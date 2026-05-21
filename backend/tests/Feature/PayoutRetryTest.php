@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use App\Models\ProviderPayout;
 use App\Jobs\SendProviderPayoutJob;
 
@@ -12,18 +13,18 @@ class PayoutRetryTest extends TestCase
 {
   use RefreshDatabase;
 
-  /** @test */
+  #[\PHPUnit\Framework\Attributes\Test]
   public function payout_retries_until_max_attempts_and_then_fails()
   {
     // create minimal user/order/payment as in other test
-    $customerId = \DB::table('users')->insertGetId([
+    $customerId = DB::table('users')->insertGetId([
       'name' => 'Retry Customer',
       'email' => 'retry@example.test',
       'password' => bcrypt('secret'),
       'created_at' => now(),
       'updated_at' => now(),
     ]);
-    $providerId = \DB::table('users')->insertGetId([
+    $providerId = DB::table('users')->insertGetId([
       'name' => 'Retry Provider',
       'email' => 'retryprov@example.test',
       'password' => bcrypt('secret'),
@@ -31,7 +32,7 @@ class PayoutRetryTest extends TestCase
       'updated_at' => now(),
     ]);
 
-    $orderId = \DB::table('orders')->insertGetId([
+    $orderId = DB::table('orders')->insertGetId([
       'order_code' => 'RTY-' . strtoupper(bin2hex(random_bytes(3))),
       'customer_id' => $customerId,
       'provider_id' => $providerId,
@@ -42,7 +43,7 @@ class PayoutRetryTest extends TestCase
       'updated_at' => now(),
     ]);
 
-    \DB::table('payments')->insert([
+    DB::table('payments')->insert([
       'order_id' => $orderId,
       'payment_type' => 'FINAL',
       'amount' => 50000,

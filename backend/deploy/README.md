@@ -1,6 +1,8 @@
-Deployment Quick-Guide — Laravel queue + scheduler
+<!-- markdownlint-disable -->
 
-1) Copy systemd unit (example)
+Panduan Deploy Singkat — Queue & Scheduler Laravel (Bahasa Indonesia)
+
+1) Menyalin unit systemd (contoh)
 
 ```bash
 sudo cp deploy/laravel-queue.service /etc/systemd/system/laravel-queue.service
@@ -9,7 +11,7 @@ sudo systemctl enable --now laravel-queue.service
 sudo journalctl -u laravel-queue -f
 ```
 
-2) Or use Supervisor (example)
+2) Atau gunakan Supervisor (contoh)
 
 ```bash
 sudo cp deploy/supervisor.conf /etc/supervisor/conf.d/laravel-queue.conf
@@ -19,16 +21,16 @@ sudo supervisorctl start laravel-queue:*
 tail -f /var/log/laravel-queue.log
 ```
 
-3) Ensure cron runs scheduler every minute:
+3) Pastikan cron menjalankan scheduler setiap menit:
 
 ```cron
 * * * * * cd /var/www/tukangdekat/backend && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-4) Environment variables
-- Place `XENDIT_API_KEY`, `PAYOUT_GATEWAY`, `PAYOUT_ALERT_WEBHOOK`, and `PAYOUT_ALERT_EMAIL` in your server's environment or `.env` (use secret manager when possible).
+4) Variabel lingkungan penting
+- Tempatkan `XENDIT_API_KEY`, `PAYOUT_GATEWAY`, `PAYOUT_ALERT_WEBHOOK`, dan `PAYOUT_ALERT_EMAIL` di environment server atau di `.env` (gunakan secret manager bila memungkinkan).
 
-5) Test pipeline
+5) Uji pipeline setelah deploy
 
 ```bash
 php artisan migrate --force
@@ -38,14 +40,14 @@ php artisan payouts:process-pending --limit=25
 ```
 
 6) Monitoring
-- `php artisan payouts:alert --since=60` and `php artisan payouts:export-failed --since=60 --email=ops@example.com`
+- Jalankan: `php artisan payouts:alert --since=60` atau `php artisan payouts:export-failed --since=60 --email=ops@example.com`
 
-Notes
-- Adjust paths to your deployment layout. These are example snippets for `/var/www/tukangdekat/backend`.
+Catatan
+- Sesuaikan path dengan layout deploy Anda. Contoh di atas menggunakan `/var/www/tukangdekat/backend`.
 
-Environment injection examples
+Contoh injeksi environment
 
-- systemd (set env in unit file): edit `deploy/laravel-queue.service` and add `Environment=` lines with your secrets. Example:
+- systemd (set env di unit file): edit `deploy/laravel-queue.service` dan tambahkan baris `Environment=` untuk secrets. Contoh:
 
 ```
 [Service]
@@ -55,7 +57,7 @@ Environment=XENDIT_API_KEY=sk_prod_....
 ExecStart=/usr/bin/php /var/www/tukangdekat/backend/artisan queue:work --sleep=3 --tries=3 --queue=default
 ```
 
-- supervisor (export env for program): in `deploy/supervisor.conf` you can add `environment=`. Example:
+- supervisor (set environment pada program): di `deploy/supervisor.conf` tambahkan `environment=`. Contoh:
 
 ```
 [program:laravel-queue]
@@ -64,4 +66,4 @@ environment=APP_ENV="production",PAYOUT_GATEWAY="xendit",XENDIT_API_KEY="sk_prod
 user=www-data
 ```
 
-Security note: prefer injecting secrets from a secure secret store (Vault, AWS SSM/Secrets Manager) and not embedding them in files. When using systemd or supervisor, ensure unit/config files are readable only by root and not committed to git.
+Catatan keamanan: lebih baik mengambil secrets dari secret store seperti Vault atau AWS Secrets Manager dan jangan menyimpan secrets di file. Pastikan file unit/config hanya dapat dibaca oleh root dan jangan commit file yang berisi secrets ke git.

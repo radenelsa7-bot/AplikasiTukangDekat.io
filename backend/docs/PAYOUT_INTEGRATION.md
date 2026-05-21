@@ -1,3 +1,5 @@
+<!-- markdownlint-disable -->
+
 Panduan Integrasi Gateway Payout (Xendit) — Project Aplikasi Tukang Dekat
 
 Tujuan

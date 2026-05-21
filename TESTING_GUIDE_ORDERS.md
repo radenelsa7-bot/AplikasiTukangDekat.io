@@ -1,127 +1,129 @@
-# Testing Guide: Orders Feature (Fixed)
+<!-- markdownlint-disable -->
+
+# Panduan Pengujian: Fitur Pesanan (Diperbaiki)
 
 ## Status
-✅ **FIXED**: Order UI display issue resolved
-✅ **Backend**: All 27 API endpoints verified working
-✅ **Frontend**: Riverpod refresh logic implemented
-✅ **Compilation**: No errors, warnings suppressed
-✅ **Payments**: QRIS flow is gateway-ready with webhook signature verification and simulation fallback
+✅ **DIPERBAIKI**: Masalah tampilan UI pesanan diselesaikan
+✅ **Backend**: Semua 27 endpoint API terverifikasi berfungsi
+✅ **Frontend**: Logika refresh Riverpod diimplementasikan
+✅ **Kompilasi**: Tidak ada kesalahan, peringatan ditekan
+✅ **Pembayaran**: Alur QRIS siap gateway dengan verifikasi tanda tangan webhook dan fallback simulasi
 
-## What Was Fixed
+## Yang Diperbaiki
 
-### Problem
-Orders were successfully created in backend but not appearing in Flutter UI "Pesanan" tab.
+### Masalah
+Pesanan berhasil dibuat di backend tetapi tidak muncul di tab "Pesanan" UI Flutter.
 
-### Root Cause
-`CreateOrderController` and `OrderActionController` were not refreshing `myOrdersProvider` after API success, causing UI to display stale data.
+### Penyebab Akar
+`CreateOrderController` dan `OrderActionController` tidak menyegarkan `myOrdersProvider` setelah API berhasil, menyebabkan UI menampilkan data stale.
 
-### Solution
-Added `_ref.refresh(myOrdersProvider)` to 4 critical methods:
-1. `createOrder()` - After order created
-2. `respondToOrder()` - After provider responds to order
-3. `startWork()` - After work starts
-4. `completeOrder()` - After work completes
+### Solusi
+Menambahkan `_ref.refresh(myOrdersProvider)` ke 4 metode kritis:
+1. `createOrder()` - Setelah pesanan dibuat
+2. `respondToOrder()` - Setelah penyedia merespons pesanan
+3. `startWork()` - Setelah pekerjaan dimulai
+4. `completeOrder()` - Setelah pekerjaan selesai
 
-**File Modified**: [lib/features/home/order_providers.dart](lib/features/home/order_providers.dart)
+**File Dimodifikasi**: [lib/features/home/order_providers.dart](lib/features/home/order_providers.dart)
 
-## Testing Steps
+## Langkah-langkah Pengujian
 
-### Test 1: Create Order as Customer (Fajar)
+### Pengujian 1: Buat Pesanan sebagai Pelanggan (Fajar)
 1. **Login**: fajar@example.com / password123
-2. **Browse**: Go to Beranda → Select Tukang Listrik Andi
-3. **Create Order**: Fill form:
+2. **Jelajahi**: Pergi ke Beranda → Pilih Tukang Listrik Andi
+3. **Buat Pesanan**: Isi formulir:
    - Layanan: Tukang Listrik
    - Tanggal: 2026-05-20
    - Jam: 14:00
    - Alamat: Test alamat Fajar
    - Catatan: Test order
-4. **Verify**: 
-   - ✅ Success message shows "Order berhasil dibuat!"
-   - ✅ Switch to Pesanan tab
-   - ✅ **NEW ORDER APPEARS IMMEDIATELY** (no manual refresh needed)
+4. **Verifikasi**: 
+   - ✅ Pesan sukses menampilkan "Order berhasil dibuat!"
+   - ✅ Beralih ke tab Pesanan
+   - ✅ **PESANAN BARU MUNCUL LANGSUNG** (tidak perlu refresh manual)
 
-### Test 2: Create Order as Customer (Nabila)
-1. **Logout**: Fajar account
+### Pengujian 2: Buat Pesanan sebagai Pelanggan (Nabila)
+1. **Logout**: Akun Fajar
 2. **Login**: nabila@example.com / password123
-3. **Browse**: Beranda → Select any provider
-4. **Create Order**: Similar form
-5. **Verify**:
-   - ✅ Order appears in Pesanan tab immediately
-   - ✅ Only shows Nabila's orders (not Fajar's)
+3. **Jelajahi**: Beranda → Pilih penyedia apa pun
+4. **Buat Pesanan**: Formulir serupa
+5. **Verifikasi**:
+   - ✅ Pesanan muncul di tab Pesanan segera
+   - ✅ Hanya menampilkan pesanan Nabila (bukan Fajar)
 
-### Test 3: Provider Actions (Andi - Provider)
+### Pengujian 3: Tindakan Penyedia (Andi - Penyedia)
 1. **Login**: andi.listrik@example.com / password123
-2. **Check Pesanan Tab**: Should see orders from customers
-3. **Accept Order**: Tap order → Accept button
-4. **Verify**:
-   - ✅ Order status changes to ACCEPTED
-   - ✅ UI refreshes immediately
-5. **Start Work**: After accepted, tap → Mulai Pekerjaan
-6. **Verify**:
-   - ✅ DP payment must already be PAID
-   - ✅ Status changes to IN_PROGRESS only after payment is confirmed
-   - ✅ UI refreshes immediately
-7. **Complete Work**: After started, tap → Selesaikan Pekerjaan
-8. **Verify**:
-   - ✅ Status changes to COMPLETED
-   - ✅ Pesanan tab updates immediately
+2. **Periksa Tab Pesanan**: Seharusnya melihat pesanan dari pelanggan
+3. **Terima Pesanan**: Ketuk pesanan → Tombol Terima
+4. **Verifikasi**:
+   - ✅ Status pesanan berubah menjadi ACCEPTED
+   - ✅ UI menyegarkan segera
+5. **Mulai Pekerjaan**: Setelah diterima, ketuk → Mulai Pekerjaan
+6. **Verifikasi**:
+   - ✅ Pembayaran DP harus sudah PAID
+   - ✅ Status berubah menjadi IN_PROGRESS hanya setelah pembayaran dikonfirmasi
+   - ✅ UI menyegarkan segera
+7. **Selesaikan Pekerjaan**: Setelah dimulai, ketuk → Selesaikan Pekerjaan
+8. **Verifikasi**:
+   - ✅ Status berubah menjadi COMPLETED
+   - ✅ Tab Pesanan diperbarui segera
 
-### Test 4: Multi-User Isolation
-1. **Login as Fajar**: Verify only Fajar's 2 orders visible
+### Pengujian 4: Isolasi Multi-Pengguna
+1. **Login sebagai Fajar**: Verifikasi hanya 2 pesanan Fajar yang terlihat
 2. **Logout**
-3. **Login as Nabila**: Verify only Nabila's 1 order visible
+3. **Login sebagai Nabila**: Verifikasi hanya 1 pesanan Nabila yang terlihat
 4. **Logout**
-5. **Login as Andi**: Verify incoming orders from customers visible
-6. **Expected**:
-   - ✅ No cross-user data leakage
-   - ✅ Each user sees only relevant orders
+5. **Login sebagai Andi**: Verifikasi pesanan masuk dari pelanggan terlihat
+6. **Diharapkan**:
+   - ✅ Tidak ada kebocoran data lintas pengguna
+   - ✅ Setiap pengguna hanya melihat pesanan yang relevan
 
-### Test 5: Long-Term Persistence
-1. **Create Order**: As Fajar
-2. **Close App**: Complete restart
-3. **Re-open**: App should load
-4. **Verify**:
-   - ✅ Pesanan tab shows created order
-   - ✅ Token persisted in FlutterSecureStorage
-   - ✅ Order data persisted in backend
+### Pengujian 5: Persistansi Jangka Panjang
+1. **Buat Pesanan**: Sebagai Fajar
+2. **Tutup Aplikasi**: Restart lengkap
+3. **Buka Kembali**: Aplikasi harus dimuat
+4. **Verifikasi**:
+   - ✅ Tab Pesanan menampilkan pesanan yang dibuat
+   - ✅ Token disimpan di FlutterSecureStorage
+   - ✅ Data pesanan disimpan di backend
 
-## Backend Verification (Curl Tests)
+## Verifikasi Backend (Pengujian Curl)
 
-### Test Customer Orders (Fajar)
+### Pengujian Pesanan Pelanggan (Fajar)
 ```bash
 # Login
 curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"fajar@example.com","password":"password123"}'
 
-# Response: token="15|AcSbpUzECvIbsKUeYGQEaZotbNb7sELyYA9jrRSAbc0fd674"
+# Respons: token="15|AcSbpUzECvIbsKUeYGQEaZotbNb7sELyYA9jrRSAbc0fd674"
 
-# Get orders
+# Dapatkan pesanan
 curl -X GET http://localhost:8000/api/orders/my-orders \
   -H "Authorization: Bearer 15|AcSbpUzECvIbsKUeYGQEaZotbNb7sELyYA9jrRSAbc0fd674"
 
-# Expected: Array with 2 orders (id: 1, 2)
+# Diharapkan: Array dengan 2 pesanan (id: 1, 2)
 ```
 
-### Test Provider Orders (Andi)
+### Pengujian Pesanan Penyedia (Andi)
 ```bash
 # Login
 curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"andi.listrik@example.com","password":"password123"}'
 
-# Get incoming orders
+# Dapatkan pesanan masuk
 curl -X GET http://localhost:8000/api/orders/my-orders \
   -H "Authorization: Bearer <ANDI_TOKEN>"
 
-# Expected: Array with 3 orders (id: 1, 2, 3)
+# Diharapkan: Array dengan 3 pesanan (id: 1, 2, 3)
 ```
 
-## n8n Notification Hooks
+## Kait Notifikasi n8n
 
-If `N8N_WEBHOOK_URL` is configured in `backend/.env`, the backend will also send event payloads to n8n and store a log row in `notification_logs`.
+Jika `N8N_WEBHOOK_URL` dikonfigurasi di `backend/.env`, backend juga akan mengirim muatan acara ke n8n dan menyimpan baris log di `notification_logs`.
 
-### Events Sent
+### Acara yang Dikirim
 - `order_created`
 - `order_accepted`
 - `order_rejected`
@@ -130,31 +132,31 @@ If `N8N_WEBHOOK_URL` is configured in `backend/.env`, the backend will also send
 - `payment_dp_paid`
 - `payment_final_paid`
 
-### Required Env
+### Env yang Diperlukan
 ```bash
 N8N_WEBHOOK_URL=https://your-n8n-domain/webhook/...
 N8N_WEBHOOK_SECRET=optional-shared-secret
 ```
 
-### Payload Shape
-Each request includes:
+### Bentuk Muatan
+Setiap permintaan mencakup:
 - `event_name`
 - `channel`
 - `payload`
 - `sent_at`
 
-The webhook handler also records the notification result as `SENT`, `FAILED`, or `SKIPPED`.
+Penanganan webhook juga mencatat hasil notifikasi sebagai `SENT`, `FAILED`, atau `SKIPPED`.
 
-## Payment Flow
+## Alur Pembayaran
 
-### Current Behavior
-- `POST /api/payments/{paymentId}/generate-qris` now mendukung mode `simulation` dan `midtrans`.
-- Jika `PAYMENT_GATEWAY_DRIVER=midtrans`, backend akan kirim transaksi Snap Midtrans dengan pembayaran `qris`.
-- Jika credential belum ada, endpoint tetap fallback ke payload simulasi agar testing lokal tidak terhenti.
-- `POST /api/webhooks/payment` memverifikasi signature Midtrans dengan rumus `sha512(order_id + status_code + gross_amount + server_key)`.
-- Provider tidak bisa mulai kerja sebelum DP benar-benar berstatus `PAID`.
+### Perilaku Saat Ini
+- `POST /api/payments/{paymentId}/generate-qris` sekarang mendukung mode `simulation` dan `midtrans`.
+- Jika `PAYMENT_GATEWAY_DRIVER=midtrans`, backend akan mengirim transaksi Snap Midtrans dengan pembayaran `qris`.
+- Jika kredensial belum ada, endpoint tetap fallback ke muatan simulasi agar pengujian lokal tidak terhenti.
+- `POST /api/webhooks/payment` memverifikasi tanda tangan Midtrans dengan rumus `sha512(order_id + status_code + gross_amount + server_key)`.
+- Penyedia tidak bisa mulai kerja sebelum DP benar-benar berstatus `PAID`.
 
-### Required Env
+### Env yang Diperlukan
 ```bash
 PAYMENT_GATEWAY_DRIVER=midtrans
 MIDTRANS_SERVER_KEY=YOUR_SERVER_KEY
@@ -162,43 +164,43 @@ MIDTRANS_CLIENT_KEY=YOUR_CLIENT_KEY
 MIDTRANS_IS_PRODUCTION=false
 ```
 
-### Notes
-- Untuk local testing, boleh tetap pakai `PAYMENT_GATEWAY_DRIVER=simulation`.
+### Catatan
+- Untuk pengujian lokal, boleh tetap pakai `PAYMENT_GATEWAY_DRIVER=simulation`.
 - Saat pindah ke Midtrans asli, isi `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, lalu set `MIDTRANS_IS_PRODUCTION` sesuai environment.
-- Pada mobile, `checkout_url` dari response bisa langsung dibuka untuk pembayaran QRIS Midtrans.
+- Pada mobile, `checkout_url` dari respons bisa langsung dibuka untuk pembayaran QRIS Midtrans.
 
-## Finance Policy
+## Kebijakan Keuangan
 
-### Commission & Settlement
-- `PLATFORM_COMMISSION_PERCENT` menentukan potongan platform dari setiap payment yang berhasil dibayar.
+### Komisi & Penyelesaian
+- `PLATFORM_COMMISSION_PERCENT` menentukan potongan platform dari setiap pembayaran yang berhasil dibayar.
 - Backend menyimpan `commission_percent`, `platform_fee`, `provider_payout`, dan `settlement_status` di tabel `payments`.
-- Saat payment berstatus `PAID`, backend otomatis menghitung payout provider dan menandai settlement sebagai `READY`.
+- Saat pembayaran berstatus `PAID`, backend secara otomatis menghitung payout penyedia dan menandai penyelesaian sebagai `READY`.
 
-### Refund Policy
-- `DP_REFUND_PERCENT` menentukan berapa persen DP yang dikembalikan saat order dibatalkan sebelum pengerjaan.
-- Jika order berstatus `CANCELLED` dan DP sudah dibayar, backend menandai refund sebagai `REQUESTED`.
-- Data refund tersimpan di field `refund_amount`, `refund_status`, `refund_reason`, dan `refund_requested_at`.
+### Kebijakan Pengembalian Dana
+- `DP_REFUND_PERCENT` menentukan berapa persen DP yang dikembalikan saat pesanan dibatalkan sebelum pengerjaan.
+- Jika pesanan berstatus `CANCELLED` dan DP sudah dibayar, backend menandai pengembalian dana sebagai `REQUESTED`.
+- Data pengembalian dana disimpan di field `refund_amount`, `refund_status`, `refund_reason`, dan `refund_requested_at`.
 
-## Treasurer Payment Report
+## Laporan Pembayaran Bendahara
 
 ### Endpoint
 ```bash
 GET /api/treasurer/payments/report
 ```
 
-### Access
-- Hanya user dengan role `TREASURER` yang bisa akses endpoint ini.
+### Akses
+- Hanya pengguna dengan role `TREASURER` yang bisa mengakses endpoint ini.
 
-### Query Parameters
+### Parameter Kueri
 - `start_date` — filter dari tanggal `YYYY-MM-DD`
 - `end_date` — filter sampai tanggal `YYYY-MM-DD`
 - `status` — `UNPAID`, `PENDING`, `PAID`, `FAILED`, `EXPIRED`
 - `payment_type` — `DP` atau `FINAL`
-- `order_id` — filter transaksi per order
-- `provider_id` — filter transaksi per provider
+- `order_id` — filter transaksi per pesanan
+- `provider_id` — filter transaksi per penyedia
 - `per_page` — jumlah data per halaman, default 20
 
-### Response Ringkas
+### Respons Ringkas
 - `summary.total_payments`
 - `summary.total_amount`
 - `summary.total_paid_amount`
@@ -207,7 +209,7 @@ GET /api/treasurer/payments/report
 - `summary.total_refund_amount`
 - `breakdown.by_status`
 - `breakdown.by_type`
-- `data` berisi daftar payment detail yang sudah di-`paginate`
+- `data` berisi daftar detail pembayaran yang sudah di-paginate
 
 ### Contoh Curl
 ```bash
@@ -215,60 +217,60 @@ curl -X GET "http://localhost:8000/api/treasurer/payments/report?start_date=2026
    -H "Authorization: Bearer YOUR_TREASURER_TOKEN"
 ```
 
-## Review Flow
+## Alur Ulasan
 
-### Test Review as Customer
-1. Login as a customer.
-2. Open an order with status `COMPLETED` or `CLOSED`.
-3. Tap **Tulis Ulasan**.
-4. Choose a rating and add an optional comment.
-5. Verify:
-   - ✅ Review is saved through `POST /api/reviews/order/{orderId}`
-   - ✅ The order detail page now shows your submitted review
-   - ✅ The provider detail page shows the updated average rating and review list
+### Pengujian Ulasan sebagai Pelanggan
+1. Login sebagai pelanggan.
+2. Buka pesanan dengan status `COMPLETED` atau `CLOSED`.
+3. Ketuk **Tulis Ulasan**.
+4. Pilih rating dan tambahkan komentar opsional.
+5. Verifikasi:
+   - ✅ Ulasan disimpan melalui `POST /api/reviews/order/{orderId}`
+   - ✅ Halaman detail pesanan sekarang menampilkan ulasan yang dikirim
+   - ✅ Halaman detail penyedia menampilkan rating rata-rata yang diperbarui dan daftar ulasan
 
-### Review API Endpoints
+### Endpoint API Ulasan
 - `POST /api/reviews/order/{orderId}`
 - `GET /api/reviews/order/{orderId}`
 - `GET /api/reviews/provider/{providerId}`
 
-## Admin Verification Flow
+## Alur Verifikasi Admin
 
-### Setup
-Use an account with `role = ADMIN`. If no admin user exists yet, create one with tinker or seed data.
+### Pengaturan
+Gunakan akun dengan `role = ADMIN`. Jika tidak ada pengguna admin, buat satu dengan tinker atau data seed.
 
-### Test Admin UI
-1. Login as admin.
-2. Open the new **Admin** tab in the home screen.
-3. Verify the list only shows providers with `is_verified = false`.
-4. Tap **Verifikasi** on one provider.
-5. Verify:
-   - ✅ Provider status changes to verified in backend
-   - ✅ Provider is removed from the pending list
-   - ✅ Event `provider_verified` is sent to `n8n` if configured
+### Pengujian UI Admin
+1. Login sebagai admin.
+2. Buka tab **Admin** baru di layar beranda.
+3. Verifikasi daftar hanya menampilkan penyedia dengan `is_verified = false`.
+4. Ketuk **Verifikasi** pada satu penyedia.
+5. Verifikasi:
+   - ✅ Status penyedia berubah menjadi terverifikasi di backend
+   - ✅ Penyedia dihapus dari daftar yang tertunda
+   - ✅ Acara `provider_verified` dikirim ke `n8n` jika dikonfigurasi
 
-### Admin API Endpoints
+### Endpoint API Admin
 - `GET /api/admin/providers/pending`
 - `PATCH /api/admin/providers/{providerId}/verification`
 
-## Expected Results
+## Hasil yang Diharapkan
 
-| Test | Before Fix | After Fix |
+| Pengujian | Sebelum Perbaikan | Setelah Perbaikan |
 |------|-----------|-----------|
-| Create order | ❌ Not visible in UI | ✅ Visible immediately |
-| Respond order | ❌ Status not updated in UI | ✅ Updated immediately |
-| Switch accounts | ❌ Cross-user leak possible | ✅ Isolated correctly |
-| Logout/Login | ❌ Token cleanup needed | ✅ Working correctly |
-| Manual refresh | ⚠️ Required workaround | ❌ Not needed anymore |
+| Buat pesanan | ❌ Tidak terlihat di UI | ✅ Terlihat langsung |
+| Respons pesanan | ❌ Status tidak diperbarui di UI | ✅ Diperbarui langsung |
+| Ganti akun | ❌ Kebocoran lintas pengguna mungkin | ✅ Terisolasi dengan benar |
+| Logout/Login | ❌ Pembersihan token diperlukan | ✅ Berfungsi dengan benar |
+| Refresh manual | ⚠️ Diperlukan solusi workaround | ❌ Tidak diperlukan lagi |
 
-## Known Limitations (If Any)
-- Integrasi gateway real sudah siap untuk Midtrans, tapi credential production belum diisi di repo.
+## Keterbatasan yang Diketahui (Jika Ada)
+- Integrasi gateway asli sudah siap untuk Midtrans, tapi kredensial produksi belum diisi di repo.
 
-## Rollback Instructions
-If issues occur, revert [lib/features/home/order_providers.dart](lib/features/home/order_providers.dart) to remove `_ref.refresh(myOrdersProvider)` calls from all 4 methods.
+## Instruksi Rollback
+Jika masalah terjadi, kembalikan [lib/features/home/order_providers.dart](lib/features/home/order_providers.dart) untuk menghapus panggilan `_ref.refresh(myOrdersProvider)` dari semua 4 metode.
 
-## Additional Notes
-- All 27 backend API endpoints verified working
-- Dio timeout set to 30 seconds (connect + receive)
-- Token authentication with Sanctum working correctly
-- Database queries filtering by user role and ID working correctly
+## Catatan Tambahan
+- Semua 27 endpoint API backend terverifikasi berfungsi
+- Timeout Dio diatur ke 30 detik (koneksi + terima)
+- Autentikasi token dengan Sanctum berfungsi dengan benar
+- Kueri basis data filtering berdasarkan peran dan ID pengguna berfungsi dengan benar

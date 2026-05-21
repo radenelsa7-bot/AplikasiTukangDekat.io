@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 Route::get('/', function () {
     return view('welcome');
@@ -22,7 +23,6 @@ use App\Http\Controllers\Admin\ProviderPayoutController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/admin/treasurer/payments', [TreasurerWebController::class, 'index'])->name('admin.treasurer.report');
-    Route::get('/api/treasurer/payments/report', [TreasurerController::class, 'paymentReport'])->name('api.treasurer.report');
 
     // Provider payouts UI + actions
     Route::get('/admin/treasurer/provider-payouts', [ProviderPayoutController::class, 'index'])->name('admin.treasurer.provider_payouts');
@@ -51,7 +51,7 @@ Route::middleware(['auth'])->group(function () {
 
         $grouped = $payments->groupBy('order.provider_id');
 
-        \DB::beginTransaction();
+        DB::beginTransaction();
         try {
             foreach ($grouped as $providerId => $group) {
                 $sum = $group->sum('provider_payout');
@@ -70,12 +70,16 @@ Route::middleware(['auth'])->group(function () {
                 ]);
             }
 
-            \DB::commit();
+            DB::commit();
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
             return redirect()->back()->with('error', 'Payout processing failed: ' . $e->getMessage());
         }
 
         return redirect()->back()->with('status', 'Payouts processed');
     })->name('admin.treasurer.process_payouts');
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/api/treasurer/payments/report', [TreasurerController::class, 'paymentReport'])->name('api.treasurer.report');
 });

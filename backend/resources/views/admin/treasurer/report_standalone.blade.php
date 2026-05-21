@@ -141,6 +141,70 @@
             };
         }
 
+        // Render pagination controls (ke luar dari template literal)
+        function renderPagination(meta) {
+            const container = document.getElementById('pagination-controls');
+            container.innerHTML = '';
+            if (!meta || meta.last_page <= 1) return;
+
+            const addBtn = (text, enabled, onClick, extraClass = '') => {
+                const b = document.createElement('button');
+                b.textContent = text;
+                b.className = `px-3 py-1 border rounded ${extraClass}`;
+                if (!enabled) {
+                    b.disabled = true;
+                    b.classList.add('opacity-50');
+                } else {
+                    b.onclick = onClick;
+                }
+                container.appendChild(b);
+            };
+
+            const addPageButton = (i) => {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                btn.className = `px-3 py-1 border rounded ${i === meta.current_page ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`;
+                if (i === meta.current_page) btn.disabled = true;
+                btn.onclick = () => load(i);
+                container.appendChild(btn);
+            };
+
+            const addEllipsis = () => {
+                const span = document.createElement('span');
+                span.textContent = '...';
+                span.className = 'px-2 text-gray-500';
+                container.appendChild(span);
+            };
+
+            const total = meta.last_page;
+            const current = meta.current_page;
+
+            addBtn('<<', current > 1, () => load(1));
+            addBtn('Prev', current > 1, () => load(current - 1));
+
+            let start = Math.max(1, current - 2);
+            let end = Math.min(total, current + 2);
+            if (start > 1) {
+                addPageButton(1);
+                if (start > 2) addEllipsis();
+            }
+            for (let i = start; i <= end; i++) addPageButton(i);
+            if (end < total) {
+                if (end < total - 1) addEllipsis();
+                addPageButton(total);
+            }
+
+            addBtn('Next', current < total, () => load(current + 1));
+            addBtn('>>', current < total, () => load(total));
+            // update jump input
+            const jumpInput = document.getElementById('jump_page');
+            if (jumpInput) {
+                jumpInput.value = current;
+                jumpInput.setAttribute('max', total);
+                jumpInput.setAttribute('min', 1);
+            }
+        }
+
         async function load(page = 1) {
             try {
                 const params = { ...paramsFromForm(), page };
@@ -162,9 +226,7 @@
                     </div>
                     <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
                         <p class="text-gray-600 text-sm">Total Provider Payout</p>
-                        // store last meta for jump handler
-                        window.__treasurer_last_meta = meta;
-                        renderPagination(meta);
+                        <p class="text-2xl font-bold text-orange-700">${formatCurrency(data.summary.total_provider_payout)}</p>
                     </div>
                 `;
                 document.getElementById('summary').innerHTML = summaryHtml;
@@ -173,69 +235,6 @@
                 const breakdownHtml = `
                     <div class="bg-white border rounded p-4">
                         <h3 class="font-semibold mb-3">Breakdown by Status</h3>
-
-                function renderPagination(meta) {
-                    const container = document.getElementById('pagination-controls');
-                    container.innerHTML = '';
-                    if (!meta || meta.last_page <= 1) return;
-
-                    const addBtn = (text, enabled, onClick, extraClass = '') => {
-                        const b = document.createElement('button');
-                        b.textContent = text;
-                        b.className = `px-3 py-1 border rounded ${extraClass}`;
-                        if (!enabled) {
-                            b.disabled = true;
-                            b.classList.add('opacity-50');
-                        } else {
-                            b.onclick = onClick;
-                        }
-                        container.appendChild(b);
-                    };
-
-                    const addPageButton = (i) => {
-                        const btn = document.createElement('button');
-                        btn.textContent = i;
-                        btn.className = `px-3 py-1 border rounded ${i === meta.current_page ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`;
-                        if (i === meta.current_page) btn.disabled = true;
-                        btn.onclick = () => load(i);
-                        container.appendChild(btn);
-                    };
-
-                    const addEllipsis = () => {
-                        const span = document.createElement('span');
-                        span.textContent = '...';
-                        span.className = 'px-2 text-gray-500';
-                        container.appendChild(span);
-                    };
-
-                    const total = meta.last_page;
-                    const current = meta.current_page;
-
-                    addBtn('<<', current > 1, () => load(1));
-                    addBtn('Prev', current > 1, () => load(current - 1));
-
-                    let start = Math.max(1, current - 2);
-                    let end = Math.min(total, current + 2);
-                    if (start > 1) {
-                        addPageButton(1);
-                        if (start > 2) addEllipsis();
-                    }
-                    for (let i = start; i <= end; i++) addPageButton(i);
-                    if (end < total) {
-                        if (end < total - 1) addEllipsis();
-                        addPageButton(total);
-                    }
-
-                    addBtn('Next', current < total, () => load(current + 1));
-                    addBtn('>>', current < total, () => load(total));
-                    // update jump input
-                    const jumpInput = document.getElementById('jump_page');
-                    if (jumpInput) {
-                        jumpInput.value = current;
-                        jumpInput.setAttribute('max', total);
-                        jumpInput.setAttribute('min', 1);
-                    }
-                }
                         <div class="space-y-2">
                             ${(data.breakdown?.by_status || []).map(b => `
                                 <div class="flex justify-between text-sm">
@@ -280,6 +279,8 @@
 
                 // Pagination - render into #pagination-controls
                 const meta = data.meta;
+                // store last meta for jump handler
+                window.__treasurer_last_meta = meta;
                 renderPagination(meta);
 
                 // Export links

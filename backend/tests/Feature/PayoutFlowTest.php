@@ -6,6 +6,7 @@ use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use App\Models\Payment;
 use App\Models\ProviderPayout;
 use App\Jobs\SendProviderPayoutJob;
@@ -14,20 +15,20 @@ class PayoutFlowTest extends TestCase
 {
   use RefreshDatabase;
 
-  /** @test */
+  #[\PHPUnit\Framework\Attributes\Test]
   public function aggregation_command_runs()
   {
     // create sample paid payment row directly to avoid missing factories
     // Temporarily disable foreign key checks for in-memory sqlite
     // create minimal users and order so foreign keys are satisfied
-    $customerId = \DB::table('users')->insertGetId([
+    $customerId = DB::table('users')->insertGetId([
       'name' => 'Test Customer',
       'email' => 'customer@example.test',
       'password' => bcrypt('secret'),
       'created_at' => now(),
       'updated_at' => now(),
     ]);
-    $providerId = \DB::table('users')->insertGetId([
+    $providerId = DB::table('users')->insertGetId([
       'name' => 'Test Provider',
       'email' => 'provider@example.test',
       'password' => bcrypt('secret'),
@@ -35,7 +36,7 @@ class PayoutFlowTest extends TestCase
       'updated_at' => now(),
     ]);
 
-    $orderId = \DB::table('orders')->insertGetId([
+    $orderId = DB::table('orders')->insertGetId([
       'order_code' => 'TST-' . strtoupper(bin2hex(random_bytes(3))),
       'customer_id' => $customerId,
       'provider_id' => $providerId,
@@ -46,7 +47,7 @@ class PayoutFlowTest extends TestCase
       'updated_at' => now(),
     ]);
 
-    \DB::table('payments')->insert([
+    DB::table('payments')->insert([
       'order_id' => $orderId,
       'payment_type' => 'FINAL',
       'amount' => 100000,

@@ -1,42 +1,44 @@
-# Deployment & Production Checklist
+<!-- markdownlint-disable -->
 
-This document collects the minimal, practical steps to run this Laravel app in production and operate background workers and the scheduler.
+# Penerapan & Daftar Periksa Produksi
 
-## Preconditions
+Dokumen ini mengumpulkan langkah-langkah minimal dan praktis untuk menjalankan aplikasi Laravel ini dalam produksi dan mengoperasikan pekerja latar belakang serta penjadwal.
 
-- PHP 8.1+ with required extensions (pdo_mysql, mbstring, openssl, json, curl, zip for XLSX generation if you need server-side Excel). Install `ext-zip` to enable server-side XLSX libraries.
-- Composer installed
-- A webserver (nginx / Apache) and a process supervisor (systemd or Supervisor) for queue workers.
-- Database (MySQL/MariaDB) accessible and configured in `.env`
+## Prasyarat
 
-## Basic deploy steps
+- PHP 8.1+ dengan ekstensi yang diperlukan (pdo_mysql, mbstring, openssl, json, curl, zip untuk pembuatan XLSX jika Anda membutuhkan Excel di sisi server). Instal `ext-zip` untuk mengaktifkan perpustakaan XLSX sisi server.
+- Composer terinstal
+- Server web (nginx / Apache) dan supervisor proses (systemd atau Supervisor) untuk pekerja antrian.
+- Database (MySQL/MariaDB) dapat diakses dan dikonfigurasi di `.env`
 
-1. Clone repository on server into `/var/www/tukangdekat` (example).
-2. Install PHP deps:
+## Langkah-langkah penerapan dasar
+
+1. Klona repositori pada server ke `/var/www/tukangdekat` (contoh).
+2. Instal dependensi PHP:
 
 ```bash
 cd /var/www/tukangdekat/backend
 composer install --no-dev --prefer-dist --optimize-autoloader
 php artisan key:generate
 cp .env.example .env
-# update .env with DB, mail, and provider API keys
+# perbarui .env dengan DB, mail, dan kunci API provider
 ```
 
-3. File permissions:
+3. Izin file:
 
 ```bash
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 ```
 
-4. Database migrations & seed (run after configuring `.env`):
+4. Migrasi dan seed database (jalankan setelah mengonfigurasi `.env`):
 
 ```bash
 php artisan migrate --force
-php artisan db:seed --class=AdminSeeder --force   # if you have seeders to create admin/treasurer
+php artisan db:seed --class=AdminSeeder --force   # jika Anda memiliki seeder untuk membuat admin/bendahara
 ```
 
-5. Cache and config optimizations:
+5. Optimasi cache dan config:
 
 ```bash
 php artisan config:cache
@@ -44,26 +46,26 @@ php artisan route:cache
 php artisan view:cache
 ```
 
-## Scheduler (cron)
+## Penjadwal (cron)
 
-This project registers scheduled commands in `bootstrap/app.php`. To run the scheduler every minute add this to the system's crontab:
+Proyek ini mendaftarkan perintah terjadwal di `bootstrap/app.php`. Untuk menjalankan penjadwal setiap menit, tambahkan ini ke crontab sistem:
 
 ```cron
 * * * * * cd /var/www/tukangdekat/backend && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-This will execute the following entries configured by the app:
+Ini akan mengeksekusi entri berikut yang dikonfigurasi oleh aplikasi:
 
-- `payouts:process` — daily at `01:00` (aggregate PAID payments into provider payouts)
-- `payouts:process-pending --limit=25` — every 5 minutes (dispatch jobs for pending payouts)
+- `payouts:process` — setiap hari pada `01:00` (agregat pembayaran PAID menjadi pembayaran provider)
+- `payouts:process-pending --limit=25` — setiap 5 menit (dispatch pekerjaan untuk pembayaran yang tertunda)
 
-## Queue worker (systemd example)
+## Pekerja antrian (contoh systemd)
 
-Create a systemd unit so queue workers run reliably and restart on failure. Example unit `/etc/systemd/system/laravel-queue.service`:
+Buat unit systemd agar pekerja antrian berjalan dengan andal dan restart jika terjadi kegagalan. Contoh unit `/etc/systemd/system/laravel-queue.service`:
 
 ```ini
 [Unit]
-Description=Laravel Queue Worker
+Description=Pekerja Antrian Laravel
 After=network.target
 
 [Service]
@@ -80,7 +82,7 @@ Environment=QUEUE_CONNECTION=database
 WantedBy=multi-user.target
 ```
 
-Commands to enable:
+Perintah untuk mengaktifkan:
 
 ```bash
 sudo systemctl daemon-reload
@@ -88,7 +90,7 @@ sudo systemctl enable --now laravel-queue.service
 sudo journalctl -u laravel-queue -f
 ```
 
-Alternatively use Supervisor (example):
+Atau gunakan Supervisor (contoh):
 
 ```
 [program:laravel-queue]
@@ -102,20 +104,20 @@ redirect_stderr=true
 stdout_logfile=/var/log/laravel-queue.log
 ```
 
-## Web server
+## Server web
 
-Use standard production nginx/Apache configuration. Ensure `public/` is the document root and PHP-FPM is configured for the `www-data` user.
+Gunakan konfigurasi nginx/Apache produksi standar. Pastikan `public/` adalah akar dokumen dan PHP-FPM dikonfigurasi untuk pengguna `www-data`.
 
-## Operational commands
+## Perintah operasional
 
-- Restart queue when deploying new code: `php artisan queue:restart`
-- Manually trigger aggregation: `php artisan payouts:process`
-- Manually dispatch pending payouts: `php artisan payouts:process-pending --limit=25`
+- Restart antrian saat menerapkan kode baru: `php artisan queue:restart`
+- Pemicu agregasi secara manual: `php artisan payouts:process`
+- Dispatch pembayaran yang tertunda secara manual: `php artisan payouts:process-pending --limit=25`
 
-## Notes & Security
+## Catatan & Keamanan
 
-- The development helper route `/test-login/{role}` was removed. Do not re-enable dev helper routes on production.
-- Keep provider gateway credentials out of the repository and store in environment variables (`.env`) or secret manager.
-- Monitor `provider_payout_attempts` table for failed attempts and retry via admin UI or `php artisan` commands.
+- Rute helper pengembangan `/test-login/{role}` telah dihapus. Jangan aktifkan kembali rute helper dev di produksi.
+- Simpan kredensial gateway provider di luar repositori dan simpan di variabel lingkungan (`.env`) atau manajer rahasia.
+- Pantau tabel `provider_payout_attempts` untuk upaya yang gagal dan coba lagi melalui UI admin atau perintah `php artisan`.
 
-If you want, I can also add the example `systemd` unit file above into the repo under `deploy/` for easy reference.
+Jika Anda mau, saya juga dapat menambahkan file unit `systemd` contoh di atas ke dalam repo di bawah `deploy/` untuk referensi mudah.

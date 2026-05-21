@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class SendProviderPayoutJob implements ShouldQueue
 {
@@ -62,7 +63,7 @@ class SendProviderPayoutJob implements ShouldQueue
       $service->process($p, $this->options);
     } catch (\Throwable $e) {
       // If job failed due to unexpected exception, mark attempt record (if any)
-      \Log::error('SendProviderPayoutJob error: ' . $e->getMessage(), ['payoutId' => $this->payoutId]);
+      Log::error('SendProviderPayoutJob error: ' . $e->getMessage(), ['payoutId' => $this->payoutId]);
       // rethrow to let queue worker handle retries according to $tries
       throw $e;
     }

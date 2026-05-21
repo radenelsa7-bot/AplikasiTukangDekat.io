@@ -9,7 +9,7 @@ return new class extends Migration {
   {
     Schema::table('payments', function (Blueprint $table) {
       if (!Schema::hasColumn('payments', 'provider_payout_processed')) {
-        $table->boolean('provider_payout_processed')->default(false)->after('paid_at');
+        $table->boolean('provider_payout_processed')->default(false)->after('provider_payout');
       }
       if (!Schema::hasColumn('payments', 'provider_paid_at')) {
         $table->timestamp('provider_paid_at')->nullable()->after('provider_payout_processed');

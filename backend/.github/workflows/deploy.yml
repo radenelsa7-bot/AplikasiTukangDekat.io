@@ -2,42 +2,67 @@ name: Deploy backend
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
+    inputs:
+      deploy_host:
+        description: 'SSH host for deployment'
+        required: false
+        default: ''
+      deploy_user:
+        description: 'SSH username for deployment'
+        required: false
+        default: ''
+      deploy_key:
+        description: 'SSH private key for deployment'
+        required: false
+        default: ''
+      deploy_port:
+        description: 'SSH port for deployment'
+        required: false
+        default: '22'
+      deploy_path:
+        description: 'Remote deployment path'
+        required: false
+        default: ''
 
 jobs:
   deploy:
     name: Deploy to server
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_HOST: ${{ inputs.deploy_host }}
+      DEPLOY_USER: ${{ inputs.deploy_user }}
+      DEPLOY_KEY: ${{ inputs.deploy_key }}
+      DEPLOY_PORT: ${{ inputs.deploy_port }}
+      DEPLOY_PATH: ${{ inputs.deploy_path }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v4
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
 
       - name: Sync files to server
         uses: appleboy/scp-action@v0.1.4
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          host: ${{ env.DEPLOY_HOST }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ env.DEPLOY_KEY }}
+          port: ${{ env.DEPLOY_PORT || '22' }}
           source: '.'
-          target: ${{ secrets.DEPLOY_PATH }}
+          target: ${{ env.DEPLOY_PATH }}
 
       - name: Run remote deploy commands
         uses: appleboy/ssh-action@v0.1.7
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          host: ${{ env.DEPLOY_HOST }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ env.DEPLOY_KEY }}
+          port: ${{ env.DEPLOY_PORT || '22' }}
           script: |
             set -e
-            cd ${{ secrets.DEPLOY_PATH }}
+            cd ${{ env.DEPLOY_PATH }}
             composer install --no-dev --prefer-dist --optimize-autoloader
             php artisan migrate --force
             php artisan config:cache || true

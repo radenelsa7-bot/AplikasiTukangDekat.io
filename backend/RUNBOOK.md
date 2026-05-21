@@ -1,3 +1,52 @@
+## RUNBOOK: Payout (Xendit) — Panduan Singkat (Bahasa Indonesia)
+
+Tujuan: cara menyiapkan, menguji, dan mendiagnosa payout provider (Xendit) untuk fitur payout sesuai SRS.
+
+- **Lokasi file terkait**: layanan adapter di `app/Services/Payout/XenditPayoutGateway.php`.
+
+1) Variabel lingkungan (ENV)
+- `PAYOUT_GATEWAY`: pilih `xendit` atau `mock`.
+- `XENDIT_API_KEY`: secret sandbox/production secret key (jangan commit ke repo).
+- `XENDIT_BASE_URL`: opsional (default `https://api.xendit.co`).
+- `XENDIT_DISBURSEMENT_PATH`: opsional path override (default `/disbursements`).
+- `XENDIT_DEBUG`: `1` untuk mengaktifkan debug log (laravel.log) saat troubleshooting.
+
+2) Cara menjalankan tes manual (lokal)
+- Jalankan command artisan untuk mencoba satu payout (sandbox):
+
+```bash
+PAYOUT_GATEWAY=xendit XENDIT_API_KEY="<sandbox_key>" XENDIT_DEBUG=1 php artisan payouts:test-gateway 10000 --to=081234567890
+```
+
+- Output akan menampilkan kelas gateway yang dipakai dan JSON respons provider. Jika successful, respon biasanya mengandung `status` (mis. `PENDING`) dan `id`/`transaction_reference`.
+
+3) Interpretasi hasil umum
+- `API_VALIDATION_ERROR`: payload tidak cocok dengan schema endpoint sandbox. Adapter telah mencoba beberapa varian payload dan fallback form-encoded; jika masih terjadi, periksa log debug di `storage/logs/laravel.log` untuk field yang ditolak.
+- `REQUEST_FORBIDDEN_ERROR`: key valid tapi tidak punya izin disbursement — hubungi Xendit dashboard atau support untuk mengaktifkan Disbursement pada akun sandbox/production.
+- Jika respons sukses tapi `status` bukan `SUCCESS`, tangani sesuai business logic (mis. job retry/backoff atau set status PENDING).
+
+4) Debugging cepat
+- Aktifkan `XENDIT_DEBUG=1` untuk mencetak request/response (log tidak menampilkan secret key secara penuh, hanya indikasi). Periksa `storage/logs/laravel.log`.
+- Gunakan `php artisan queue:work --tries=3` untuk memproses job dan melihat log runtime.
+
+5) Keamanan & Idempotensi
+- Simpan `XENDIT_API_KEY` di secret manager (GitHub Secrets / server env). Jangan commit.
+- Adapter menambahkan header `X-IDEMPOTENCY-KEY` pada request. Pastikan idempotency dipertahankan saat retry.
+
+6) Monitoring & Runbook ops
+- Simpan setiap percobaan payout dan respons provider ke DB (attempt record). Buat alert/monitoring ketika jumlah gagal > threshold (contoh: 3x gagal per jam).
+- Tindakan on-call: cek `laravel.log`, periksa request-id yang tercetak di log debug, hubungi Xendit support jika `REQUEST_FORBIDDEN_ERROR` atau error 5xx berulang.
+
+7) Deploy / CI notes
+- Tambahkan secrets di GitHub repo: `XENDIT_API_KEY` (production), `PAYOUT_GATEWAY`.
+- Jangan jalankan `payouts:test-gateway` di environment `production` tanpa flag `--force`.
+
+8) Catatan pengembang
+- Jika sandbox menolak field tertentu, adapter mencoba fallback variant payload. Jika masih gagal, minta contoh payload yang diterima Xendit atau gunakan Mock gateway untuk CI.
+
+-- Akhir RUNBOOK --
+<!-- markdownlint-disable -->
+
 # Runbook — Quick Production Steps
 
 This runbook lists concrete commands to perform a production deploy and to operate the payout system.

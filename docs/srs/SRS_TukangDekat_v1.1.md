@@ -1,3 +1,5 @@
+<!-- markdownlint-disable -->
+
 # Software Requirements Specification
 for
 **TukangDekat – Platform Pemesanan Jasa Lokal Kecamatan Bojongloa Kaler Berbasis Mobile & API**

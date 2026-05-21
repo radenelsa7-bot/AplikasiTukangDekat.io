@@ -1,0 +1,5 @@
+[app]
+app1.example.com ansible_user=deploy
+
+[app:vars]
+ansible_python_interpreter=/usr/bin/python3

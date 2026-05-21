@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD033 MD041 -->
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
@@ -7,31 +9,31 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-## About Laravel
+## Tentang Laravel
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Laravel adalah kerangka kerja aplikasi web dengan sintaks ekspresif dan elegan. Kami percaya pengembangan harus menjadi pengalaman yang menyenangkan dan kreatif untuk benar-benar memuaskan. Laravel menghilangkan kesulitan pengembangan dengan memudahkan tugas-tugas umum yang digunakan dalam banyak proyek web, seperti:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- [Mesin routing sederhana dan cepat](https://laravel.com/docs/routing).
+- [Kontainer injeksi ketergantungan yang kuat](https://laravel.com/docs/container).
+- Multiple back-end untuk penyimpanan [session](https://laravel.com/docs/session) dan [cache](https://laravel.com/docs/cache).
+- [ORM database](https://laravel.com/docs/eloquent) ekspresif dan intuitif.
+- [Migrasi database](https://laravel.com/docs/migrations) yang independen dari basis data.
+- [Pemrosesan pekerjaan latar belakang yang kuat](https://laravel.com/docs/queues).
+- [Penyiaran acara secara real-time](https://laravel.com/docs/broadcasting).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Laravel dapat diakses, powerful, dan menyediakan alat yang diperlukan untuk aplikasi besar dan robust.
 
-## Learning Laravel
+## Belajar Laravel
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Laravel memiliki [dokumentasi](https://laravel.com/docs) paling ekstensif dan menyeluruh serta perpustakaan tutorial video dari semua kerangka kerja aplikasi web modern, membuat semakin mudah untuk memulai dengan kerangka kerja. Anda juga dapat melihat [Laravel Learn](https://laravel.com/learn), di mana Anda akan dipandu dalam membangun aplikasi Laravel modern.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Jika Anda tidak ingin membaca, [Laracasts](https://laracasts.com) dapat membantu. Laracasts berisi ribuan tutorial video tentang berbagai topik termasuk Laravel, PHP modern, unit testing, dan JavaScript. Tingkatkan keterampilan Anda dengan menggali perpustakaan video komprehensif kami.
 
-## Laravel Sponsors
+## Sponsor Laravel
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Kami ingin mengucapkan terima kasih kepada sponsor berikut atas pendanaan pengembangan Laravel. Jika Anda tertarik menjadi sponsor, silakan kunjungi [program Mitra Laravel](https://partners.laravel.com).
 
-### Premium Partners
+### Mitra Premium
 
 - **[Vehikl](https://vehikl.com)**
 - **[Tighten Co.](https://tighten.co)**
@@ -42,42 +44,42 @@ We would like to extend our thanks to the following sponsors for funding Laravel
 - **[Redberry](https://redberry.international/laravel-development)**
 - **[Active Logic](https://activelogic.com)**
 
-## Contributing
+## Berkontribusi
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Terima kasih telah mempertimbangkan untuk berkontribusi pada kerangka kerja Laravel! Panduan kontribusi dapat ditemukan di [dokumentasi Laravel](https://laravel.com/docs/contributions).
 
-## Code of Conduct
+## Kode Etik
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Untuk memastikan komunitas Laravel menyambut semua orang, silakan tinjau dan patuhi [Kode Etik](https://laravel.com/docs/contributions#code-of-conduct).
 
-## Security Vulnerabilities
+## Kerentanan Keamanan
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Jika Anda menemukan kerentanan keamanan dalam Laravel, silakan kirim email ke Taylor Otwell melalui [taylor@laravel.com](mailto:taylor@laravel.com). Semua kerentanan keamanan akan ditangani dengan cepat.
 
-## License
+## Lisensi
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Kerangka kerja Laravel adalah perangkat lunak open-source yang dilisensikan di bawah [lisensi MIT](https://opensource.org/licenses/MIT).
 
-## Project Notes
+## Catatan Proyek (Ringkas)
 
-This project includes treasurer reporting, provider payout aggregation, payout dispatch jobs, attempt logging, and export support for CSV/XLS/XLSX.
+Proyek ini mencakup laporan bendahara (treasurer), agregasi payout provider, job dispatch untuk payout, pencatatan percobaan (attempt logging), dan ekspor laporan ke CSV/XLS/XLSX.
 
-The temporary `/test-login/{role}` helper has been removed. Use the real authentication flow in production.
+Helper sementara `/test-login/{role}` telah dihapus — gunakan alur autentikasi yang sebenarnya pada environment produksi.
 
-### Scheduler
+### Penjadwalan (Scheduler)
 
-The scheduler is configured in `bootstrap/app.php`:
+Beberapa tugas terjadwal:
 
-- `payouts:process` runs daily at `01:00`.
-- `payouts:process-pending --limit=25` runs every 5 minutes.
+- `payouts:process` dijadwalkan tiap hari pada pukul `01:00`.
+- `payouts:process-pending --limit=25` dijalankan setiap 5 menit.
 
-For production servers, add one cron entry to run Laravel's scheduler every minute:
+Untuk server produksi, tambahkan satu cron entry agar scheduler Laravel dijalankan setiap menit:
 
 ```bash
 * * * * * cd /path/to/Project-Aplikasi-Tukang-Dekat/backend && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-### Useful commands
+### Perintah Berguna
 
 ```bash
 php artisan payouts:process

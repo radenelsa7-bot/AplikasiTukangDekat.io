@@ -1,77 +1,77 @@
-# 🧪 Manual Testing Guide - TukangDekat Mobile App
+# 🧪 Panduan Pengujian Manual - Aplikasi Seluler TukangDekat
 
-**Status:** ✅ App compiled successfully and running on Chrome
-**Backend:** http://127.0.0.1:8000 (running)
-**Frontend:** Chrome web app (running)
-
----
-
-## Setup Checklist
-
-Before starting tests, verify:
-
-- [x] Backend running on http://127.0.0.1:8000
-- [x] Flutter app running in Chrome
-- [x] Chrome DevTools open (F12)
-- [x] Test accounts seeded in database
+**Status:** ✅ Aplikasi dikompilasi dengan sukses dan berjalan di Chrome
+**Backend:** http://127.0.0.1:8000 (berjalan)
+**Frontend:** Aplikasi web Chrome (berjalan)
 
 ---
 
-## Test Scenarios
+## Daftar Periksa Pengaturan
 
-### Scenario 1: Launch App & Splash Screen
+Sebelum memulai pengujian, verifikasi:
 
-**Steps:**
-1. Open Chrome (should already be open from `flutter run -d chrome`)
-2. Look for app loading screen
-
-**Expected Results:**
-- [ ] SplashPage appears (show "CircularProgressIndicator")
-- [ ] After 2-3 seconds, redirects to LoginPage (no saved token)
-- [ ] URL: http://localhost:xxxxx (Chrome dev server)
-
-**If Issue:**
-- Check browser console (F12 → Console tab)
-- Look for "CORS errors" or "connection refused"
-- Verify backend running: http://127.0.0.1:8000
+- [x] Backend berjalan di http://127.0.0.1:8000
+- [x] Aplikasi Flutter berjalan di Chrome
+- [x] Chrome DevTools terbuka (F12)
+- [x] Akun pengujian diseed di database
 
 ---
 
-### Scenario 2: Login Page Display
+## Skenario Pengujian
 
-**Expected Results:**
-- [ ] "TukangDekat" title visible
-- [ ] "Layanan Teknisi Terpercaya" subtitle visible
-- [ ] Email field with email icon
-- [ ] Password field with lock icon
-- [ ] "Masuk" button
-- [ ] "Belum punya akun? Daftar" link at bottom
+### Skenario 1: Luncurkan Aplikasi & Layar Splash
 
-**Test Data Pre-filled:**
+**Langkah:**
+1. Buka Chrome (seharusnya sudah terbuka dari `flutter run -d chrome`)
+2. Cari layar muat aplikasi
+
+**Hasil yang Diharapkan:**
+- [ ] SplashPage muncul (menampilkan "CircularProgressIndicator")
+- [ ] Setelah 2-3 detik, dialihkan ke LoginPage (tidak ada token tersimpan)
+- [ ] URL: http://localhost:xxxxx (server dev Chrome)
+
+**Jika Ada Masalah:**
+- Periksa konsol browser (F12 → tab Console)
+- Cari "CORS errors" atau "connection refused"
+- Verifikasi backend berjalan: http://127.0.0.1:8000
+
+---
+
+### Skenario 2: Tampilan Halaman Login
+
+**Hasil yang Diharapkan:**
+- [ ] Judul "TukangDekat" terlihat
+- [ ] Subtitle "Layanan Teknisi Terpercaya" terlihat
+- [ ] Kolom email dengan ikon email
+- [ ] Kolom password dengan ikon kunci
+- [ ] Tombol "Masuk"
+- [ ] Tautan "Belum punya akun? Daftar" di bagian bawah
+
+**Data Pengujian Diisi Sebelumnya:**
 - Email: `customer@test.com`
 - Password: `password123`
 
 ---
 
-### Scenario 3: Successful Login
+### Skenario 3: Login Berhasil
 
-**Steps:**
-1. Email field should show: `customer@test.com`
-2. Password field should show: `password123`
-3. Click "Masuk" button
+**Langkah:**
+1. Kolom email harus menampilkan: `customer@test.com`
+2. Kolom password harus menampilkan: `password123`
+3. Klik tombol "Masuk"
 
-**Expected Results:**
-- [ ] Button shows loading spinner while authenticating
-- [ ] Network tab shows: POST /api/auth/login → 200 OK
-- [ ] Response contains: token + user data (id, name, email, role)
-- [ ] After success, navigates to HomePage
-- [ ] Token saved in secure storage (not visible but happens)
+**Hasil yang Diharapkan:**
+- [ ] Tombol menampilkan spinner loading saat autentikasi
+- [ ] Tab Network menampilkan: POST /api/auth/login → 200 OK
+- [ ] Respons berisi: token + data pengguna (id, name, email, role)
+- [ ] Setelah sukses, navigasi ke HomePage
+- [ ] Token disimpan di secure storage (tidak terlihat tapi terjadi)
 
-**Network Request Check (DevTools):**
-1. Open DevTools (F12)
-2. Go to Network tab
-3. Filter by: "auth"
-4. You should see:
+**Pemeriksaan Permintaan Jaringan (DevTools):**
+1. Buka DevTools (F12)
+2. Buka tab Network
+3. Filter dengan: "auth"
+4. Anda seharusnya melihat:
    ```
    POST /api/auth/login
    Status: 200
@@ -89,46 +89,46 @@ Before starting tests, verify:
 
 ---
 
-### Scenario 4: HomePage Display
+### Skenario 4: Tampilan Halaman Beranda
 
-**After successful login, should see:**
+**Setelah login berhasil, seharusnya melihat:**
 
-**Tab 1: Beranda (Home/Catalog)**
-- [ ] Search bar: "Cari teknisi atau layanan" with search icon
-- [ ] "Kategori Layanan" section
-- [ ] 5 category cards (Listrik, Plumbing, AC, Bangunan Ringan, Elektronik)
-- [ ] Horizontal scrollable category list
+**Tab 1: Beranda (Katalog)**
+- [ ] Bilah pencarian: "Cari teknisi atau layanan" dengan ikon pencarian
+- [ ] Bagian "Kategori Layanan"
+- [ ] 5 kartu kategori (Listrik, Plumbing, AC, Bangunan Ringan, Elektronik)
+- [ ] Daftar kategori dapat digulir secara horizontal
 
-**Tab 2: Pesanan (My Orders)**
-- [ ] Empty state with "Belum ada order" message
+**Tab 2: Pesanan (Pesanan Saya)**
+- [ ] Status kosong dengan pesan "Belum ada order"
 
-**Tab 3: Akun (Account)**
-- [ ] "Profil Akun" title
-- [ ] Card showing: Email, Role, ID
+**Tab 3: Akun (Akun)**
+- [ ] Judul "Profil Akun"
+- [ ] Kartu yang menampilkan: Email, Role, ID
 
 **AppBar:**
-- [ ] Title: "TukangDekat"
-- [ ] 3 tabs visible at bottom
-- [ ] Logout button (icon) at top right
+- [ ] Judul: "TukangDekat"
+- [ ] 3 tab terlihat di bagian bawah
+- [ ] Tombol logout (ikon) di kanan atas
 
 ---
 
-### Scenario 5: Browse Categories
+### Skenario 5: Jelajahi Kategori
 
-**Steps:**
-1. On Beranda tab
-2. Scroll horizontal through category cards
-3. Click on "Listrik" category (first card)
+**Langkah:**
+1. Di tab Beranda
+2. Gulir horizontal melalui kartu kategori
+3. Klik pada kategori "Listrik" (kartu pertama)
 
-**Expected Results:**
-- [ ] Category card highlights (different color/background)
-- [ ] "Teknisi Tersedia" section appears below
-- [ ] Shows 3 providers for Listrik category
-- [ ] Each provider card shows:
-  - Name (e.g., "Andi Elektrik")
-  - Description/area
-  - Rating (★ 4.5 or similar)
-  - Arrow icon (→)
+**Hasil yang Diharapkan:**
+- [ ] Kartu kategori disorot (warna/latar belakang berbeda)
+- [ ] Bagian "Teknisi Tersedia" muncul di bawah
+- [ ] Menampilkan 3 penyedia untuk kategori Listrik
+- [ ] Setiap kartu penyedia menampilkan:
+   - Nama (contoh: "Andi Elektrik")
+   - Deskripsi/area
+   - Rating (★ 4.5 atau serupa)
+   - Ikon panah (→)
 
 **Network Check:**
 - DevTools Network tab should show:
@@ -150,74 +150,74 @@ Before starting tests, verify:
 
 ---
 
-### Scenario 6: Provider Detail Page
+### Skenario 6: Halaman Detail Penyedia
 
-**Steps:**
-1. Click on one provider card (e.g., "Andi Elektrik")
+**Langkah:**
+1. Klik pada salah satu kartu penyedia (contoh: "Andi Elektrik")
 
-**Expected Results:**
-- [ ] Navigate to ProviderDetailPage
-- [ ] AppBar shows "Detail Teknisi" title
-- [ ] Back button (←) appears at left
-- [ ] Shows provider info:
-  - Profile picture (circle avatar with icon)
-  - Business name (large)
-  - Rating with stars (★ 4.5)
-  - "Terverifikasi" badge (if verified)
-  - Description text
-  - Area/Address
+**Hasil yang Diharapkan:**
+- [ ] Navigasi ke ProviderDetailPage
+- [ ] AppBar menampilkan judul "Detail Teknisi"
+- [ ] Tombol kembali (←) muncul di sebelah kiri
+- [ ] Menampilkan informasi penyedia:
+  - Foto profil (avatar lingkaran dengan ikon)
+  - Nama bisnis (besar)
+  - Rating dengan bintang (★ 4.5)
+  - Badge "Terverifikasi" (jika terverifikasi)
+  - Teks deskripsi
+  - Area/Alamat
 
-**Layanan Tersedia (Services) Section:**
-- [ ] Title "Layanan Tersedia"
-- [ ] List of services with:
-  - Service name
-  - Price format: "Rp50000 / jam" (or per pekerjaan)
+**Bagian Layanan Tersedia (Layanan):**
+- [ ] Judul "Layanan Tersedia"
+- [ ] Daftar layanan dengan:
+  - Nama layanan
+  - Format harga: "Rp50000 / jam" (atau per pekerjaan)
 
-**CTA Button:**
-- [ ] "Pesan Sekarang" button at bottom (full width)
+**Tombol CTA:**
+- [ ] Tombol "Pesan Sekarang" di bagian bawah (lebar penuh)
 
-**Network Check:**
+**Pemeriksaan Jaringan:**
 ```
 GET /api/catalog/providers/{id}
 Status: 200
-Response includes: services array
+Response mencakup: array layanan
 ```
 
 ---
 
-### Scenario 7: Create Order
+### Skenario 7: Buat Order
 
-**Steps:**
-1. On ProviderDetailPage
-2. Click "Pesan Sekarang" button
+**Langkah:**
+1. Di ProviderDetailPage
+2. Klik tombol "Pesan Sekarang"
 
-**Expected Results:**
-- [ ] Navigate to CreateOrderPage
-- [ ] AppBar shows "Buat Order" title
-- [ ] "Detail Order" section visible
+**Hasil yang Diharapkan:**
+- [ ] Navigasi ke CreateOrderPage
+- [ ] AppBar menampilkan judul "Buat Order"
+- [ ] Bagian "Detail Order" terlihat
 
-**Form Fields:**
-- [ ] "Alamat Lokasi" text field (3 lines, location icon)
-- [ ] "Catatan Tambahan" field (3 lines, note icon)
-- [ ] "Tanggal Pekerjaan" button (calendar icon)
-- [ ] "Jam Pekerjaan" button (clock icon)
-- [ ] Payment info box explaining 50-50 split
-- [ ] "Buat Order" button
+**Kolom Formulir:**
+- [ ] Kolom teks "Alamat Lokasi" (3 baris, ikon lokasi)
+- [ ] Kolom "Catatan Tambahan" (3 baris, ikon catatan)
+- [ ] Tombol "Tanggal Pekerjaan" (ikon kalender)
+- [ ] Tombol "Jam Pekerjaan" (ikon jam)
+- [ ] Kotak informasi pembayaran menjelaskan pembagian 50-50
+- [ ] Tombol "Buat Order"
 
-**Steps to Fill Form:**
-1. Type address: "Jl. Contoh No 123, Bandung"
-2. Type notes: "Ada masalah dengan instalasi"
-3. Click "Tanggal Pekerjaan" → Pick tomorrow's date
-4. Click "Jam Pekerjaan" → Pick time (e.g., 14:00)
-5. Click "Buat Order"
+**Langkah Mengisi Formulir:**
+1. Ketik alamat: "Jl. Contoh No 123, Bandung"
+2. Ketik catatan: "Ada masalah dengan instalasi"
+3. Klik "Tanggal Pekerjaan" → Pilih tanggal besok
+4. Klik "Jam Pekerjaan" → Pilih waktu (contoh: 14:00)
+5. Klik "Buat Order"
 
-**Expected Results:**
-- [ ] Button shows loading spinner
-- [ ] Network tab shows: POST /api/orders → 201 Created
-- [ ] Success message appears: "Order berhasil dibuat!"
-- [ ] Navigate back to CatalogPage
+**Hasil yang Diharapkan:**
+- [ ] Tombol menampilkan spinner loading
+- [ ] Tab Network menampilkan: POST /api/orders → 201 Created
+- [ ] Pesan sukses muncul: "Order berhasil dibuat!"
+- [ ] Navigasi kembali ke CatalogPage
 
-**Network Request:**
+**Permintaan Jaringan:**
 ```
 POST /api/orders
 Payload: {
@@ -227,242 +227,242 @@ Payload: {
   ...
 }
 Status: 201
-Response: created OrderData
+Response: OrderData yang dibuat
 ```
 
 ---
 
-### Scenario 8: View My Orders
+### Skenario 8: Lihat Pesanan Saya
 
-**Steps:**
-1. After order created, click "Pesanan" tab
+**Langkah:**
+1. Setelah order dibuat, klik tab "Pesanan"
 
-**Expected Results:**
-- [ ] Order appears in list with:
-  - Order card layout
-  - Status badge (color-coded, e.g., blue for "CREATED")
-  - Order code (ORD-20260514-XXXX)
-  - Address
-  - Schedule date/time
-  - Estimated price (Rp...)
+**Hasil yang Diharapkan:**
+- [ ] Order muncul di daftar dengan:
+  - Tata letak kartu pesanan
+  - Badge status (dikodekan dengan warna, contoh: biru untuk "CREATED")
+  - Kode order (ORD-20260514-XXXX)
+  - Alamat
+  - Tanggal/waktu jadwal
+  - Harga perkiraan (Rp...)
 
-**Click on Order:**
-1. Click the order card
+**Klik pada Order:**
+1. Klik kartu order
 
-**Expected Results - Order Detail:**
-- [ ] Navigate to OrderDetailPage
-- [ ] Shows sections:
-  - Status card (with color)
-  - Order code
-  - Address
-  - Schedule
-  - Pricing info
-  - Payment breakdown (DP + Final)
+**Hasil yang Diharapkan - Detail Order:**
+- [ ] Navigasi ke OrderDetailPage
+- [ ] Menampilkan bagian:
+  - Kartu status (dengan warna)
+  - Kode order
+  - Alamat
+  - Jadwal
+  - Informasi harga
+  - Rincian pembayaran (DP + Final)
 
-**Network Check:**
+**Pemeriksaan Jaringan:**
 ```
 GET /api/orders
 Status: 200
-Response: list of orders
+Response: daftar pesanan
 
 GET /api/orders/{id}
 Status: 200
-Response: full order details
+Response: detail pesanan lengkap
 ```
 
 ---
 
-### Scenario 9: Search Provider
+### Skenario 9: Cari Penyedia
 
-**Steps:**
-1. Back to Beranda tab
-2. Click search bar at top
-3. Type provider name: "Andi"
+**Langkah:**
+1. Kembali ke tab Beranda
+2. Klik bilah pencarian di atas
+3. Ketik nama penyedia: "Andi"
 
-**Expected Results:**
-- [ ] Search input focuses
-- [ ] While typing, results update in real-time
-- [ ] Shows matching providers
-- [ ] Can click to view provider detail
+**Hasil yang Diharapkan:**
+- [ ] Input pencarian fokus
+- [ ] Saat mengetik, hasil diperbarui secara real-time
+- [ ] Menampilkan penyedia yang cocok
+- [ ] Dapat diklik untuk melihat detail penyedia
 
-**Network Check:**
+**Pemeriksaan Jaringan:**
 ```
 GET /api/catalog/providers/search?q=andi
 Status: 200
-Response: filtered providers
+Response: penyedia yang disaring
 ```
 
 ---
 
-### Scenario 10: Logout
+### Skenario 10: Keluar (Logout)
 
-**Steps:**
-1. On any page with AppBar
-2. Click logout button (icon) at top right
+**Langkah:**
+1. Di halaman mana pun dengan AppBar
+2. Klik tombol logout (ikon) di kanan atas
 
-**Expected Results:**
-- [ ] Button shows loading spinner
-- [ ] Network tab shows: POST /api/auth/logout → 200
-- [ ] Navigate back to LoginPage
-- [ ] Token cleared from storage
-- [ ] "Belum punya akun? Daftar" link visible
-- [ ] Can login again with fresh session
+**Hasil yang Diharapkan:**
+- [ ] Tombol menampilkan spinner loading
+- [ ] Tab Network menampilkan: POST /api/auth/logout → 200
+- [ ] Navigasi kembali ke LoginPage
+- [ ] Token dihapus dari penyimpanan
+- [ ] Tautan "Belum punya akun? Daftar" terlihat
+- [ ] Dapat login lagi dengan sesi baru
 
 ---
 
-## Error Scenarios to Test
+## Skenario Error yang Akan Diuji
 
-### E1: Wrong Credentials
-**Steps:**
-1. On LoginPage
-2. Change email to: invalid@test.com
-3. Keep password: password123
-4. Click Masuk
+### E1: Kredensial Salah
+**Langkah:**
+1. Di LoginPage
+2. Ubah email menjadi: invalid@test.com
+3. Pertahankan password: password123
+4. Klik Masuk
 
-**Expected:**
-- [ ] Error message appears
-- [ ] Network shows: POST /api/auth/login → 422 (validation error)
-- [ ] Stay on LoginPage (no navigation)
+**Hasil yang Diharapkan:**
+- [ ] Pesan kesalahan muncul
+- [ ] Network menampilkan: POST /api/auth/login → 422 (validation error)
+- [ ] Tetap di LoginPage (tidak ada navigasi)
 
-### E2: Empty Form
-**Steps:**
-1. On LoginPage
-2. Clear both fields
-3. Click Masuk
+### E2: Formulir Kosong
+**Langkah:**
+1. Di LoginPage
+2. Hapus kedua kolom
+3. Klik Masuk
 
-**Expected:**
-- [ ] Form validation errors appear
-- [ ] "Email wajib diisi" message
-- [ ] "Password wajib diisi" message
-- [ ] No API call made (validation on client-side)
+**Hasil yang Diharapkan:**
+- [ ] Kesalahan validasi formulir muncul
+- [ ] Pesan "Email wajib diisi"
+- [ ] Pesan "Password wajib diisi"
+- [ ] Tidak ada panggilan API yang dibuat (validasi di sisi klien)
 
 ### E3: Backend Offline
-**Steps:**
-1. Stop backend server (in terminal where `php artisan serve` running)
-2. Try login
+**Langkah:**
+1. Hentikan server backend (di terminal tempat `php artisan serve` berjalan)
+2. Coba login
 
-**Expected:**
-- [ ] Loading spinner shows
-- [ ] After timeout (~5-10 seconds), error message appears
-- [ ] Network tab shows: Failed (Connection error)
-- [ ] Error message: "Connection error" or similar
-
----
-
-## Browser DevTools Checklist
-
-### Console Tab (F12 → Console)
-- [ ] No red error messages
-- [ ] No "CORS" errors
-- [ ] No "undefined" errors
-- [ ] Check for warnings (yellow text) - usually okay
-
-### Network Tab (F12 → Network)
-- [ ] All API requests show "200 OK" or "201 Created"
-- [ ] No "404 Not Found" errors
-- [ ] No "500 Internal Server Error"
-- [ ] Response time < 1 second (usually 100-300ms)
-
-### Storage Tab (F12 → Application/Storage)
-- [ ] After login, check "Local Storage" or "Secure Storage"
-- [ ] Token should be saved (may be encrypted)
-- [ ] After logout, token should be cleared
+**Hasil yang Diharapkan:**
+- [ ] Spinner loading ditampilkan
+- [ ] Setelah timeout (~5-10 detik), pesan kesalahan muncul
+- [ ] Tab Network menampilkan: Failed (Connection error)
+- [ ] Pesan kesalahan: "Connection error" atau serupa
 
 ---
 
-## Quick Test Checklist
+## Daftar Periksa Browser DevTools
 
-Print this and check off as you go:
+### Tab Konsol (F12 → Console)
+- [ ] Tidak ada pesan kesalahan merah
+- [ ] Tidak ada kesalahan "CORS"
+- [ ] Tidak ada kesalahan "undefined"
+- [ ] Periksa peringatan (teks kuning) - biasanya baik-baik saja
+
+### Tab Jaringan (F12 → Network)
+- [ ] Semua permintaan API menampilkan "200 OK" atau "201 Created"
+- [ ] Tidak ada kesalahan "404 Not Found"
+- [ ] Tidak ada "500 Internal Server Error"
+- [ ] Waktu respons < 1 detik (biasanya 100-300ms)
+
+### Tab Penyimpanan (F12 → Application/Storage)
+- [ ] Setelah login, periksa "Local Storage" atau "Secure Storage"
+- [ ] Token harus disimpan (mungkin terenkripsi)
+- [ ] Setelah logout, token harus dihapus
+
+---
+
+## Daftar Periksa Pengujian Cepat
+
+Cetak ini dan centang saat Anda melanjutkan:
 
 ```
 LANDING:
-- [ ] App loads without errors
-- [ ] SplashPage appears
-- [ ] Redirect to LoginPage
+- [ ] Aplikasi dimuat tanpa kesalahan
+- [ ] SplashPage muncul
+- [ ] Pengalihan ke LoginPage
 
 LOGIN:
-- [ ] Email field pre-filled with customer@test.com
-- [ ] Password field pre-filled with password123
-- [ ] Click Masuk works
-- [ ] Navigate to HomePage
+- [ ] Kolom email diisi sebelumnya dengan customer@test.com
+- [ ] Kolom password diisi sebelumnya dengan password123
+- [ ] Klik Masuk berfungsi
+- [ ] Navigasi ke HomePage
 
 HOMEPAGE:
-- [ ] 3 tabs visible (Beranda, Pesanan, Akun)
-- [ ] Tab 1 shows categories
-- [ ] Tab 2 shows "Belum ada order"
-- [ ] Tab 3 shows profile info
+- [ ] 3 tab terlihat (Beranda, Pesanan, Akun)
+- [ ] Tab 1 menampilkan kategori
+- [ ] Tab 2 menampilkan "Belum ada order"
+- [ ] Tab 3 menampilkan informasi profil
 
 CATALOG:
-- [ ] Click category filters providers
-- [ ] Click provider shows detail
-- [ ] Click "Pesan Sekarang" opens form
+- [ ] Klik kategori menyaring penyedia
+- [ ] Klik penyedia menampilkan detail
+- [ ] Klik "Pesan Sekarang" membuka formulir
 
-CREATE ORDER:
-- [ ] Fill form fields
-- [ ] Pick date and time
-- [ ] Submit creates order
-- [ ] Success message appears
+BUAT ORDER:
+- [ ] Isi kolom formulir
+- [ ] Pilih tanggal dan waktu
+- [ ] Submit membuat order
+- [ ] Pesan sukses muncul
 
-VIEW ORDERS:
-- [ ] Click Pesanan tab shows order
-- [ ] Click order shows details
-- [ ] See payment breakdown
+LIHAT PESANAN:
+- [ ] Klik tab Pesanan menampilkan order
+- [ ] Klik order menampilkan detail
+- [ ] Lihat rincian pembayaran
 
-SEARCH:
-- [ ] Type in search bar
-- [ ] Results appear in real-time
-- [ ] Can click result
+PENCARIAN:
+- [ ] Ketik di bilah pencarian
+- [ ] Hasil muncul secara real-time
+- [ ] Dapat diklik hasil
 
 LOGOUT:
-- [ ] Click logout button
-- [ ] Back to LoginPage
-- [ ] Can login again
+- [ ] Klik tombol logout
+- [ ] Kembali ke LoginPage
+- [ ] Dapat login lagi
 
-ERRORS:
-- [ ] Wrong credentials show error
-- [ ] Empty form validates
-- [ ] No console errors
+KESALAHAN:
+- [ ] Kredensial salah menampilkan kesalahan
+- [ ] Formulir kosong melakukan validasi
+- [ ] Tidak ada kesalahan konsol
 ```
 
 ---
 
-## Success Criteria
+## Kriteria Kesuksesan
 
-✅ **APP IS WORKING IF:**
-1. Compilation successful (no red errors)
-2. App opens in Chrome without crashing
-3. Can login with test account
-4. Can browse categories and providers
-5. Can create order
-6. Can view order details
-7. No console errors
-8. Network requests complete successfully
-
----
-
-## Common Issues & Solutions
-
-| Issue | Solution |
-|-------|----------|
-| "Couldn't connect to backend" | Start backend: `php artisan serve` |
-| "CORS errors" in console | Add CORS headers to Laravel (usually already configured) |
-| Button doesn't respond | Check if loading spinner showing - wait for response |
-| Blank page after login | Check browser console for errors |
-| Can't create order | Fill all required fields (address, date, time) |
-| Order doesn't appear | Wait 2 seconds and refresh Pesanan tab |
+✅ **APLIKASI BERFUNGSI JIKA:**
+1. Kompilasi berhasil (tidak ada kesalahan merah)
+2. Aplikasi terbuka di Chrome tanpa mogok
+3. Dapat login dengan akun pengujian
+4. Dapat menjelajahi kategori dan penyedia
+5. Dapat membuat order
+6. Dapat melihat detail order
+7. Tidak ada kesalahan konsol
+8. Permintaan jaringan selesai dengan sukses
 
 ---
 
-## Next: If All Tests Pass ✅
+## Masalah Umum & Solusi
 
-Proceed to Phase 3:
-1. Payment gateway integration (Midtrans/Xendit)
-2. Provider order acceptance flow
-3. Real-time notifications
+| Masalah | Solusi |
+|---------|--------|
+| "Tidak dapat terhubung ke backend" | Mulai backend: `php artisan serve` |
+| Kesalahan "CORS" di konsol | Tambahkan header CORS ke Laravel (biasanya sudah dikonfigurasi) |
+| Tombol tidak merespons | Periksa apakah spinner loading ditampilkan - tunggu respons |
+| Halaman kosong setelah login | Periksa konsol browser untuk kesalahan |
+| Tidak dapat membuat order | Isi semua kolom yang diperlukan (alamat, tanggal, waktu) |
+| Order tidak muncul | Tunggu 2 detik dan segarkan tab Pesanan |
 
 ---
 
-**Testing Started:** May 14, 2026
-**Status:** Ready for manual testing
+## Selanjutnya: Jika Semua Pengujian Lulus ✅
 
-Good luck! 🎉
+Lanjutkan ke Fase 3:
+1. Integrasi gateway pembayaran (Midtrans/Xendit)
+2. Alur penerimaan order penyedia
+3. Notifikasi real-time
+
+---
+
+**Pengujian Dimulai:** 14 Mei 2026
+**Status:** Siap untuk pengujian manual
+
+Semoga beruntung! 🎉

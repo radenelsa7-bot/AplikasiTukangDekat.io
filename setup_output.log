@@ -1,0 +1,131 @@
+[0;36m
+╔══════════════════════════════════════════════════════╗
+║      TukangDekat – GitHub Project Setup              ║
+║      Timeline: 11 Mei – 18 Juni 2026                 ║
+╚══════════════════════════════════════════════════════╝
+[0m
+[0;32m✓ GitHub CLI terdeteksi & sudah login[0m
+[1;33m→ Target repo: Fajar1180/Project-Aplikasi-Tukang-Dekat[0m
+
+[0;36m[1/4] Membuat labels...[0m
+  [0;32m✓[0m Label: role: PM
+  [0;32m✓[0m Label: role: Backend
+  [0;32m✓[0m Label: role: Frontend
+  [0;32m✓[0m Label: role: Testing
+  [0;32m✓[0m Label: week-1 (11-17 Mei)
+  [0;32m✓[0m Label: week-2 (18-24 Mei)
+  [0;32m✓[0m Label: week-3 (25-31 Mei)
+  [0;32m✓[0m Label: week-4 (1-7 Jun)
+  [0;32m✓[0m Label: week-5 (8-14 Jun)
+  [0;32m✓[0m Label: week-6 (15-18 Jun)
+  [0;32m✓[0m Label: priority: high
+  [0;32m✓[0m Label: priority: medium
+  [0;32m✓[0m Label: priority: low
+  [0;32m✓[0m Label: status: blocked
+  [0;32m✓[0m Label: status: review
+  [0;32m✓[0m Label: module: auth
+  [0;32m✓[0m Label: module: order
+  [0;32m✓[0m Label: module: payment
+  [0;32m✓[0m Label: module: provider
+  [0;32m✓[0m Label: module: notification
+  [0;32m✓[0m Label: module: review
+  [0;32m✓[0m Label: module: admin
+  [0;32m✓[0m Label: module: UI/UX
+  [0;32m✓[0m Label: documentation
+  [0;32m✓[0m Label: testing
+
+[0;36m[2/4] Membuat milestones (per minggu)...[0m
+  [1;33m⚠[0m Milestone mungkin sudah ada: Week 1 – Setup & Perencanaan (11–17 Mei)
+  [1;33m⚠[0m Milestone mungkin sudah ada: Week 2 – Auth & Fondasi API (18–24 Mei)
+  [1;33m⚠[0m Milestone mungkin sudah ada: Week 3 – Core Feature Backend (25–31 Mei)
+  [1;33m⚠[0m Milestone mungkin sudah ada: Week 4 – Payment & Notifikasi (1–7 Jun)
+  [1;33m⚠[0m Milestone mungkin sudah ada: Week 5 – Frontend & Integrasi (8–14 Jun)
+  [1;33m⚠[0m Milestone mungkin sudah ada: Week 6 – Testing & Finalisasi (15–18 Jun)
+
+[0;36m[3/4] Membuat GitHub Project Board...[0m
+  [1;33m⚠[0m Project board skip — akan manual add issues nanti
+
+[0;36m[4/5] Membuat issues...[0m
+
+  [1;33m── WEEK 1: Setup & Perencanaan (11–17 Mei) ──[0m
+  [1;33m⚠[0m Gagal: [PM] Finalisasi SRS & distribusi dokumen ke tim
+  [1;33m⚠[0m Gagal: [PM] Setup GitHub Project Board & milestone tracking
+  [1;33m⚠[0m Gagal: [PM] Buat WBS & jadwal detail per anggota
+  [1;33m⚠[0m Gagal: [Backend] Setup Laravel project & Docker environment
+  [1;33m⚠[0m Gagal: [Backend] Database migration sesuai schema MySQL
+  [1;33m⚠[0m Gagal: [Frontend] Setup Flutter project & struktur folder
+  [1;33m⚠[0m Gagal: [Frontend] Desain wireframe & UI kit (Figma)
+  [1;33m⚠[0m Gagal: [Testing] Buat Test Plan dokumen
+
+  [1;33m── WEEK 2: Auth & Fondasi API (18–24 Mei) ──[0m
+  [1;33m⚠[0m Gagal: [Backend] API Auth: Register, Login, Logout (FR-01, FR-02, FR-03)
+  [1;33m⚠[0m Gagal: [Backend] API Service Catalog: Categories & Provider List (FR-08, FR-09, FR-10)
+  [1;33m⚠[0m Gagal: [Backend] Model & Eloquent Relationships
+  [1;33m⚠[0m Gagal: [Frontend] Screen: Login & Register
+  [1;33m⚠[0m Gagal: [Frontend] Screen: Home & Daftar Kategori
+  [1;33m⚠[0m Gagal: [Frontend] Screen: Daftar Provider & Detail Provider
+  [1;33m⚠[0m Gagal: [Testing] Testing Auth & Service Catalog API (Postman)
+
+  [1;33m── WEEK 3: Core Feature Backend (25–31 Mei) ──[0m
+  [1;33m⚠[0m Gagal: [Backend] API Orders: CRUD & Status Lifecycle (FR-11 s/d FR-14)
+  [1;33m⚠[0m Gagal: [Backend] Auto-create DP Payment saat Order dibuat (BR-01)
+  [1;33m⚠[0m Gagal: [Backend] API Reviews & Rating (FR-23, FR-24)
+  [1;33m⚠[0m Gagal: [Frontend] Screen: Form Buat Order
+  [1;33m⚠[0m Gagal: [Frontend] Screen: Detail Order & Riwayat Order
+  [1;33m⚠[0m Gagal: [Frontend] Screen: Provider – Terima/Tolak & Mulai Order
+  [1;33m⚠[0m Gagal: [Testing] Testing Order Lifecycle (Postman + Manual)
+  [1;33m⚠[0m Gagal: [PM] Review progress Week 2 & koordinasi Week 3
+
+  [1;33m── WEEK 4: Payment & Notifikasi (1–7 Jun) ──[0m
+  [1;33m⚠[0m Gagal: [Backend] Integrasi Payment Gateway QRIS – Generate QR (FR-16, FR-19)
+  [1;33m⚠[0m Gagal: [Backend] Webhook Payment Callback & Status Update (FR-17, FR-20)
+  [1;33m⚠[0m Gagal: [Backend] Integrasi n8n – Event Notifikasi (FR-21, FR-22)
+  [1;33m⚠[0m Gagal: [Frontend] Screen: Pembayaran DP (QRIS)
+  [1;33m⚠[0m Gagal: [Frontend] Screen: Pembayaran Pelunasan (QRIS Final)
+  [1;33m⚠[0m Gagal: [Frontend] Screen: Rating & Review + Dashboard Admin/Treasurer
+  [1;33m⚠[0m Gagal: [Testing] Testing Payment Flow & Webhook
+
+  [1;33m── WEEK 5: Frontend Integration & Polish (8–14 Jun) ──[0m
+  [1;33m⚠[0m Gagal: [Frontend] Integrasi end-to-end flow Customer (Order → Bayar DP → Closed)
+  [1;33m⚠[0m Gagal: [Frontend] Integrasi end-to-end flow Provider
+  [1;33m⚠[0m Gagal: [Frontend] Polish UI, responsiveness & UX improvements
+  [1;33m⚠[0m Gagal: [Backend] Admin endpoints & Treasurer report (FR-25, FR-26)
+  [1;33m⚠[0m Gagal: [Backend] Finalisasi & hardening API (security, validation, error handling)
+  [1;33m⚠[0m Gagal: [Testing] Integration Testing – Full User Journey
+  [1;33m⚠[0m Gagal: [PM] Review dokumen final & persiapan demo UAS
+
+  [1;33m── WEEK 6: Testing, Bug Fix & Demo (15–18 Jun) ──[0m
+  [1;33m⚠[0m Gagal: [Testing] Final QA – Bug Fix Verification & Regression Test
+  [1;33m⚠[0m Gagal: [Backend] Deploy ke VPS & konfigurasi production
+  [1;33m⚠[0m Gagal: [Frontend] Build APK release untuk demo
+  [1;33m⚠[0m Gagal: [PM] Laporan Akhir & Dokumentasi Final
+  [1;33m⚠[0m Gagal: [ALL] Demo & Presentasi UAS
+
+[0;36m[5/5] Menambahkan issues ke Project Board...[0m
+  [1;33m⚠[0m Project board belum ada — issues hanya di Issues tab
+  [0;36m→ Lihat di: https://github.com/Fajar1180/Project-Aplikasi-Tukang-Dekat/issues[0m
+
+[0;32m╔══════════════════════════════════════════════════════╗
+║  ✓ Setup selesai!                                    ║
+╚══════════════════════════════════════════════════════╝\033[0m
+
+[0;36mRingkasan yang dibuat:[0m
+  • Labels    : role, week, priority, module, status
+  • Milestones: 6 milestone (Week 1–6)
+  • Issues    : 35+ issues lengkap dengan assignee & label
+  • Project   : Kanban board TukangDekat – Sprint Board
+
+[1;33m⚠  PENTING – Ganti username GitHub di variabel ini:[0m
+  PM  = elsa-balqis
+  BE1 = fajar-nurjaman
+  BE2 = nabilah-asana
+  BE3 = fatin-asyifa
+  FE1 = tetep-safarudin
+  FE2 = fazna-alaisal
+  FE3 = nabil-ramadhan
+  QA  = aldy-ramadani
+
+[0;36mLihat GitHub Project di:[0m
+  https://github.com/Fajar1180/Project-Aplikasi-Tukang-Dekat/issues
+  https://github.com/Fajar1180/Project-Aplikasi-Tukang-Dekat/milestones
+

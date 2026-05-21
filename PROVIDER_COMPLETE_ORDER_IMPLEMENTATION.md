@@ -1,16 +1,16 @@
-# Provider Complete Order Feature - Implementation Guide
+# Fitur Penyelesaian Pesanan Penyedia - Panduan Implementasi
 
-## Current Status: ✅ RESOLVED - COMPLETE WORKFLOW IMPLEMENTED
+## Status Saat Ini: ✅ TERSELESAIKAN - ALUR KERJA LENGKAP DIIMPLEMENTASIKAN
 
-### Solution Implemented: Option B - Auto-Mark DP as Paid
+### Solusi yang Diimplementasikan: Opsi B - Auto-Tandai DP sebagai Dibayar
 
-**Backend Change**: [OrderController.php](app/Http/Controllers/Api/OrderController.php) - `startWork()` method
+**Perubahan Backend**: [OrderController.php](app/Http/Controllers/Api/OrderController.php) - metode `startWork()`
 
-Modified to automatically mark DP payment as PAID when provider starts work:
+Dimodifikasi untuk secara otomatis menandai pembayaran DP sebagai DIBAYAR ketika penyedia mulai bekerja:
 
 ```php
-// Auto-mark DP as paid when starting work (for testing)
-// TODO: Implement proper payment module with QRIS/transfer payment
+// Auto-tandai DP sebagai dibayar saat mulai bekerja (untuk pengujian)
+// TODO: Implementasikan modul pembayaran yang tepat dengan QRIS/transfer
 $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
 if ($dpPayment && $dpPayment->status === 'UNPAID') {
   $dpPayment->update([
@@ -22,96 +22,96 @@ if ($dpPayment && $dpPayment->status === 'UNPAID') {
 $order->update(['status' => 'IN_PROGRESS']);
 ```
 
-### Verification: ✅ Complete Workflow Tested
+### Verifikasi: ✅ Alur Kerja Lengkap Telah Diuji
 
-**Curl Test Results (Order #1):**
+**Hasil Pengujian Curl (Pesanan #1):**
 
-1. **Start Work**
+1. **Mulai Bekerja**
    ```
    Status: IN_PROGRESS ✅
    DP Payment: PAID (paid_at: 2026-05-14 14:25:39)
    ```
 
-2. **Complete Order** (final_price: 200000)
+2. **Selesaikan Pesanan** (final_price: 200000)
    ```
    Status: COMPLETED ✅
    final_price: 200000
    DP Payment: PAID
-   FINAL Payment: UNPAID (created automatically)
+   FINAL Payment: UNPAID (dibuat secara otomatis)
    ```
 
-## Solution Options
+## Opsi Solusi
 
-### Option 1: ✅ RECOMMENDED - Implement Payment Module
-**Benefit**: Complete workflow, realistic
-**Time**: Medium (requires payment gateway integration)
-**Status**: Not yet implemented
+### Opsi 1: ✅ DIREKOMENDASIKAN - Implementasikan Modul Pembayaran
+**Keuntungan**: Alur kerja lengkap, realistis
+**Waktu**: Sedang (memerlukan integrasi gateway pembayaran)
+**Status**: Belum diimplementasikan
 
-**Steps:**
-1. Create payment endpoints for customer to mark DP as PAID
-2. Integrate payment gateway (QRIS, transfer, dll)
-3. Add payment UI to customer's order detail
-4. Test complete workflow
+**Langkah-langkah:**
+1. Buat endpoint pembayaran untuk pelanggan menandai DP sebagai DIBAYAR
+2. Integrasikan gateway pembayaran (QRIS, transfer, dll)
+3. Tambahkan UI pembayaran ke detail pesanan pelanggan
+4. Uji alur kerja lengkap
 
-### Option 2: ⚡ QUICK - Skip Payment for Testing
-**Benefit**: Allows immediate testing of complete workflow
-**Time**: Low (1 change in backend)
-**Status**: Ready to implement
+### Opsi 2: ⚡ CEPAT - Lewati Pembayaran untuk Pengujian
+**Keuntungan**: Memungkinkan pengujian alur kerja lengkap segera
+**Waktu**: Rendah (1 perubahan di backend)
+**Status**: Siap untuk diimplementasikan
 
-**Change needed:**
-- Remove DP payment validation in `startWork()` OR
-- Auto-mark DP as PAID when order is accepted
+**Perubahan yang diperlukan:**
+- Hapus validasi pembayaran DP di `startWork()` ATAU
+- Auto-tandai DP sebagai DIBAYAR ketika pesanan diterima
 
-### Option 3: 📱 Hybrid - Manual Payment Marking
-**Benefit**: Test without real payment gateway
-**Time**: Low-Medium (add simple endpoint)
-**Status**: Can implement quickly
+### Opsi 3: 📱 Hibrida - Penandaan Pembayaran Manual
+**Keuntungan**: Uji tanpa gateway pembayaran nyata
+**Waktu**: Rendah-Sedang (tambahkan endpoint sederhana)
+**Status**: Dapat diimplementasikan dengan cepat
 
-**Implementation:**
-- Add admin/test endpoint to mark payment as PAID
-- Curl command to mark DP paid:
-  ```bash
-  curl -X POST http://localhost:8000/api/test/payments/{paymentId}/mark-paid
-  ```
+**Implementasi:**
+- Tambahkan endpoint admin/tes untuk menandai pembayaran sebagai DIBAYAR
+- Perintah Curl untuk menandai DP dibayar:
+   ```bash
+   curl -X POST http://localhost:8000/api/test/payments/{paymentId}/mark-paid
+   ```
 
-## Recommended Implementation (Option 2 + 3)
+## Implementasi yang Direkomendasikan (Opsi 2 + 3)
 
-### Step 1: ✅ Backend Modified - Auto-Mark DP as Paid
+### Langkah 1: ✅ Backend Dimodifikasi - Auto-Tandai DP sebagai Dibayar
 
-**Status**: COMPLETED
+**Status**: TERSELESAIKAN
 
-**File Modified**: [backend/app/Http/Controllers/Api/OrderController.php](backend/app/Http/Controllers/Api/OrderController.php)
+**File yang Dimodifikasi**: [backend/app/Http/Controllers/Api/OrderController.php](backend/app/Http/Controllers/Api/OrderController.php)
 
-**Change**: Lines 191-197 in `startWork()` method
+**Perubahan**: Baris 191-197 dalam metode `startWork()`
 
-**What Changed**:
-- ❌ REMOVED: Validation that DP payment must be PAID
-- ✅ ADDED: Auto-mark UNPAID DP as PAID with timestamp
-- ✅ RESULT: Provider can now proceed to IN_PROGRESS status
+**Apa yang Berubah**:
+- ❌ DIHAPUS: Validasi bahwa pembayaran DP harus DIBAYAR
+- ✅ DITAMBAHKAN: Auto-tandai DP yang BELUM DIBAYAR sebagai DIBAYAR dengan cap waktu
+- ✅ HASIL: Penyedia sekarang dapat melanjutkan ke status IN_PROGRESS
 
-### Step 2: ✅ Complete Workflow Tested
+### Langkah 2: ✅ Alur Kerja Lengkap Telah Diuji
 
-**Status**: VERIFIED
+**Status**: DIVERIFIKASI
 ```bash
-# 1. Provider login (Andi) ✅
+# 1. Login penyedia (Andi) ✅
 curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"andi.listrik@example.com","password":"password123"}'
 # Response: token="22|ByE4zXeApFGS7G4v1d0gbBLLEOQoZ2AYC8BQZl0J32566b08"
 
-# 2. Accept order ✅
+# 2. Terima pesanan ✅
 curl -X POST http://localhost:8000/api/orders/1/respond \
   -H "Authorization: Bearer 22|ByE4zXeApFGS7G4v1d0gbBLLEOQoZ2AYC8BQZl0J32566b08" \
   -H "Content-Type: application/json" \
   -d '{"action":"accept"}'
 # Status: ACCEPTED
 
-# 3. Start work ✅ (DP auto-marked PAID)
+# 3. Mulai bekerja ✅ (DP auto-tandai DIBAYAR)
 curl -X POST http://localhost:8000/api/orders/1/start-work \
   -H "Authorization: Bearer 22|ByE4zXeApFGS7G4v1d0gbBLLEOQoZ2AYC8BQZl0J32566b08"
 # Response: status: IN_PROGRESS ✅
 
-# 4. Complete order ✅
+# 4. Selesaikan pesanan ✅
 curl -X POST http://localhost:8000/api/orders/1/complete \
   -H "Authorization: Bearer 22|ByE4zXeApFGS7G4v1d0gbBLLEOQoZ2AYC8BQZl0J32566b08" \
   -H "Content-Type: application/json" \
@@ -119,116 +119,116 @@ curl -X POST http://localhost:8000/api/orders/1/complete \
 # Response: status: COMPLETED, final_amount: 125000 ✅
 ```
 
-**Database Verification (Order #1)**:
+**Verifikasi Database (Pesanan #1)**:
 ```
 ✅ Status: COMPLETED
 ✅ final_price: 200000
 ✅ DP Payment: PAID (paid_at: 2026-05-14 14:25:39)
-✅ FINAL Payment: UNPAID (created automatically, amount: 125000)
+✅ FINAL Payment: UNPAID (dibuat secara otomatis, jumlah: 125000)
 ```
 
-## UI Flow (Already Implemented)
+## Alur UI (Sudah Diimplementasikan)
 
-Once backend is fixed, this UI flow already exists in Flutter:
+Setelah backend diperbaiki, alur UI ini sudah ada di Flutter:
 
 ```
-Order Detail Page
+Halaman Detail Pesanan
 ├─ Status: CREATED
-│  └─ Buttons: ✅ Terima Order | ❌ Tolak Order
+│  └─ Tombol: ✅ Terima Order | ❌ Tolak Order
 │
-├─ Status: ACCEPTED (after accept)
-│  └─ Buttons: ✅ Mulai Pekerjaan
+├─ Status: ACCEPTED (setelah diterima)
+│  └─ Tombol: ✅ Mulai Pekerjaan
 │
-├─ Status: IN_PROGRESS (after start work)
-│  └─ Buttons: ✅ Selesaikan Pekerjaan (opens price input dialog)
+├─ Status: IN_PROGRESS (setelah mulai bekerja)
+│  └─ Tombol: ✅ Selesaikan Pekerjaan (membuka dialog input harga)
 │
-└─ Status: COMPLETED (after complete)
-   └─ No action buttons (final state)
+└─ Status: COMPLETED (setelah selesai)
+   └─ Tidak ada tombol aksi (status final)
 ```
 
-## Implementation Decision: ✅ COMPLETED
+## Keputusan Implementasi: ✅ TERSELESAIKAN
 
-**Option Chosen**: B - Auto-mark DP as paid (Better for testing)
+**Opsi yang Dipilih**: B - Auto-tandai DP sebagai dibayar (Lebih baik untuk pengujian)
 
-**Rationale**:
-- ✅ Allows complete workflow testing
-- ✅ More realistic than removing validation
-- ✅ Still leaves placeholder for future real payment integration
-- ✅ Automatically creates FINAL payment record
-- ⏸️ Production note: Replace with real payment gateway when needed
+**Alasan Pemilihan**:
+- ✅ Memungkinkan pengujian alur kerja lengkap
+- ✅ Lebih realistis daripada menghapus validasi
+- ✅ Masih meninggalkan placeholder untuk integrasi pembayaran nyata di masa depan
+- ✅ Secara otomatis membuat catatan pembayaran FINAL
+- ⏸️ Catatan produksi: Ganti dengan gateway pembayaran nyata saat diperlukan
 
-## Recommended Next Steps
+## Langkah Berikutnya yang Direkomendasikan
 
-### ✅ Immediate - Today (DONE)
+### ✅ Segera - Hari Ini (SELESAI)
 
-- ✅ Backend modified: Auto-mark DP as paid in startWork()
-- ✅ Tested with curl: Complete workflow verified
-- ✅ Database: Order #1 COMPLETED with final payment
+- ✅ Backend dimodifikasi: Auto-tandai DP sebagai dibayar di startWork()
+- ✅ Diuji dengan curl: Alur kerja lengkap terverifikasi
+- ✅ Database: Pesanan #1 COMPLETED dengan pembayaran final
 
-### 📱 Next - Flutter UI Testing (THIS WEEK)
+### 📱 Berikutnya - Pengujian UI Flutter (MINGGU INI)
 
-1. **Rebuild Flutter App**
+1. **Bangun Ulang Aplikasi Flutter**
    ```bash
    cd mobile
    flutter pub get
    flutter run
    ```
 
-2. **Manual Test as Provider (Andi)**
+2. **Uji Manual sebagai Penyedia (Andi)**
    - Login: andi.listrik@example.com / password123
-   - Go to Pesanan tab
-   - Select order with status ACCEPTED
-   - Tap "Mulai Pekerjaan" button
-   - ✅ Verify status changes to IN_PROGRESS
-   - Tap "Selesaikan Pekerjaan" button
-   - Enter final price (e.g., 200000)
-   - ✅ Verify status changes to COMPLETED
-   - ✅ Verify immediate UI refresh (thanks to refresh fix from earlier!)
+   - Buka tab Pesanan
+   - Pilih pesanan dengan status ACCEPTED
+   - Ketuk tombol "Mulai Pekerjaan"
+   - ✅ Verifikasi status berubah menjadi IN_PROGRESS
+   - Ketuk tombol "Selesaikan Pekerjaan"
+   - Masukkan harga final (contoh: 200000)
+   - ✅ Verifikasi status berubah menjadi COMPLETED
+   - ✅ Verifikasi refresh UI segera (berkat perbaikan refresh dari sebelumnya!)
 
-3. **Test Multiple Orders**
-   - Test orders #3, #5 (also ACCEPTED)
-   - Verify each completes successfully
+3. **Uji Pesanan Ganda**
+   - Uji pesanan #3, #5 (juga ACCEPTED)
+   - Verifikasi setiap pesanan diselesaikan dengan sukses
 
-4. **Test as Customer (Verify Order Appears)**
-   - Login as Fajar/Nabila
-   - Go to Pesanan tab
-   - ✅ Verify provider's completed order shows with status COMPLETED
+4. **Uji sebagai Pelanggan (Verifikasi Pesanan Muncul)**
+   - Login sebagai Fajar/Nabila
+   - Buka tab Pesanan
+   - ✅ Verifikasi pesanan yang diselesaikan penyedia ditampilkan dengan status COMPLETED
 
-### 🔧 Future - Real Payment Integration (NEXT SPRINT)
+### 🔧 Masa Depan - Integrasi Pembayaran Nyata (SPRINT BERIKUTNYA)
 
-1. Implement payment endpoints
-2. Add payment UI for customers
-3. Integrate payment gateway (QRIS/transfer)
-4. Remove auto-payment marking
-5. Test real payment flow
+1. Implementasikan endpoint pembayaran
+2. Tambahkan UI pembayaran untuk pelanggan
+3. Integrasikan gateway pembayaran (QRIS/transfer)
+4. Hapus penandaan pembayaran otomatis
+5. Uji alur pembayaran nyata
 
-## Files to Modify
+## File untuk Dimodifikasi
 
-If choosing Option A or B:
+Jika memilih Opsi A atau B:
 - **[backend/app/Http/Controllers/Api/OrderController.php](backend/app/Http/Controllers/Api/OrderController.php)**
-  - Modify `startWork()` method (lines 190-197)
+  - Modifikasi metode `startWork()` (baris 190-197)
 
-No frontend changes needed - UI already supports complete workflow!
+Tidak ada perubahan frontend yang diperlukan - UI sudah mendukung alur kerja lengkap!
 
-## Payment-Related Endpoints (For Reference)
+## Endpoint Terkait Pembayaran (Untuk Referensi)
 
-### Existing Endpoints
+### Endpoint yang Ada
 ```
-POST   /api/orders/{orderId}/respond      (accept/reject order)
-POST   /api/orders/{orderId}/start-work   (start work) ← BLOCKED by payment
-POST   /api/orders/{orderId}/complete     (complete order)
+POST   /api/orders/{orderId}/respond      (terima/tolak pesanan)
+POST   /api/orders/{orderId}/start-work   (mulai bekerja) ← DIBLOKIR oleh pembayaran
+POST   /api/orders/{orderId}/complete     (selesaikan pesanan)
 GET    /api/payments/{paymentId}/generate-qris
 ```
 
-### To Be Implemented
+### Akan Diimplementasikan
 ```
-POST   /api/payments/{paymentId}/mark-paid (for testing)
-POST   /api/payments/{paymentId}/process (for payment gateway)
-GET    /api/orders/{orderId}/payments (payment status)
+POST   /api/payments/{paymentId}/mark-paid (untuk pengujian)
+POST   /api/payments/{paymentId}/process (untuk gateway pembayaran)
+GET    /api/orders/{orderId}/payments (status pembayaran)
 ```
 
 ---
 
-**Status**: ⏸️ BLOCKED pending decision on payment implementation approach
+**Status**: ⏸️ TERBLOKIR menunggu keputusan tentang pendekatan implementasi pembayaran
 
-**Next Action**: Choose Option A, B, or C and I'll implement it immediately
+**Tindakan Berikutnya**: Pilih Opsi A, B, atau C dan saya akan mengimplementasikannya segera

@@ -1,79 +1,79 @@
-# Backend API - TukangDekat
-## Setup & Running
+# API Backend - TukangDekat
+## Pengaturan & Menjalankan
 
-### Prerequisites
+### Prasyarat
 - PHP 8.1+
 - MySQL 8.0+
 - Composer
 - Laravel 11
 
-### Installation & Setup
+### Instalasi & Pengaturan
 ```bash
-# 1. Install dependencies
+# 1. Instal dependensi
 composer install
 
-# 2. Configure .env
+# 2. Konfigurasi .env
 cp .env.example .env
-# Update DB_* variables:
+# Perbarui variabel DB_*:
 # DB_DATABASE=db_tukangdekat
 # DB_USERNAME=root
 # DB_PASSWORD=
 
-# 3. Generate app key
+# 3. Buat kunci aplikasi
 php artisan key:generate
 
-# 4. Run migrations & seeding
+# 4. Jalankan migrasi & seeding
 php artisan migrate:fresh --seed
 
-# 5. Start server
+# 5. Mulai server
 php artisan serve --host=0.0.0.0 --port=8000
 ```
 
-## API Endpoints
+## Endpoint API
 
-### 1. Authentication (Public)
+### 1. Autentikasi (Publik)
 ```
-POST   /api/auth/register     - Register user baru (CUSTOMER/PROVIDER)
-POST   /api/auth/login        - Login & get token
-POST   /api/auth/logout       - Logout (require token)
-```
-
-### 2. Catalog (Public)
-```
-GET    /api/catalog/categories                    - Get all categories
-GET    /api/catalog/categories/{categoryId}/providers  - Get providers by category
-GET    /api/catalog/providers/{providerId}       - Get provider detail
-GET    /api/catalog/providers/search?q=...       - Search providers
+POST   /api/auth/register     - Daftarkan pengguna baru (CUSTOMER/PROVIDER)
+POST   /api/auth/login        - Login & dapatkan token
+POST   /api/auth/logout       - Logout (memerlukan token)
 ```
 
-### 3. Orders (Protected - auth:sanctum)
+### 2. Katalog (Publik)
 ```
-POST   /api/orders                      - Create order (CUSTOMER only)
-GET    /api/orders/my-orders            - Get my orders
-GET    /api/orders/{orderId}            - Get order detail
-POST   /api/orders/{orderId}/respond    - Provider accept/reject order
-POST   /api/orders/{orderId}/start-work - Provider start work
-POST   /api/orders/{orderId}/complete   - Provider complete order
+GET    /api/catalog/categories                    - Dapatkan semua kategori
+GET    /api/catalog/categories/{categoryId}/providers  - Dapatkan penyedia berdasarkan kategori
+GET    /api/catalog/providers/{providerId}       - Dapatkan detail penyedia
+GET    /api/catalog/providers/search?q=...       - Cari penyedia
 ```
 
-### 4. Payments (Protected)
+### 3. Pesanan (Dilindungi - auth:sanctum)
 ```
-GET    /api/payments/order/{orderId}         - Get payments for order
-GET    /api/payments/{paymentId}             - Get payment status
-POST   /api/payments/{paymentId}/generate-qris  - Generate QRIS
-POST   /api/webhooks/payment                 - Payment gateway callback (webhook)
-```
-
-### 5. Reviews (Protected)
-```
-POST   /api/reviews/order/{orderId}      - Create review (CUSTOMER only)
-GET    /api/reviews/provider/{providerId} - Get provider reviews
-GET    /api/reviews/order/{orderId}       - Get order review
+POST   /api/orders                      - Buat pesanan (CUSTOMER saja)
+GET    /api/orders/my-orders            - Dapatkan pesanan saya
+GET    /api/orders/{orderId}            - Dapatkan detail pesanan
+POST   /api/orders/{orderId}/respond    - Penyedia terima/tolak pesanan
+POST   /api/orders/{orderId}/start-work - Penyedia mulai bekerja
+POST   /api/orders/{orderId}/complete   - Penyedia selesaikan pesanan
 ```
 
-## Sample Requests
+### 4. Pembayaran (Dilindungi)
+```
+GET    /api/payments/order/{orderId}         - Dapatkan pembayaran untuk pesanan
+GET    /api/payments/{paymentId}             - Dapatkan status pembayaran
+POST   /api/payments/{paymentId}/generate-qris  - Buat QRIS
+POST   /api/webhooks/payment                 - Callback gateway pembayaran (webhook)
+```
 
-### Register
+### 5. Ulasan (Dilindungi)
+```
+POST   /api/reviews/order/{orderId}      - Buat ulasan (CUSTOMER saja)
+GET    /api/reviews/provider/{providerId} - Dapatkan ulasan penyedia
+GET    /api/reviews/order/{orderId}       - Dapatkan ulasan pesanan
+```
+
+## Contoh Permintaan
+
+### Daftar
 ```bash
 curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -96,7 +96,7 @@ curl -X POST http://localhost:8000/api/auth/login \
   }'
 ```
 
-### Create Order (with token)
+### Buat Pesanan (dengan token)
 ```bash
 curl -X POST http://localhost:8000/api/orders \
   -H "Content-Type: application/json" \
@@ -111,21 +111,21 @@ curl -X POST http://localhost:8000/api/orders \
   }'
 ```
 
-## Test Accounts
+## Akun Pengujian
 
-**Customer:**
+**Pelanggan:**
 - Email: fajar@example.com
 - Password: password123
 
-**Provider:**
+**Penyedia:**
 - Email: andi.listrik@example.com (Listrik)
 - Email: budi.plumbing@example.com (Plumbing)
 - Email: citra.ac@example.com (AC)
 - Password: password123 (semua)
 
-## Database Schema
+## Skema Basis Data
 
-### Tables Created
+### Tabel yang Dibuat
 - users
 - provider_profiles
 - service_categories
@@ -136,30 +136,30 @@ curl -X POST http://localhost:8000/api/orders \
 - reviews
 - notification_logs
 
-## Architecture
+## Arsitektur
 
-- **Controller**: Handle HTTP requests & validation
-- **Models**: Database entities dengan relationships
-- **Routes**: RESTful API endpoints
-- **Middleware**: Authentication (Sanctum)
+- **Controller**: Menangani permintaan HTTP & validasi
+- **Models**: Entitas basis data dengan hubungan
+- **Routes**: Endpoint API RESTful
+- **Middleware**: Autentikasi (Sanctum)
 
-## Key Features Implemented
+## Fitur Utama yang Diimplementasikan
 
-✅ User Registration & Login (Sanctum tokens)
-✅ Role-based access control (CUSTOMER, PROVIDER, ADMIN, TREASURER)
-✅ Service Catalog & Search
-✅ Order Lifecycle (CREATED → ACCEPTED → IN_PROGRESS → COMPLETED → CLOSED)
-✅ Payment management (DP 50% + Final settlement)
-✅ Review & Rating system
-✅ Notification logging
-✅ Error handling & validation
+✅ Pendaftaran Pengguna & Login (token Sanctum)
+✅ Kontrol akses berbasis peran (CUSTOMER, PROVIDER, ADMIN, TREASURER)
+✅ Katalog Layanan & Pencarian
+✅ Siklus Hidup Pesanan (CREATED → ACCEPTED → IN_PROGRESS → COMPLETED → CLOSED)
+✅ Manajemen Pembayaran (DP 50% + penyelesaian akhir)
+✅ Sistem Ulasan & Rating
+✅ Pencatatan Notifikasi
+✅ Penanganan kesalahan & validasi
 
-## Next Steps
+## Langkah Berikutnya
 
-1. Implement Provider Management panel (admin)
-2. Integrate payment gateway (Midtrans/Xendit)
-3. Setup n8n workflow for notifications
-4. Add file upload for order attachments
-5. Implement Treasurer reporting dashboard
-6. Add order history & filtering
-7. Setup Docker compose for deployment
+1. Implementasikan panel Manajemen Penyedia (admin)
+2. Integrasikan gateway pembayaran (Midtrans/Xendit)
+3. Atur alur kerja n8n untuk notifikasi
+4. Tambahkan unggah file untuk lampiran pesanan
+5. Implementasikan dasbor pelaporan Bendahara
+6. Tambahkan riwayat pesanan & filter
+7. Atur docker compose untuk penerapan

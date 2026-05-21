@@ -1,87 +1,87 @@
-# Debug Fixes Report - May 14, 2026
+# Laporan Perbaikan Debug - 14 Mei 2026
 
-## Issues Fixed
+## Masalah yang Diperbaiki
 
-### 1. ✅ Search Endpoint 404 Error
+### 1. ✅ Kesalahan Endpoint Search 404
 
-**Problem:** 
-- Search bar showing error: `DioException [bad response]: 404`
+**Masalah:** 
+- Bilah pencarian menampilkan kesalahan: `DioException [bad response]: 404`
 - Endpoint: `/api/catalog/providers/search?q=AC`
 
-**Root Cause:**
-- Route order in Laravel - `/providers/{providerId}` was matching `/providers/search` before search route was evaluated
-- In Laravel routing, specific routes must be defined BEFORE dynamic parameter routes
+**Penyebab Akar:**
+- Urutan rute di Laravel - `/providers/{providerId}` cocok dengan `/providers/search` sebelum rute pencarian dievaluasi
+- Dalam perutean Laravel, rute spesifik harus didefinisikan SEBELUM rute parameter dinamis
 
-**Solution Applied:**
-- **File:** `backend/routes/api.php` (lines 18-23)
-- **Change:** Moved `/providers/search` route BEFORE `/providers/{providerId}` route
-- **Before:**
+**Solusi Diterapkan:**
+- **File:** `backend/routes/api.php` (baris 18-23)
+- **Perubahan:** Memindahkan rute `/providers/search` SEBELUM rute `/providers/{providerId}`
+- **Sebelum:**
   ```php
   Route::get('/providers/{providerId}', [CatalogController::class, 'getProviderDetail']);
   Route::get('/providers/search', [CatalogController::class, 'searchProviders']);
   ```
-- **After:**
+- **Sesudah:**
   ```php
   Route::get('/providers/search', [CatalogController::class, 'searchProviders']);
   Route::get('/providers/{providerId}', [CatalogController::class, 'getProviderDetail']);
   ```
 
-**Verification:**
-- Restart backend server
-- Try search with "AC" - should now return providers instead of 404
+**Verifikasi:**
+- Mulai ulang server backend
+- Coba pencarian dengan "AC" - sekarang harus mengembalikan penyedia alih-alih 404
 
 ---
 
-### 2. ✅ Order Filtering Issue - Token Not Cleared on Logout
+### 2. ✅ Masalah Penyaringan Pesanan - Token Tidak Dihapus Saat Logout
 
-**Problem:**
-- Orders from user A (Fajar) visible in user B's (Nabila) account
-- Should only show orders belonging to authenticated user
+**Masalah:**
+- Pesanan dari pengguna A (Fajar) terlihat di akun pengguna B (Nabila)
+- Seharusnya hanya menampilkan pesanan yang dimiliki pengguna yang diautentikasi
 
-**Root Cause:**
-- `logout()` method was not calling `apiService.clearToken()`
-- Old token remained in Dio HTTP headers
-- When new user logged in, if logout didn't properly clear headers, requests could use mixed/old tokens
-- Backend `getMyOrders()` receives correct user from token, but frontend might have stale token
+**Penyebab Akar:**
+- Metode `logout()` tidak memanggil `apiService.clearToken()`
+- Token lama tetap berada di header HTTP Dio
+- Ketika pengguna baru masuk, jika logout tidak menghapus header dengan benar, permintaan dapat menggunakan token campuran/lama
+- Backend `getMyOrders()` menerima pengguna yang benar dari token, tetapi frontend mungkin memiliki token usang
 
-**Solution Applied:**
-- **File:** `mobile/lib/features/auth/auth_controller.dart` (logout method)
-- **Change:** Added `apiService.clearToken()` call in logout
-- **Before:**
+**Solusi Diterapkan:**
+- **File:** `mobile/lib/features/auth/auth_controller.dart` (metode logout)
+- **Perubahan:** Menambahkan panggilan `apiService.clearToken()` dalam logout
+- **Sebelum:**
   ```dart
   Future<void> logout() async {
-    // ... no clearToken() call
+    // ... tidak ada panggilan clearToken()
     await _ref.read(authStorageProvider).clearAll();
   }
   ```
-- **After:**
+- **Sesudah:**
   ```dart
   Future<void> logout() async {
     final apiService = _ref.read(apiServiceProvider);
     await apiService.logout();
-    apiService.clearToken();  // ← Added this line
+    apiService.clearToken();  // ← Baris ini ditambahkan
     await _ref.read(authStorageProvider).clearAll();
   }
   ```
 
-**Why This Fixes It:**
-1. Old token removed from Dio headers immediately
-2. New user's login will set new token in headers
-3. Subsequent API calls use correct auth
-4. Backend filters orders correctly by authenticated user_id
+**Mengapa Ini Memperbaikinya:**
+1. Token lama dihapus dari header Dio segera
+2. Login pengguna baru akan menetapkan token baru di header
+3. Panggilan API berikutnya menggunakan otentikasi yang benar
+4. Backend menyaring pesanan dengan benar berdasarkan user_id yang diautentikasi
 
 ---
 
-## Backend Verification
+## Verifikasi Backend
 
 ### Endpoint: `/api/catalog/providers/search`
 
-**Test Command:**
+**Perintah Uji:**
 ```bash
 curl -s -X GET "http://localhost:8000/api/catalog/providers/search?q=listrik" | python -m json.tool
 ```
 
-**Expected Response (200 OK):**
+**Respons yang Diharapkan (200 OK):**
 ```json
 {
   "data": [
@@ -95,96 +95,96 @@ curl -s -X GET "http://localhost:8000/api/catalog/providers/search?q=listrik" | 
 }
 ```
 
-**Error Response (400):**
+**Respons Kesalahan (400):**
 ```json
 {
   "message": "Query parameter q is required."
 }
 ```
 
-### Endpoint: `/api/orders/my-orders` (Protected)
+### Endpoint: `/api/orders/my-orders` (Terlindungi)
 
-**Test Command:**
+**Perintah Uji:**
 ```bash
-# Login as Fajar
+# Login sebagai Fajar
 curl -s -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"fajar@example.com","password":"password123"}' | python -m json.tool
 
-# Get Fajar's orders with token
+# Dapatkan pesanan Fajar dengan token
 curl -s -X GET http://localhost:8000/api/orders/my-orders \
   -H "Authorization: Bearer TOKEN_HERE" | python -m json.tool
 ```
 
-**Expected:** Only Fajar's orders returned
+**Harapan:** Hanya pesanan Fajar yang dikembalikan
 
 ---
 
-## Manual Testing Steps
+## Langkah Pengujian Manual
 
-### Step 1: Test Search (Frontend)
-1. Open app at `localhost:62119` (or current Flutter dev port)
-2. Go to "Beranda" tab
-3. Type "listrik" in search bar
-4. **Expected:** List of providers with "listrik" in name/area (NOT 404 error)
+### Langkah 1: Uji Pencarian (Frontend)
+1. Buka aplikasi di `localhost:62119` (atau port dev Flutter saat ini)
+2. Pergi ke tab "Beranda"
+3. Ketik "listrik" di bilah pencarian
+4. **Harapan:** Daftar penyedia dengan "listrik" di nama/area (BUKAN kesalahan 404)
 
-### Step 2: Test Order Filtering (Frontend)
-1. Click logout button (if logged in)
-2. On LoginPage, login as **Fajar**:
+### Langkah 2: Uji Penyaringan Pesanan (Frontend)
+1. Klik tombol logout (jika sudah masuk)
+2. Pada LoginPage, masuk sebagai **Fajar**:
    - Email: `fajar@example.com`
    - Password: `password123`
-3. Go to "Pesanan" tab
-4. **Expected:** See orders assigned to Fajar
-5. Note the order code (e.g., `ORD-20260513-0001`)
-6. Click logout button in AppBar
-7. On LoginPage, login as **Nabila**:
+3. Pergi ke tab "Pesanan"
+4. **Harapan:** Lihat pesanan yang ditetapkan ke Fajar
+5. Catat kode pesanan (misalnya `ORD-20260513-0001`)
+6. Klik tombol logout di AppBar
+7. Pada LoginPage, masuk sebagai **Nabila**:
    - Email: `nabila@example.com`
    - Password: `password123`
-8. Go to "Pesanan" tab
-9. **Expected:** See DIFFERENT orders (NOT the orders from Fajar)
-10. Verify Fajar's order code is NOT visible
+8. Pergi ke tab "Pesanan"
+9. **Harapan:** Lihat pesanan BERBEDA (BUKAN pesanan dari Fajar)
+10. Verifikasi kode pesanan Fajar TIDAK terlihat
 
-### Step 3: Verify Backend Token Handling
-1. In Chrome DevTools (F12), go to Network tab
-2. Go to "Pesanan" tab
-3. Look for API request to `my-orders`
-4. Click on request, go to Headers tab
-5. Look for `Authorization` header
-6. **Expected:** Should show `Bearer <token>` with different tokens for different users
+### Langkah 3: Verifikasi Penanganan Token Backend
+1. Di Chrome DevTools (F12), pergi ke tab Network
+2. Pergi ke tab "Pesanan"
+3. Cari permintaan API ke `my-orders`
+4. Klik pada permintaan, pergi ke tab Headers
+5. Cari header `Authorization`
+6. **Harapan:** Seharusnya menampilkan `Bearer <token>` dengan token berbeda untuk pengguna berbeda
 
 ---
 
-## Files Modified
+## File yang Dimodifikasi
 
 1. **Backend:**
-   - `backend/routes/api.php` - Route ordering fix
-   - `backend/app/Http/Controllers/Api/CatalogController.php` - Search validation already added
+   - `backend/routes/api.php` - Perbaikan urutan rute
+   - `backend/app/Http/Controllers/Api/CatalogController.php` - Validasi pencarian sudah ditambahkan
 
 2. **Frontend:**
-   - `mobile/lib/features/auth/auth_controller.dart` - Added clearToken() in logout
-   - `mobile/lib/core/services/api_service.dart` - Already has correct setToken/clearToken
-   - `mobile/lib/core/http/dio_provider.dart` - Already has 30s timeout
+   - `mobile/lib/features/auth/auth_controller.dart` - Ditambahkan clearToken() dalam logout
+   - `mobile/lib/core/services/api_service.dart` - Sudah memiliki setToken/clearToken yang benar
+   - `mobile/lib/core/http/dio_provider.dart` - Sudah memiliki timeout 30 detik
 
 ---
 
-## Next Steps if Issues Persist
+## Langkah Berikutnya jika Masalah Tetap Ada
 
-### If Search Still Returns 404:
-1. Clear browser cache (Ctrl+Shift+Delete)
-2. Restart backend server
-3. Run `flutter clean` and `flutter run` again
-4. Check backend logs for actual error
+### Jika Pencarian Masih Mengembalikan 404:
+1. Hapus cache browser (Ctrl+Shift+Delete)
+2. Mulai ulang server backend
+3. Jalankan `flutter clean` dan `flutter run` lagi
+4. Periksa log backend untuk kesalahan sebenarnya
 
-### If Orders Still Show Across Users:
-1. Check DevTools Network tab for Authorization header
-2. Verify token is different for each user login
-3. Check backend logs to see which user_id is being received
-4. Run manual curl test to isolate if issue is frontend or backend
+### Jika Pesanan Masih Ditampilkan Antar Pengguna:
+1. Periksa tab Network DevTools untuk header Authorization
+2. Verifikasi token berbeda untuk setiap login pengguna
+3. Periksa log backend untuk melihat user_id apa yang diterima
+4. Jalankan tes curl manual untuk mengisolasi jika masalah adalah frontend atau backend
 
 ---
 
 ## Status
-- ✅ Search route ordering fixed
-- ✅ Logout token cleanup fixed  
-- ✅ Ready for testing
-- 🔄 Awaiting manual test verification
+- ✅ Urutan rute pencarian diperbaiki
+- ✅ Pembersihan token logout diperbaiki  
+- ✅ Siap untuk pengujian
+- 🔄 Menunggu verifikasi tes manual
