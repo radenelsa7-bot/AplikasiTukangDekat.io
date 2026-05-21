@@ -83,3 +83,30 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/api/treasurer/payments/report', [TreasurerController::class, 'paymentReport'])->name('api.treasurer.report');
 });
+
+// Health check route with metrics middleware
+Route::get('/health', function () {
+    return response('ok', 200);
+})->middleware(\App\\Http\\Middleware\\CollectMetrics::class);
+
+// Expose simple Prometheus-style metrics from cache
+Route::get('/metrics', function () {
+    $total = cache('metrics.requests_total', 0);
+    $sum = cache('metrics.request_duration_seconds_sum', 0);
+    $count = cache('metrics.request_duration_seconds_count', 0);
+
+    $lines = [];
+    $lines[] = "# HELP requests_total Total HTTP requests";
+    $lines[] = "# TYPE requests_total counter";
+    $lines[] = "requests_total {$total}";
+
+    $lines[] = "# HELP request_duration_seconds_sum Sum of request durations in seconds";
+    $lines[] = "# TYPE request_duration_seconds_sum counter";
+    $lines[] = "request_duration_seconds_sum {$sum}";
+
+    $lines[] = "# HELP request_duration_seconds_count Count of recorded request durations";
+    $lines[] = "# TYPE request_duration_seconds_count counter";
+    $lines[] = "request_duration_seconds_count {$count}";
+
+    return response(implode("\n", $lines), 200, ['Content-Type' => 'text/plain; version=0.0.4']);
+});
