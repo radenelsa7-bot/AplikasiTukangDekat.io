@@ -18,6 +18,7 @@ Dokumen ini mencatat progres backend dan frontend dalam satu tempat, supaya muda
 - Merilis tag `v1.0.0` dan memperbarui draft release menjadi release publik.
 - Commit dan push perubahan ke `main` sudah dilakukan.
  - Integration tests for network failures and backoff: branch `feature/backend-121-integration-backoff` (completed)
+ - Monitoring/metrics produksi dan alerting: branch `feature/backend-124-monitoring-alerts` (completed)
 
 ### Frontend
 - Status frontend utama masih fokus pada tracking branch dan pemetaan issue.
@@ -35,7 +36,6 @@ Dokumen ini mencatat progres backend dan frontend dalam satu tempat, supaya muda
 - CI job untuk integration/staging yang digate oleh secrets.
 - Migrasi dan enable queue worker di staging/production.
 - Smoke test dan post-deploy verification.
-- Monitoring/metrics produksi seperti Sentry atau Prometheus.
 
 ### Frontend
 - Payout-alerts UI / notifikasi untuk admin atau treasurer.
