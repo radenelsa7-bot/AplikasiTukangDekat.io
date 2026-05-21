@@ -87,7 +87,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 // Health check route with metrics middleware
 Route::get('/health', function () {
     return response('ok', 200);
-})->middleware(\App\\Http\\Middleware\\CollectMetrics::class);
+})->middleware(\App\Http\Middleware\CollectMetrics::class);
 
 // Expose simple Prometheus-style metrics from cache
 Route::get('/metrics', function () {

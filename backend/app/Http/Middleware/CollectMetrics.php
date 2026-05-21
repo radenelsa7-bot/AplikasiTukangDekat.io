@@ -1,10 +1,10 @@
 <?php
 
-namespace App\\Http\\Middleware;
+namespace App\Http\Middleware;
 
 use Closure;
-use Illuminate\\Support\\Facades\\Cache;
-use Illuminate\\Http\\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Http\Request;
 
 class CollectMetrics
 {
