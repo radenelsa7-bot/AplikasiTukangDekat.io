@@ -12,7 +12,7 @@
 # =============================================================
 
 # ─── KONFIGURASI — SESUAIKAN INI ─────────────────────────────
-REPO="Fajar1180/Project-Aplikasi-Tukang-Dekat"          # Ganti dengan username/repo kamu
+REPO="radenelsa7-bot/PM_UAS_rekayasa_Sistem_Informasi"          # Ganti dengan username/repo kamu
 PROJECT_NAME="TukangDekat – Sprint Board"
 # ─────────────────────────────────────────────────────────────
 
@@ -90,7 +90,7 @@ create_label "testing"              "0e8a16" ""
 # =============================================================
 # STEP 2 – MILESTONES
 # =============================================================
-echo -e "\n${CYAN}[2/4] Membuat milestones (per minggu)...${NC}"
+echo -e "\n${CYAN}[2/4] Membuat milestones backlog...${NC}"
 
 create_milestone() {
   local title="$1" due="$2" desc="$3"
@@ -104,12 +104,10 @@ create_milestone() {
     || echo -e "  ${YELLOW}⚠${NC} Milestone mungkin sudah ada: $title"
 }
 
-create_milestone "Week 1 – Setup & Perencanaan (11–17 Mei)"   "2026-05-17" "Environment setup, pembagian tugas, wireframe awal"
-create_milestone "Week 2 – Auth & Fondasi API (18–24 Mei)"    "2026-05-24" "Auth register/login, DB migration, Flutter project init"
-create_milestone "Week 3 – Core Feature Backend (25–31 Mei)"  "2026-05-31" "Order, Provider, Service Catalog API"
-create_milestone "Week 4 – Payment & Notifikasi (1–7 Jun)"    "2026-06-07" "QRIS DP & Final, webhook, n8n integration"
-create_milestone "Week 5 – Frontend & Integrasi (8–14 Jun)"   "2026-06-14" "Flutter screens, integrasi API, review & rating"
-create_milestone "Week 6 – Testing & Finalisasi (15–18 Jun)"  "2026-06-18" "QA testing, bug fix, demo, dokumentasi final"
+create_milestone "Backend – Integration & Reliability" "2026-05-31" "Integration test untuk network failures dan backoff"
+create_milestone "Backend – Deploy & Monitoring" "2026-06-07" "CI staging, smoke test post-deploy, monitoring/alerting"
+create_milestone "Frontend – Alerts, Tests & Notes" "2026-06-14" "Payout-alerts UI, frontend tests, API notes"
+create_milestone "Project – Board Sync & Tracking" "2026-06-18" "Sinkronisasi issue, progress, dan project board"
 
 # Helper: get milestone title by title keyword
 get_milestone() {
@@ -189,19 +187,70 @@ create_issue() {
   rm -f "$body_file"
 }
 
-# NOTE: Ganti username GitHub di bawah sesuai akun masing-masing anggota
-# Untuk mendapatkan username, kunjungi: https://github.com/settings/profile (lihat username)
-# Atau biarkan kosong untuk membuat issues tanpa assignee (assign nanti manual)
-PM="Fajar1180"                     # R.Elsa Balqis (PM)
-BE1="Fajar1180"                    # Muhammad Fajar Nurjaman
-BE2="Fajar1180"                    # Nabilah Asana Alecia
-BE3="Fajar1180"                    # Fatin Asyifa Nurrizky
-FE1="Fajar1180"                    # Tetep Safarudin
-FE2="Fajar1180"                    # Fazna Alaisal
-FE3="Fajar1180"                    # Nabil Ramadhan
-QA="Fajar1180"                     # Aldy Ramadani
+# Backlog aktif yang diselaraskan dengan PROGRESS_TRACKING.md.
+# Isi username GitHub asli sebelum menjalankan script.
+PM="${raradenelsa7-bot:-}"           # R.Elsa Balqis (PM)
+BE1="${NabilahAsana:-}"         # Backend 1
+BE2="${Fajar1180:-}"         # Backend 2
+BE3="${Fatinasy7:-}"         # Backend 3
+FE1="${tetepsafarudin:-}"         # Frontend 1
+FE2="${faznalaisal44:-}"         # Frontend 2
+FE3="${nabilramadhan05:-}"         # Frontend 3
+QA="${aldyrmdny-lab:-}"           # QA
 
-echo -e "\n  ${YELLOW}── WEEK 1: Setup & Perencanaan (11–17 Mei) ──${NC}"
+echo -e "\n  ${YELLOW}── BACKEND: backlog yang masih pending ──${NC}"
+
+create_issue \
+  "[PM] Sinkronkan tracking board dan status repo" \
+  "## Deskripsi\nSesuaikan project board dan daftar issue agar selaras dengan PROGRESS_TRACKING.md.\n\n## Tasks\n- [ ] Pastikan issue yang sudah selesai tidak muncul sebagai backlog aktif\n- [ ] Pindahkan task yang pending ke milestone yang tepat\n- [ ] Update status issue di project board\n- [ ] Review draft PR tracking yang masih terbuka\n\n## Referensi\n- PROGRESS_TRACKING.md" \
+  "role: PM,documentation,priority: high" \
+  "$PM" "Project – Board Sync & Tracking"
+
+create_issue \
+  "[Backend] Integration test untuk network failures dan backoff" \
+  "## Deskripsi\nTambahkan integration test lengkap untuk kegagalan jaringan dan retry/backoff pada payout pipeline.\n\n## Tasks\n- [ ] Uji skenario timeout dan koneksi putus\n- [ ] Uji retry/backoff pada gateway call\n- [ ] Uji logging dan fallback response saat provider down\n- [ ] Pastikan test berjalan stabil di pipeline CI\n\n## Referensi\n- PROGRESS_TRACKING.md\n- Branch: feature/backend-121-integration-backoff" \
+  "role: Backend,testing,priority: high,module: payment" \
+  "$BE1" "Backend – Integration & Reliability"
+
+create_issue \
+  "[Backend] CI job integration/staging gate by secrets" \
+  "## Deskripsi\nBuat job CI untuk integration/staging yang hanya aktif bila secrets tersedia.\n\n## Tasks\n- [ ] Tambahkan job khusus integration/staging\n- [ ] Gate job memakai secrets yang aman\n- [ ] Pastikan job tidak gagal saat secrets belum disetel\n- [ ] Dokumentasikan cara menjalankan job di environment staging\n\n## Referensi\n- PROGRESS_TRACKING.md\n- Branch: feature/backend-122-ci-staging" \
+  "role: Backend,priority: high,documentation" \
+  "$BE2" "Backend – Deploy & Monitoring"
+
+create_issue \
+  "[Backend] Migrasi staging, queue worker, dan smoke test post-deploy" \
+  "## Deskripsi\nSiapkan migrasi staging, aktifkan queue worker, lalu jalankan smoke test setelah deploy.\n\n## Tasks\n- [ ] Jalankan migrasi di staging\n- [ ] Aktifkan queue worker di staging/production\n- [ ] Tambahkan smoke test pasca deploy\n- [ ] Catat hasil verifikasi deployment\n\n## Referensi\n- PROGRESS_TRACKING.md\n- Branch: feature/backend-123-deploy-smoke" \
+  "role: Backend,priority: high,testing,module: notification" \
+  "$BE3" "Backend – Deploy & Monitoring"
+
+create_issue \
+  "[Backend] Monitoring/metrics produksi dan alerting" \
+  "## Deskripsi\nTambahkan monitoring produksi dan alerting untuk payout pipeline.\n\n## Tasks\n- [ ] Evaluasi Sentry/Prometheus untuk produksi\n- [ ] Tambahkan alert untuk kegagalan payout\n- [ ] Pastikan event penting terekam di log/metric\n- [ ] Dokumentasikan cara memantau error produksi\n\n## Referensi\n- PROGRESS_TRACKING.md\n- Branch: feature/backend-124-monitoring-alerts" \
+  "role: Backend,priority: medium,module: notification" \
+  "$BE1,$BE2" "Backend – Deploy & Monitoring"
+
+echo -e "\n  ${YELLOW}── FRONTEND: backlog yang masih pending ──${NC}"
+
+create_issue \
+  "[Frontend] Payout-alerts UI untuk admin atau treasurer" \
+  "## Deskripsi\nBangun UI notifikasi payout untuk admin atau treasurer.\n\n## Tasks\n- [ ] Tampilkan daftar alert payout\n- [ ] Tambahkan state empty/error/loading\n- [ ] Sinkronkan dengan alur notifikasi backend\n- [ ] Pastikan tampilan cocok di mobile\n\n## Referensi\n- PROGRESS_TRACKING.md\n- Branch: feature/frontend-125-alert-ui" \
+  "role: Frontend,priority: high,module: notification,module: UI/UX" \
+  "$FE1" "Frontend – Alerts, Tests & Notes"
+
+create_issue \
+  "[Frontend] Build dan jalankan frontend tests" \
+  "## Deskripsi\nJalankan dan rapikan test frontend yang mencakup build, style, dan basic UI flow.\n\n## Tasks\n- [ ] Jalankan build frontend\n- [ ] Jalankan test terkait vite, tailwind, dan js\n- [ ] Perbaiki test yang gagal\n- [ ] Simpan hasil validasi di dokumen tracking\n\n## Referensi\n- PROGRESS_TRACKING.md\n- Branch: feature/frontend-126-tests" \
+  "role: Frontend,testing,priority: high" \
+  "$FE2" "Frontend – Alerts, Tests & Notes"
+
+create_issue \
+  "[Frontend] Update API docs dan frontend integration notes" \
+  "## Deskripsi\nPerbarui dokumentasi integrasi API untuk frontend agar selaras dengan backend terakhir.\n\n## Tasks\n- [ ] Update endpoint yang berubah\n- [ ] Tambahkan catatan integrasi untuk screen penting\n- [ ] Sesuaikan contoh request/response\n- [ ] Pastikan dokumentasi mudah dipakai saat handoff\n\n## Referensi\n- PROGRESS_TRACKING.md\n- Branch: feature/frontend-127-api-notes" \
+  "role: Frontend,documentation,priority: medium" \
+  "$FE3" "Frontend – Alerts, Tests & Notes"
+
+if false; then
 
 create_issue \
   "[PM] Finalisasi SRS & distribusi dokumen ke tim" \
