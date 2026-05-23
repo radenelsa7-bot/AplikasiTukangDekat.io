@@ -1,0 +1,87 @@
+name: CI - Integration Staging
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ feature/backend-122-ci-staging ]
+
+jobs:
+  integration-staging:
+    # only run when required secrets are configured in the repository
+    if: ${{ secrets.DEPLOY_KEY != '' }}
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, bcmath, xml, gd, zip
+
+      - name: Get Composer cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist --no-interaction
+
+      - name: Write .env from example (using secrets)
+        run: |
+          cp .env.example .env
+          cat <<EOF >> .env
+APP_ENV=staging
+APP_KEY=${APP_KEY}
+DB_CONNECTION=${DB_CONNECTION}
+DB_HOST=${DB_HOST}
+DB_PORT=${DB_PORT}
+DB_DATABASE=${DB_DATABASE}
+DB_USERNAME=${DB_USERNAME}
+DB_PASSWORD=${DB_PASSWORD}
+PAYOUT_GATEWAY=${PAYOUT_GATEWAY}
+XENDIT_API_KEY=${XENDIT_API_KEY}
+MIDTRANS_SERVER_KEY=${MIDTRANS_SERVER_KEY}
+EOF
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+          DB_CONNECTION: ${{ secrets.DB_CONNECTION }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          PAYOUT_GATEWAY: ${{ secrets.PAYOUT_GATEWAY }}
+          XENDIT_API_KEY: ${{ secrets.XENDIT_API_KEY }}
+          MIDTRANS_SERVER_KEY: ${{ secrets.MIDTRANS_SERVER_KEY }}
+
+      - name: Prepare application
+        run: |
+          php artisan key:generate --ansi
+
+      - name: Run migrations on staging DB
+        run: php artisan migrate --force
+
+      - name: Run integration tests
+        run: |
+          if php artisan test --list | grep -q Integration; then
+            php artisan test --testsuite=Integration --no-interaction
+          else
+            php artisan test --no-interaction
+          fi
+
+  secrets-missing:
+    # informative job: runs when DEPLOY_KEY is not configured
+    if: ${{ secrets.DEPLOY_KEY == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Secrets not configured
+        run: |
+          echo "Integration/staging job skipped: required secrets not found."
+          echo "Set DEPLOY_KEY and other staging secrets in repository settings to enable this job."
