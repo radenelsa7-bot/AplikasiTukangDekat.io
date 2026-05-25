@@ -78,3 +78,4 @@ Bagian ini disiapkan untuk branch yang benar-benar dipakai mengerjakan task yang
 
 - Dokumen ini bersifat ringkas dan fokus pada backend/frontend.
 - Jika ada perubahan besar, update bagian "Sudah Selesai" dan "Masih Belum Selesai" terlebih dahulu.
+
