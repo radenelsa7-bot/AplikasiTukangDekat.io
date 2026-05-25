@@ -438,46 +438,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Search bar
-            AppTextField(
-              controller: _searchCtrl,
-              label: 'Cari teknisi atau layanan',
-              prefixIcon: const Icon(Icons.search),
-              onChanged: (value) {
-                ref.read(searchQueryProvider.notifier).state = value;
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Search results
-            if (searchQuery.isNotEmpty)
-              _buildSearchResults(context, ref)
-            else ...[
-              // Categories
-              Text(
-                'Kategori Layanan',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              _buildCategories(context, ref, selectedCategory),
-              const SizedBox(height: 32),
-
-              // Providers by category
-              if (selectedCategory != null)
-                _buildProvidersByCategory(context, ref, selectedCategory),
-            ],
-          ],
-        ),
-      ),
     );
   }
 
-  // ─── Categories ───────────────────────────────────────────────────────────
   Widget _buildCategories(
     BuildContext context,
     WidgetRef ref,
@@ -487,9 +450,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
     return categoriesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, st) => Center(
-        child: Text('Error: $err'),
-      ),
+      error: (err, st) => Center(child: Text('Error: $err')),
       data: (categories) {
         if (categories.isEmpty) {
           return const Center(child: Text('Tidak ada kategori'));
@@ -567,42 +528,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: GestureDetector(
-                  onTap: () {
-                    ref.read(selectedCategoryProvider.notifier).state =
-                        isSelected ? null : category.id;
-                  },
-                  child: Card(
-                    color: isSelected
-                        ? Theme.of(context).primaryColor
-                        : Colors.white,
-                    child: Container(
-                      width: 120,
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.home_repair_service,
-                            size: 40,
-                            color: isSelected
-                                ? Colors.white
-                                : Theme.of(context).primaryColor,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            category.name,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : Colors.black,
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -673,16 +598,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
     return providersAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, st) => Center(
-        child: Text('Error: $err'),
-      ),
+      error: (err, st) => Center(child: Text('Error: $err')),
       data: (providers) {
         if (providers.isEmpty) {
           return _buildEmptyState(
             context,
             'Tidak ada provider di kategori ini',
           );
-          return const Center(child: Text('Tidak ada provider di kategori ini'));
         }
 
         return Column(
@@ -712,15 +634,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
     return resultsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, st) => Center(
-        child: Text('Error: $err'),
-      ),
+      error: (err, st) => Center(child: Text('Error: $err')),
       data: (providers) {
         if (providers.isEmpty) {
           return _buildEmptyState(context, 'Tidak ada hasil pencarian');
-          return const Center(
-            child: Text('Tidak ada hasil pencarian'),
-          );
         }
 
         return Column(
@@ -857,7 +774,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          // Rating
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -930,41 +846,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             ),
           ),
         ),
-  Widget _buildProviderCard(BuildContext context, dynamic provider, int categoryId) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Icon(Icons.person),
-        ),
-        title: Text(provider.businessName),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(provider.description ?? 'No description',
-                maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.star, size: 16, color: Colors.amber),
-                const SizedBox(width: 4),
-                Text('${provider.avgRating ?? 0.0}'),
-              ],
-            ),
-          ],
-        ),
-        trailing: const Icon(Icons.arrow_forward),
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ProviderDetailPage(
-                providerId: provider.id,
-                categoryId: categoryId,
-              ),
-            ),
-          );
-        },
       ),
     );
   }
