@@ -123,7 +123,7 @@ PROJECT_OWNER=$(echo $REPO | cut -d'/' -f1)
 PROJECT_OUTPUT=$(gh project create \
   --owner "$PROJECT_OWNER" \
   --title "$PROJECT_NAME" \
-  --format json 2>&1)
+  --format json 2>&1) || true
 
 PROJECT_NUMBER=$(printf '%s' "$PROJECT_OUTPUT" | python3 -c "import sys,json; data=sys.stdin.read().strip(); print(json.loads(data).get('number','') if data and '{' in data else '')" 2>/dev/null || true)
 
@@ -154,6 +154,12 @@ create_issue() {
 
   local ms_title=$(get_milestone "$milestone_keyword")
   
+  # Skip if issue with same title already exists
+  if gh issue list --repo "$REPO" --state all --limit 200 --json title --jq '.[] | .title' 2>/dev/null | grep -Fx -- "$title" >/dev/null 2>&1; then
+    echo -e "  ${YELLOW}⚠${NC} Issue sudah ada: $title"
+    return
+  fi
+
   # Create temporary file for body (to handle complex text with newlines)
   local body_file=$(mktemp)
   printf '%b' "$body" > "$body_file"
@@ -188,15 +194,15 @@ create_issue() {
 }
 
 # Backlog aktif yang diselaraskan dengan PROGRESS_TRACKING.md.
-# Isi username GitHub asli sebelum menjalankan script.
-PM="${raradenelsa7-bot:-}"           # R.Elsa Balqis (PM)
-BE1="${NabilahAsana:-}"         # Backend 1
-BE2="${Fajar1180:-}"         # Backend 2
-BE3="${Fatinasy7:-}"         # Backend 3
-FE1="${tetepsafarudin:-}"         # Frontend 1
-FE2="${faznalaisal44:-}"         # Frontend 2
-FE3="${nabilramadhan05:-}"         # Frontend 3
-QA="${aldyrmdny-lab:-}"           # QA
+# Menggunakan username GitHub literal sebagaimana Anda berikan.
+PM="radenelsa7-bot"           # R.Elsa Balqis (PM)
+BE1="NabilahAsana"            # Backend 1
+BE2="Fajar1180"              # Backend 2
+BE3="Fatinasy7"              # Backend 3
+FE1="tetepsafarudin"         # Frontend 1
+FE2="faznalaisal44"          # Frontend 2
+FE3="nabilramadhan05"        # Frontend 3
+QA="aldyrmdny-lab"           # QA
 
 echo -e "\n  ${YELLOW}── BACKEND: backlog yang masih pending ──${NC}"
 
@@ -513,6 +519,8 @@ create_issue \
   "## Deskripsi\nPersiapan dan pelaksanaan demo TukangDekat untuk UAS.\n\n## Skenario Demo\n1. Register Customer & Provider\n2. Provider setup profil & layanan\n3. Customer cari provider & buat order\n4. Generate & bayar QRIS DP (sandbox)\n5. Provider terima order & mulai kerja\n6. Provider complete order + input final price\n7. Customer bayar pelunasan QRIS\n8. Order CLOSED – Customer beri rating\n9. Treasurer lihat laporan transaksi\n10. Admin verifikasi provider\n\n## Tasks\n- [ ] Gladi resik demo (14 Juni)\n- [ ] Siapkan device untuk demo\n- [ ] Backup APK & pastikan server live\n- [ ] Siapkan slide presentasi\n- [ ] Presentasi UAS (15–18 Juni)" \
   "role: PM,role: Backend,role: Frontend,role: Testing,week-6 (15-18 Jun),priority: high" \
   "$PM" "Week 6"
+# close disabled block
+fi
 
 # =============================================================
 # STEP 5 – Add all issues to Project Board

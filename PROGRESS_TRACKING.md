@@ -17,6 +17,7 @@ Dokumen ini mencatat progres backend dan frontend dalam satu tempat, supaya muda
 - Menjalankan full PHPUnit test suite, semua lulus.
 - Merilis tag `v1.0.0` dan memperbarui draft release menjadi release publik.
 - Commit dan push perubahan ke `main` sudah dilakukan.
+- ✅ **feature/backend-122-ci-staging**: Menambahkan GitHub Actions workflow `ci-staging.yml` untuk job integration/staging yang digate oleh secrets (`DEPLOY_KEY`). Job berjalan saat push/dispatch ke branch ini, melakukan: composer install, setup .env dari secrets, migrate, dan run tests. Fallback job informatif jika secrets tidak dikonfigurasi.
 
 ### Frontend
 - Status frontend utama masih fokus pada tracking branch dan pemetaan issue.
@@ -31,7 +32,6 @@ Dokumen ini mencatat progres backend dan frontend dalam satu tempat, supaya muda
 
 ### Backend
 - Integration test lengkap untuk network failures dan backoff.
-- CI job untuk integration/staging yang digate oleh secrets.
 - Migrasi dan enable queue worker di staging/production.
 - Smoke test dan post-deploy verification.
 - Monitoring/metrics produksi seperti Sentry atau Prometheus.
@@ -61,7 +61,6 @@ Bagian ini disiapkan untuk branch yang benar-benar dipakai mengerjakan task yang
 
 ### Backend
 - `feature/backend-121-integration-backoff` - integration test untuk network failures dan backoff.
-- `feature/backend-122-ci-staging` - CI job untuk integration/staging yang digate oleh secrets.
 - `feature/backend-123-deploy-smoke` - migrasi staging, enable queue worker, dan smoke test post-deploy.
 - `feature/backend-124-monitoring-alerts` - monitoring/metrics produksi dan alerting.
 

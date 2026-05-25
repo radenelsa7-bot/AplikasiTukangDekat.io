@@ -441,7 +441,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     );
   }
 
-  // ─── Categories ───────────────────────────────────────────────────────────
   Widget _buildCategories(
     BuildContext context,
     WidgetRef ref,
@@ -775,7 +774,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          // Rating
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
