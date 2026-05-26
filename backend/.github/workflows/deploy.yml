@@ -72,3 +72,5 @@ jobs:
             if [ -f /etc/systemd/system/laravel-queue.service ]; then
               sudo systemctl restart laravel-queue || true
             fi
+            chmod +x deploy/smoke-test.sh
+            ./deploy/smoke-test.sh

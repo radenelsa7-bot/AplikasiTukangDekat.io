@@ -29,6 +29,7 @@ class HomePage extends ConsumerWidget {
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           title: const Text('TukangDekat'),
           bottom: TabBar(tabs: tabs),
