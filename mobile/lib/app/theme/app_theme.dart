@@ -8,8 +8,6 @@ class AppTheme {
       onPrimary: white,
       secondary: orange,
       onSecondary: white,
-      background: cream,
-      onBackground: navy,
       surface: white,
       onSurface: navy,
       error: Colors.red,
