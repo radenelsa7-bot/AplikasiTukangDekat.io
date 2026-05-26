@@ -5,7 +5,7 @@
 ╚══════════════════════════════════════════════════════╝
 [0m
 [0;32m✓ GitHub CLI terdeteksi & sudah login[0m
-[1;33m→ Target repo: Fajar1180/Project-Aplikasi-Tukang-Dekat[0m
+[1;33m→ Target repo: radenelsa7-bot/PM_UAS_rekayasa_Sistem_Informasi[0m
 
 [0;36m[1/4] Membuat labels...[0m
   [0;32m✓[0m Label: role: PM
@@ -116,16 +116,16 @@
   • Project   : Kanban board TukangDekat – Sprint Board
 
 [1;33m⚠  PENTING – Ganti username GitHub di variabel ini:[0m
-  PM  = Fajar1180
+  PM  = radenelsa7-bot
   BE1 = Fajar1180
-  BE2 = Fajar1180
-  BE3 = Fajar1180
-  FE1 = Fajar1180
-  FE2 = Fajar1180
-  FE3 = Fajar1180
-  QA  = Fajar1180
+  BE2 = nabilah-asana
+  BE3 = fatin-asyifa
+  FE1 = tetep-safarudin
+  FE2 = fazna-alaisal
+  FE3 = nabil-ramadhan
+  QA  = aldy-ramadani
 
 [0;36mLihat GitHub Project di:[0m
-  https://github.com/Fajar1180/Project-Aplikasi-Tukang-Dekat/issues
-  https://github.com/Fajar1180/Project-Aplikasi-Tukang-Dekat/milestones
+  https://github.com/radenelsa7-bot/PM_UAS_rekayasa_Sistem_Informasi/issues
+  https://github.com/radenelsa7-bot/PM_UAS_rekayasa_Sistem_Informasi/milestones
 
