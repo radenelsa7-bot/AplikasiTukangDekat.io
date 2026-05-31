@@ -14,6 +14,7 @@ set -euo pipefail
 REPO="radenelsa7-bot/PM_UAS_rekayasa_Sistem_Informasi"
 PROJECT_NAME="TukangDekat - Sprint Board"
 PROJECT_OWNER="${REPO%%/*}"
+SYNC_SCOPE="${SYNC_SCOPE:-all}"
 
 PM="radenelsa7-bot"
 BE1="Fajar1180"
@@ -42,8 +43,28 @@ require_cmd() {
   fi
 }
 
+detect_python() {
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_CMD=(python3)
+    return 0
+  fi
+
+  if command -v python >/dev/null 2>&1; then
+    PYTHON_CMD=(python)
+    return 0
+  fi
+
+  if command -v py >/dev/null 2>&1; then
+    PYTHON_CMD=(py -3)
+    return 0
+  fi
+
+  fail "✗ Python tidak ditemukan. Install python3/python atau aktifkan Python Launcher (py)."
+  exit 1
+}
+
 require_cmd gh
-require_cmd python3
+detect_python
 
 if ! gh auth status >/dev/null 2>&1; then
   fail "✗ GitHub CLI belum login. Jalankan: gh auth login"
@@ -55,6 +76,7 @@ info "║      TukangDekat - GitHub Sync Script                ║"
 info "╚══════════════════════════════════════════════════════╝"
 info "Target repo : $REPO"
 info "Project name : $PROJECT_NAME"
+info "Sync scope  : $SYNC_SCOPE"
 
 print_repo_snapshot() {
   info "\n[0] Cek isi repo terlebih dahulu..."
@@ -186,7 +208,7 @@ create_or_get_issue() {
 
 project_number_from_list() {
   local json_output="$1"
-  PROJECT_JSON="$json_output" PROJECT_TITLE="$PROJECT_NAME" python3 - <<'PY'
+  PROJECT_JSON="$json_output" PROJECT_TITLE="$PROJECT_NAME" "${PYTHON_CMD[@]}" - <<'PY'
 import json, os, sys
 raw = os.environ.get('PROJECT_JSON', '').strip()
 title = os.environ.get('PROJECT_TITLE', '')
@@ -237,7 +259,7 @@ ensure_project_board() {
     return 0
   fi
 
-  project_number="$(printf '%s' "$create_output" | python3 - <<'PY'
+  project_number="$(printf '%s' "$create_output" | "${PYTHON_CMD[@]}" - <<'PY'
 import json, sys
 raw = sys.stdin.read().strip()
 if not raw:
@@ -305,15 +327,22 @@ ensure_label "testing" "0e8a16" ""
 # Milestones
 # -------------------------------------------------------------
 info "\n[2/4] Membuat milestones..."
-ensure_milestone "Backend - Integration & Reliability" "2026-05-31" "Integration test untuk network failures dan backoff"
-ensure_milestone "Backend - Deploy & Monitoring" "2026-06-07" "CI staging, smoke test post-deploy, monitoring/alerting"
-ensure_milestone "Frontend - Alerts, Tests & Notes" "2026-06-14" "Payout-alerts UI, frontend tests, API notes"
-ensure_milestone "Project - Board Sync & Tracking" "2026-06-18" "Sinkronisasi issue, progress, dan project board"
+if [[ "$SYNC_SCOPE" == "all" ]]; then
+  ensure_milestone "Backend - Integration & Reliability" "2026-05-31" "Integration test untuk network failures dan backoff"
+  ensure_milestone "Backend - Deploy & Monitoring" "2026-06-07" "CI staging, smoke test post-deploy, monitoring/alerting"
+  ensure_milestone "Frontend - Alerts, Tests & Notes" "2026-06-14" "Payout-alerts UI, frontend tests, API notes"
+  ensure_milestone "Project - Board Sync & Tracking" "2026-06-18" "Sinkronisasi issue, progress, dan project board"
 
-backend_integration_ms="Backend - Integration & Reliability"
-backend_deploy_ms="Backend - Deploy & Monitoring"
-frontend_ms="Frontend - Alerts, Tests & Notes"
-project_ms="Project - Board Sync & Tracking"
+  backend_integration_ms="Backend - Integration & Reliability"
+  backend_deploy_ms="Backend - Deploy & Monitoring"
+  frontend_ms="Frontend - Alerts, Tests & Notes"
+  project_ms="Project - Board Sync & Tracking"
+else
+  backend_integration_ms=""
+  backend_deploy_ms=""
+  frontend_ms=""
+  project_ms=""
+fi
 
 # -------------------------------------------------------------
 # Project board
@@ -325,9 +354,39 @@ project_number="$(ensure_project_board || true)"
 # -------------------------------------------------------------
 info "\n[3/4] Membuat issues..."
 
-issue_url="$(create_or_get_issue \
-  "[Backend] Integration test untuk network failures dan backoff" \
-  "$(cat <<'EOF'
+should_sync_for_assignees() {
+  local assignees_csv="$1"
+  # if sync scope is all, allow
+  if [[ "$SYNC_SCOPE" == "all" ]]; then
+    return 0
+  fi
+  # normalize
+  local scope_lc; scope_lc="$(printf '%s' "$SYNC_SCOPE" | tr '[:upper:]' '[:lower:]')"
+  IFS=',' read -ra arr <<< "$assignees_csv"
+  for a in "${arr[@]}"; do
+    a_trimmed="$(printf '%s' "$a" | sed 's/^\s*//;s/\s*$//')"
+    a_lc="$(printf '%s' "$a_trimmed" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$a_lc" == "$scope_lc" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# helper to create an issue only when assignees overlap with SYNC_SCOPE
+create_issue_if_in_scope() {
+  local title="$1" body="$2" labels_csv="$3" assignees_csv="$4" ms_title="$5"
+  if should_sync_for_assignees "$assignees_csv"; then
+    local url
+    url="$(create_or_get_issue "$title" "$body" "$labels_csv" "$assignees_csv" "$ms_title" )" || true
+    add_issue_to_project "$project_number" "$url"
+  else
+    warn "  ⚠ Skip issue (out of scope): $title"
+  fi
+}
+
+# create issues scoped
+create_issue_if_in_scope "[Backend] Integration test untuk network failures dan backoff" "$(cat <<'EOF'
 ## Deskripsi
 Tambahkan integration test lengkap untuk kegagalan jaringan dan retry/backoff pada payout pipeline.
 
@@ -341,12 +400,41 @@ Tambahkan integration test lengkap untuk kegagalan jaringan dan retry/backoff pa
 - PROGRESS_TRACKING.md
 - Branch: feature/backend-121-integration-backoff
 EOF
-)" \
-  "role: Backend,testing,priority: high,module: payment" \
-  "$BE1" \
-  "$backend_integration_ms" )" || true
-add_issue_to_project "$project_number" "$issue_url"
+)" "role: Backend,testing,priority: high,module: payment" "$BE1" "$backend_integration_ms"
 
+create_issue_if_in_scope "[Backend] Database migration sesuai schema MySQL" "$(cat <<'EOF'
+## Deskripsi
+Sesuaikan migrasi database dengan schema MySQL yang dipakai aplikasi.
+
+## Tasks
+- [ ] Review struktur tabel dan relasi
+- [ ] Sesuaikan tipe data dan constraint
+- [ ] Pastikan migrasi bisa dijalankan ulang secara aman
+- [ ] Dokumentasikan perubahan schema di tracking
+
+## Referensi
+- PROGRESS_TRACKING.md
+- Branch: feature/backend-122-ci-staging
+EOF
+)" "role: Backend,priority: high,documentation" "$BE2" "$backend_deploy_ms"
+
+create_issue_if_in_scope "[Backend] Monitoring/metrics produksi dan alerting" "$(cat <<'EOF'
+## Deskripsi
+Tambahkan monitoring produksi dan alerting untuk payout pipeline.
+
+## Tasks
+- [ ] Evaluasi Sentry/Prometheus untuk produksi
+- [ ] Tambahkan alert untuk kegagalan payout
+- [ ] Pastikan event penting terekam di log/metric
+- [ ] Dokumentasikan cara memantau error produksi
+
+## Referensi
+- PROGRESS_TRACKING.md
+- Branch: feature/backend-124-monitoring-alerts
+EOF
+)" "role: Backend,priority: medium,module: notification" "$BE1,$BE2" "$backend_deploy_ms"
+
+if [[ "$SYNC_SCOPE" == "all" ]]; then
 issue_url="$(create_or_get_issue \
   "[Backend] CI job integration/staging gate by secrets" \
   "$(cat <<'EOF'
@@ -391,31 +479,7 @@ EOF
   "$backend_deploy_ms" )" || true
 add_issue_to_project "$project_number" "$issue_url"
 
-issue_url="$(create_or_get_issue \
-  "[Backend] Monitoring/metrics produksi dan alerting" \
-  "$(cat <<'EOF'
-## Deskripsi
-Tambahkan monitoring produksi dan alerting untuk payout pipeline.
-
-## Tasks
-- [ ] Evaluasi Sentry/Prometheus untuk produksi
-- [ ] Tambahkan alert untuk kegagalan payout
-- [ ] Pastikan event penting terekam di log/metric
-- [ ] Dokumentasikan cara memantau error produksi
-
-## Referensi
-- PROGRESS_TRACKING.md
-- Branch: feature/backend-124-monitoring-alerts
-EOF
-)" \
-  "role: Backend,priority: medium,module: notification" \
-  "$BE1,$BE2" \
-  "$backend_deploy_ms" )" || true
-add_issue_to_project "$project_number" "$issue_url"
-
-issue_url="$(create_or_get_issue \
-  "[Frontend] Payout-alerts UI untuk admin atau treasurer" \
-  "$(cat <<'EOF'
+create_issue_if_in_scope "[Frontend] Payout-alerts UI untuk admin atau treasurer" "$(cat <<'EOF'
 ## Deskripsi
 Bangun UI notifikasi payout untuk admin atau treasurer.
 
@@ -429,15 +493,9 @@ Bangun UI notifikasi payout untuk admin atau treasurer.
 - PROGRESS_TRACKING.md
 - Branch: feature/frontend-125-alert-ui
 EOF
-)" \
-  "role: Frontend,priority: high,module: notification,module: UI/UX" \
-  "$FE1" \
-  "$frontend_ms" )" || true
-add_issue_to_project "$project_number" "$issue_url"
+)" "role: Frontend,priority: high,module: notification,module: UI/UX" "$FE1" "$frontend_ms"
 
-issue_url="$(create_or_get_issue \
-  "[Frontend] Build dan jalankan frontend tests" \
-  "$(cat <<'EOF'
+create_issue_if_in_scope "[Frontend] Build dan jalankan frontend tests" "$(cat <<'EOF'
 ## Deskripsi
 Jalankan dan rapikan test frontend yang mencakup build, style, dan basic UI flow.
 
@@ -451,15 +509,9 @@ Jalankan dan rapikan test frontend yang mencakup build, style, dan basic UI flow
 - PROGRESS_TRACKING.md
 - Branch: feature/frontend-126-tests
 EOF
-)" \
-  "role: Frontend,testing,priority: high" \
-  "$FE2" \
-  "$frontend_ms" )" || true
-add_issue_to_project "$project_number" "$issue_url"
+)" "role: Frontend,testing,priority: high" "$FE2" "$frontend_ms"
 
-issue_url="$(create_or_get_issue \
-  "[Frontend] Update API docs dan frontend integration notes" \
-  "$(cat <<'EOF'
+create_issue_if_in_scope "[Frontend] Update API docs dan frontend integration notes" "$(cat <<'EOF'
 ## Deskripsi
 Perbarui dokumentasi integrasi API untuk frontend agar selaras dengan backend terakhir.
 
@@ -473,16 +525,10 @@ Perbarui dokumentasi integrasi API untuk frontend agar selaras dengan backend te
 - PROGRESS_TRACKING.md
 - Branch: feature/frontend-127-api-notes
 EOF
-)" \
-  "role: Frontend,documentation,priority: medium" \
-  "$FE3" \
-  "$frontend_ms" )" || true
-add_issue_to_project "$project_number" "$issue_url"
+)" "role: Frontend,documentation,priority: medium" "$FE3" "$frontend_ms"
 
 # Optional project sync issue
-issue_url="$(create_or_get_issue \
-  "[PM] Sinkronkan project tracking dan issue repo" \
-  "$(cat <<'EOF'
+create_issue_if_in_scope "[PM] Sinkronkan project tracking dan issue repo" "$(cat <<'EOF'
 ## Deskripsi
 Selaraskan GitHub Issues, labels, milestone, dan project board dengan PROGRESS_TRACKING.md.
 
@@ -494,11 +540,8 @@ Selaraskan GitHub Issues, labels, milestone, dan project board dengan PROGRESS_T
 ## Referensi
 - PROGRESS_TRACKING.md
 EOF
-)" \
-  "role: PM,documentation,priority: high" \
-  "$PM" \
-  "$project_ms" )" || true
-add_issue_to_project "$project_number" "$issue_url"
+)" "role: PM,documentation,priority: high" "$PM" "$project_ms"
+fi
 
 # -------------------------------------------------------------
 # Final summary
@@ -513,6 +556,7 @@ echo "  FE1 = $FE1"
 echo "  FE2 = $FE2"
 echo "  FE3 = $FE3"
 echo "  QA  = $QA"
+echo "  Scope = $SYNC_SCOPE"
 
 echo
 info "Lihat Issues : https://github.com/${REPO}/issues"
