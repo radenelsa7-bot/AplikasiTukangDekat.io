@@ -10,11 +10,17 @@ Route::get('/', function () {
 
 // Auth routes (kept for compatibility with views that reference route('login'))
 Route::get('/login', function () {
-    return redirect('/');
+    return view('auth.login');
 })->name('login');
 Route::get('/register', function () {
-    return redirect('/');
+    return view('auth.register');
 })->name('register');
+
+// Simple dashboard placeholder (UI-only). Actual backend auth integration
+// can be connected later (Sanctum/session/token).
+Route::get('/dashboard', function () {
+    return view('app.dashboard');
+})->name('dashboard');
 
 // Admin/Treasurer UI
 use App\Http\Controllers\Admin\TreasurerWebController;

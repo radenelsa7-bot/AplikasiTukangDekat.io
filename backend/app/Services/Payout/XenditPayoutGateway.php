@@ -168,33 +168,77 @@ class XenditPayoutGateway implements PayoutGatewayInterface
 
     protected function attemptPathsAndVariants(array $paths, array $variants)
     {
+        $maxAttempts = (int) env('XENDIT_RETRY_ATTEMPTS', 3);
+        $backoffMs = (int) env('XENDIT_RETRY_BACKOFF_MS', 25);
+
         foreach ($paths as $path) {
             foreach ($variants as $requestBody) {
-                $res = $this->postToPath($path, $requestBody);
+                $attempt = 0;
+                $lastRes = null;
 
-                if (env('XENDIT_DEBUG', false)) {
+                do {
+                    $attempt++;
                     try {
-                        Log::debug('xendit.request', ['path' => $path, 'request' => $requestBody, 'status' => $res->status(), 'body' => $res->body()]);
-                    } catch (\Throwable $e) {
-                        Log::warning('xendit.debug.log_failed', ['err' => $e->getMessage()]);
+                        $res = $this->postToPath($path, $requestBody);
+                        $lastRes = $res;
+                    } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                        $lastRes = null;
                     }
-                }
 
-                // If validation error, try a sanitized JSON retry and a form fallback
-                $jsonBody = null;
-                try {
-                    $jsonBody = $res->json();
-                } catch (\Throwable $e) {
-                    $jsonBody = null;
-                }
+                    if (env('XENDIT_DEBUG', false) && $lastRes) {
+                        try {
+                            Log::debug('xendit.request', ['path' => $path, 'request' => $requestBody, 'status' => $lastRes->status(), 'body' => $lastRes->body()]);
+                        } catch (\Throwable $e) {
+                            Log::warning('xendit.debug.log_failed', ['err' => $e->getMessage()]);
+                        }
+                    }
 
-                if ($jsonBody && (data_get($jsonBody, 'error_code') === 'API_VALIDATION_ERROR' || $res->status() === 422)) {
-                    $res = $this->handleValidationErrorRetry($res, $path, $requestBody);
-                }
+                    // If we got a response, check for validation error handling first
+                    if ($lastRes) {
+                        $jsonBody = null;
+                        try {
+                            $jsonBody = $lastRes->json();
+                        } catch (\Throwable $e) {
+                            $jsonBody = null;
+                        }
 
-                if ($res->status() !== 404) {
-                    return $res;
-                }
+                        if ($jsonBody && (data_get($jsonBody, 'error_code') === 'API_VALIDATION_ERROR' || $lastRes->status() === 422)) {
+                            $lastRes = $this->handleValidationErrorRetry($lastRes, $path, $requestBody);
+                        }
+                    }
+
+                    // Retry on connection failure or server error (5xx)
+                    $shouldRetry = false;
+                    if (!$lastRes) {
+                        $shouldRetry = true;
+                    } else {
+                        try {
+                            if ($lastRes->serverError()) {
+                                $shouldRetry = true;
+                            }
+                        } catch (\Throwable $_) {
+                            // ignore and don't retry based on this check
+                        }
+                    }
+
+                    if ($shouldRetry && $attempt < $maxAttempts) {
+                        // exponential backoff (ms -> us)
+                        $delayUs = (int) ($backoffMs * 1000 * (2 ** ($attempt - 1)));
+                        usleep($delayUs);
+                        continue;
+                    }
+
+                    // If we have a response and it's not a 404, return it
+                    if ($lastRes && $lastRes->status() !== 404) {
+                        return $lastRes;
+                    }
+
+                    // If no response and we've exhausted attempts, break to next variant/path
+                    if (!$lastRes) {
+                        break;
+                    }
+
+                } while ($attempt < $maxAttempts);
             }
         }
 

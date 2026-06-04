@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
@@ -84,6 +86,35 @@ class AuthController extends Controller
     }
 
     /**
+     * Session-based login for Sanctum SPA (web)
+     */
+    public function sessionLogin(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
+
+        if (!Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']], $request->boolean('remember'))) {
+            return response()->json(['message' => 'invalid_credentials'], 401);
+        }
+
+        $request->session()->regenerate();
+
+        $user = $request->user();
+
+        return response()->json([
+            'message' => 'ok',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+        ], 200);
+    }
+
+    /**
      * Logout user
      */
     public function logout(Request $request)
@@ -97,5 +128,18 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'logged_out',
         ], 200);
+    }
+
+    /**
+     * Session-based logout for Sanctum SPA (web)
+     */
+    public function sessionLogout(Request $request): JsonResponse
+    {
+        Auth::guard()->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json(['message' => 'logged_out'], 200);
     }
 }
