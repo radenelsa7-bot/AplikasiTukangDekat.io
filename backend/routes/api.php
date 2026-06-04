@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\TreasurerController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\IntegrationController;
 
 // Public routes (authentication)
 Route::prefix('auth')->group(function () {
@@ -70,6 +71,25 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Webhook routes (tanpa authentication)
 Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback']);
+
+// Integration routes
+Route::prefix('integrations')->group(function () {
+    // Public health check
+    Route::get('/health', [IntegrationController::class, 'healthCheck']);
+
+    // N8n webhook callback (tanpa authentication)
+    Route::post('/n8n/webhook', [IntegrationController::class, 'n8nWebhookCallback']);
+
+    // Protected routes
+    Route::middleware('auth:sanctum')->group(function () {
+        // Dispatch n8n event
+        Route::post('/n8n/events', [IntegrationController::class, 'handleN8nEvent']);
+
+        // Notification logs
+        Route::get('/notifications/logs', [IntegrationController::class, 'getNotificationLogs']);
+        Route::get('/notifications/logs/{id}', [IntegrationController::class, 'getNotificationLogDetail']);
+    });
+});
 
 // Fallback untuk testing
 Route::get('/user', function (Request $request) {

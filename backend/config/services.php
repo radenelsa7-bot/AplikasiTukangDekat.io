@@ -38,6 +38,21 @@ return [
     'n8n' => [
         'webhook_url' => env('N8N_WEBHOOK_URL'),
         'secret' => env('N8N_WEBHOOK_SECRET'),
+        'url' => env('N8N_URL', 'http://localhost:5678'),
+        'webhook_key' => env('N8N_WEBHOOK_KEY'),
+        'workflows' => [
+            'order_created_WA' => env('N8N_WORKFLOW_ORDER_CREATED_WA'),
+            'order_accepted_WA' => env('N8N_WORKFLOW_ORDER_ACCEPTED_WA'),
+            'order_rejected_WA' => env('N8N_WORKFLOW_ORDER_REJECTED_WA'),
+            'dp_paid_WA' => env('N8N_WORKFLOW_DP_PAID_WA'),
+            'order_completed_WA' => env('N8N_WORKFLOW_ORDER_COMPLETED_WA'),
+            'final_paid_WA' => env('N8N_WORKFLOW_FINAL_PAID_WA'),
+            'payment_failed_WA' => env('N8N_WORKFLOW_PAYMENT_FAILED_WA'),
+            'payout_completed_WA' => env('N8N_WORKFLOW_PAYOUT_COMPLETED_WA'),
+        ],
+        'wa_provider' => env('N8N_WA_PROVIDER', 'fonnte'),
+        'wa_api_key' => env('N8N_WA_API_KEY'),
+        'email_from' => env('N8N_EMAIL_FROM', 'noreply@tukangdekat.id'),
     ],
 
     'payments' => [
