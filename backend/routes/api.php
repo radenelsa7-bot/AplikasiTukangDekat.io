@@ -14,6 +14,9 @@ use App\Http\Controllers\Api\ReviewController;
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    // Session-based auth (SPA) - no CSRF needed in API routes
+    Route::post('/session-login', [AuthController::class, 'sessionLogin']);
+    Route::post('/session-logout', [AuthController::class, 'sessionLogout']);
 });
 
 // Catalog routes (public)
@@ -71,4 +74,9 @@ Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallb
 // Fallback untuk testing
 Route::get('/user', function (Request $request) {
     return $request->user();
+})->middleware('auth:sanctum');
+
+// Session user endpoint (for SPA)
+Route::get('/user-session', function (Request $request) {
+    return $request->user() ?: response()->json(['error' => 'Not authenticated'], 401);
 })->middleware('auth:sanctum');

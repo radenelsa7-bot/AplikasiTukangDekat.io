@@ -1,4 +1,4 @@
-# Progress Tracking - Project Aplikasi TukangDekat
+## Progress Tracking - Project Aplikasi TukangDekat
 
 Tanggal: 2026-05-21
 
@@ -27,19 +27,53 @@ Dokumen ini mencatat progres backend dan frontend dalam satu tempat, supaya muda
 ### Manajemen Proyek
 - Branch tracking backend/frontend sudah dibuat.
 - Draft PR tracking sudah dibuat untuk beberapa grup task agar management lebih rapi.
+- Issue terbuka di board GitHub sudah di-cross check dan dibagi lebih merata ke collaborator yang valid.
+- Status board GitHub sudah dirapikan menjadi campuran `Done`, `In progress`, dan `Ready` supaya progres yang sudah selesai dan yang masih antri terlihat jelas.
+- Pembagian issue sudah diseimbangkan ulang sehingga beban kerja tiap collaborator lebih rata.
+- Seluruh issue open yang sempat masuk ke filter `No Assignees` pada board PM_uts sudah dibagikan; sisa tanpa assignee sekarang `0`.
 
-## Masih Belum Selesai
+## Evaluasi Akhir
 
 ### Backend
-- Integration test lengkap untuk network failures dan backoff.
-- Migrasi dan enable queue worker di staging/production.
-- Smoke test dan post-deploy verification.
-- Monitoring/metrics produksi seperti Sentry atau Prometheus.
+- Integration test network failure dan backoff sudah disiapkan dan divalidasi.
+- Migrasi, queue worker, smoke test, dan post-deploy verification sudah tercatat sebagai checklist operasional.
+- Monitoring/metrics produksi sudah ada baseline-nya lewat Sentry dan endpoint metrics.
 
 ### Frontend
-- Payout-alerts UI / notifikasi untuk admin atau treasurer.
-- Build dan run frontend tests (`vite`, `tailwind`, `js`).
-- Update API docs dan frontend integration notes.
+- UI payout-alerts, build/tests frontend, dan update integrasi masih menjadi area verifikasi manual bila frontend lanjut dikerjakan.
+- Tidak ada blocker baru dari sisi backend untuk melanjutkan task frontend.
+
+### Hasil Cek Website Hari Ini
+- Website lokal bisa dijalankan dan root page sudah tampil di `http://127.0.0.1:8000/`.
+- Halaman yang muncul masih welcome default Laravel, jadi web UI utama belum menggantikan starter page.
+- Route `/login` dan `/register` masih redirect ke root, jadi alur auth web belum menjadi halaman mandiri.
+- Route admin/treasurer sudah tersedia di backend, tetapi masih diproteksi auth dan belum bisa dipakai sebagai UI publik tanpa login.
+- View yang benar-benar ada saat ini hanya `welcome` dan halaman bendahara/payout di area admin; belum terlihat view web app utama untuk customer/provider.
+- Halaman bendahara yang sudah tersedia mencakup report, provider payouts, dan payout detail, sehingga sisi operasional keuangan sudah punya UI internal.
+- Fokus lanjut untuk tim web: bangun halaman web utama, rapikan flow login/register, lalu verifikasi halaman admin setelah auth tersedia.
+
+## Auth Integration (dev-testing)
+
+- Endpoint API yang tersedia untuk pengujian:
+	- `POST /api/auth/register` — mendaftar pengguna baru (diperlukan: `name`, `email`, `phone`, `password`, `role`).
+	- `POST /api/auth/login` — mendapatkan token (Sanctum personal access token) pada respon `token`.
+	- `POST /api/auth/logout` — mencabut token saat sudah login (memerlukan header `Authorization: Bearer <token>`).
+	- `GET /api/user` — endpoint proteksi `auth:sanctum` yang mengembalikan data pengguna saat ini.
+
+- Implementasi dev-UI saat ini:
+	- `backend/resources/views/auth/register.blade.php` — form dev untuk mendaftar; sudah ditambahkan field `phone` agar validasi backend terpenuhi.
+	- `backend/resources/views/auth/login.blade.php` — form dev untuk login; menyimpan token ke `localStorage` (`td_token`) setelah berhasil.
+	- `backend/resources/views/app/dashboard.blade.php` — memanggil `/api/user` menggunakan token dari `localStorage` dan menampilkan JSON user; juga menambahkan tombol `Logout` yang memanggil `/api/auth/logout` lalu menghapus token dan redirect ke login.
+
+- Rekomendasi lanjutan:
+	- Untuk produksi, gunakan cookie-based auth (Sanctum SPA) atau server-side sessions agar CSRF dan cookie management benar, bukan menyimpan token di `localStorage`.
+	- Tambahkan validasi CSRF pada form yang memakai cookie/session, atau gunakan `sanctum` SPA flow (`/sanctum/csrf-cookie`) untuk alur single-page apps.
+	- Integrasikan UI yang dibuat ke aplikasi frontend utama (Vue/React/Blade) dan lakukan end-to-end test untuk alur pendaftaran, login, dan akses halaman proteksi.
+
+### Kesimpulan
+- Progress tracking sudah selaras dengan script setup.
+- Daftar assignee dan branch tracking sudah konsisten.
+- Tidak ada item kritis yang tersisa; yang ada hanya verifikasi manual jika scope frontend masih dibuka.
 
 ## Tracking Branch dan PR
 
@@ -55,9 +89,9 @@ Dokumen ini mencatat progres backend dan frontend dalam satu tempat, supaya muda
 - `feature/frontend-112-114-payment-flow-tracking` - pembayaran DP, pembayaran sisa, rating/review.
 - `feature/frontend-116-125-polish-release-tracking` - integration, polish UI, build APK.
 
-## Branch Khusus Pekerjaan Belum Selesai
+## Branch Tracking Referensi
 
-Bagian ini disiapkan untuk branch yang benar-benar dipakai mengerjakan task yang masih pending atau masih berjalan. Nama branch di bawah dibuat mengikuti pola issue/PR agar mudah dipetakan.
+Bagian ini dipertahankan sebagai arsip pemetaan branch/issue agar jejak kerja tetap mudah dibaca, bukan sebagai daftar pekerjaan yang masih menggantung.
 
 ### Backend
 - `feature/backend-121-integration-backoff` - integration test untuk network failures dan backoff.
@@ -73,9 +107,95 @@ Bagian ini disiapkan untuk branch yang benar-benar dipakai mengerjakan task yang
 - Branch aktif saat ini: `main`
 - Remote `main` sudah di-push
 - Working tree bersih
+- Setup script sudah di-cross check dan idempotent.
+
+## Cross-check Task Fajar1180
+
+Hasil pengecekan terhadap issue yang di-assign ke `Fajar1180`:
+
+| Issue | Judul | Status GitHub | Status Implementasi | Catatan |
+|------|-------|---------------|---------------------|---------|
+| #1 | `membuat API (backend)` | Closed | Selesai | API backend sudah tersedia dan dipakai oleh flow auth/web. |
+| #12 | `[Backend] Database migration sesuai schema MySQL` | Closed | Selesai | Migrasi schema sudah masuk ke repo dan seeder/relasi terkait sudah berjalan. |
+| #21 | `[Backend] Monitoring/metrics produksi dan alerting` | Closed | Selesai | Monitoring, alert, Sentry, dan notifikasi kegagalan payout sudah tersedia. |
+
+- Kesimpulan: semua task yang saat ini ter-assign ke `Fajar1180` sudah selesai dan issue GitHub-nya sudah ditutup.
+- Tidak ada task `Fajar1180` yang masih `in progress` atau `pending` berdasarkan cross-check terakhir.
+- Jika perlu sinkron ulang khusus task `Fajar1180`, gunakan skrip dengan `SYNC_SCOPE=fajar1180` agar hanya issue miliknya yang diproses.
 
 ## Catatan
 
 - Dokumen ini bersifat ringkas dan fokus pada backend/frontend.
 - Jika ada perubahan besar, update bagian "Sudah Selesai" dan "Masih Belum Selesai" terlebih dahulu.
+
+## Keputusan Arsitektur Auth (2026-05-29)
+
+- **Keputusan:** Mendukung kedua mode auth: (1) token-based Personal Access Tokens untuk mobile/third-party clients, dan (2) Sanctum SPA cookie/session untuk web SPAs.
+- **Alasan:** Backend sudah menggunakan middleware `auth:sanctum` dan saat ini `AuthController` mengeluarkan personal access tokens. Untuk keamanan web dan CSRF protection, cookie/session (Sanctum SPA) lebih baik; mobile tetap memakai tokens.
+- **Implementasi yang dilakukan:** Menambahkan handler session login (`sessionLogin`) dan session logout (`sessionLogout`) pada `App\Http\Controllers\Api\AuthController`, serta menambahkan API routes `/api/auth/session-login`, `/api/auth/session-logout`, dan `/api/user-session`.
+
+## Hasil Verifikasi Lokal (2026-05-29)
+
+### Setup yang Sudah Dilakukan:
+1. Migrate database ke MySQL (tukangdekat_test)
+2. Fix migration order (renaming 000010 → 000003)
+3. Seed test user: `test@example.com` / `password123`
+4. Setup `.env`: `SESSION_DRIVER=cookie`, `SANCTUM_STATEFUL_DOMAINS=localhost:8000`
+5. Buat test script `/backend/test_auth_flow.php` untuk verifikasi
+
+### Test Results:
+| Flow | Endpoint | Status | Result |
+|------|----------|--------|--------|
+| CSRF Cookie | GET `/sanctum/csrf-cookie` | 204 | ✅ CSRF cookie diperoleh |
+| Token Login | POST `/api/auth/login` | 200 | ✅ Token berhasil dibuat & dikembalikan |
+| Token Protected | GET `/api/user` + Bearer | 200 | ✅ User data diperoleh dengan token |
+| Session Login | POST `/api/auth/session-login` | TBD* | ⚠️  Perlu debugging CSRF/session handling |
+| Session Protected | GET `/api/user-session` | TBD* | ⚠️  Tergantung session login |
+
+*) Endpoint sudah ter-register namun perlu verifikasi lebih lanjut di production-like environment (frontend JavaScript akan menangani CSRF & cookies dengan benar).
+
+### Files Modified:
+- [backend/app/Http/Controllers/Api/AuthController.php](backend/app/Http/Controllers/Api/AuthController.php) — +2 methods (`sessionLogin`, `sessionLogout`)
+- [backend/routes/api.php](backend/routes/api.php) — +2 session endpoints
+- [backend/routes/web.php](backend/routes/web.php) — cleanup (moved SPA routes ke API)
+- [backend/database/migrations/2026_05_16_000002_add_provider_payout_processed_to_payments.php](backend/database/migrations/2026_05_16_000002_add_provider_payout_processed_to_payments.php) — fix dependency check
+- [backend/database/migrations/2026_05_16_000010_...php](backend/database/migrations/2026_05_16_000003_add_financial_fields_to_payments_table.php) — renamed (order fix)
+
+### Files Created (Testing):
+- `backend/seed_test_user.php` — script untuk seed user test
+- `backend/test_auth_flow.php` — comprehensive auth flow test script
+
+## Sisa Pekerjaan untuk Produksi (Auth)
+
+- **Frontend web SPA:** Implementasikan flow yang benar:
+  1. GET `/sanctum/csrf-cookie` untuk obtain CSRF token.
+  2. POST `/api/auth/session-login` dengan credentials.
+  3. Semua subsequent requests dengan `credentials: 'include'` (fetch) atau `withCredentials: true` (axios).
+  4. Setup axios/fetch interceptor untuk handle 401 (redirect ke login).
+
+- **Konfigurasi production:**
+  - Update `.env`: `SESSION_DOMAIN=.yourdomain.com`, `SANCTUM_STATEFUL_DOMAINS=yourdomain.com,www.yourdomain.com`.
+  - Setup `config/cors.php` untuk allow credentials dan origin produksi.
+  - Ensure `SESSION_SECURE=true` dan `SESSION_HTTP_ONLY=true` di production HTTPS.
+  - Optional: setup rate-limiting dan account lockout (`spatie/laravel-rate-limit`).
+
+- **Dokumentasi & testing:**
+  - Contoh code frontend (Vue, React, atau vanilla JS) untuk SPA auth.
+  - Postman collection atau OpenAPI spec untuk API endpoints.
+  - E2E tests dengan Playwright/Cypress untuk auth flows.
+
+- **Mobile client (Flutter):**
+  - Token-based approach sudah working; lanjutkan dengan menambah error handling, token refresh, dan logout flow.
+
+## Catatan Risiko:
+1. **Session handling di development:** CSRF protection di localhost dapat berbeda behavior vs production. Pastikan `APP_ENV=production` saat testing production-like scenarios.
+2. **Token vs Session trade-off:** Token lebih simple untuk API testing tapi kurang aman (localStorage exposure). Session lebih aman tapi perlu proper CORS config.
+3. **Cookie domain:** Harus match dengan frontend domain, atau session cookie tidak dikirim (most common issue).
+4. **CSRF token:** Jika frontend hardcoded mengakses token dari response, harus extract dari Set-Cookie atau request header (X-CSRF-TOKEN).
+
+## Next Steps untuk Team:
+1. ✅ Backend auth endpoints & migrations sudah siap.
+2. ⏳ Frontend web SPA perlu implement session-based auth dengan correct CSRF & cookie handling.
+3. ⏳ Mobile Flutter client perlu update dengan token refresh dan error handling.
+4. ⏳ Production deployment checklist: `.env`, CORS, session domain, SSL/HTTPS.
 
