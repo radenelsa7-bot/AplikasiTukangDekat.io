@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const puppeteer = require('puppeteer-core');
+const { chromium } = require('playwright-core');
 const yargs = require('yargs');
 const fetch = require('node-fetch');
 
@@ -16,12 +16,14 @@ const argv = yargs
 
   try {
     const launchOptions = { args: ['--no-sandbox', '--disable-setuid-sandbox'] };
-    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    if (process.env.PLAYWRIGHT_EXECUTABLE_PATH) {
+      launchOptions.executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH;
+    } else if (process.env.PUPPETEER_EXECUTABLE_PATH) {
       launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
     } else {
-      console.warn('PUPPETEER_EXECUTABLE_PATH not set — attempting to launch bundled Chromium may fail.');
+      console.warn('PLAYWRIGHT_EXECUTABLE_PATH not set — attempting to launch bundled Chromium may fail.');
     }
-    const browser = await puppeteer.launch(launchOptions);
+    const browser = await chromium.launch(launchOptions);
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 800 });
     await page.goto(url, { waitUntil: 'networkidle2', timeout });
