@@ -1,6 +1,6 @@
 Capture QRIS worker
 
-This worker uses `puppeteer-core` and requires a system Chrome/Chromium binary.
+This worker uses `playwright-core` and requires a system Chrome/Chromium binary.
 
 Setup
 
@@ -35,5 +35,12 @@ node index.js --url="https://checkout-staging.xendit.co/web/<invoice_id>" --time
 
 Notes
 
-- We intentionally use `puppeteer-core` to avoid `@puppeteer/browsers` which pulls in vulnerable tar-fs/ws dependencies.
+- We intentionally use `playwright-core` to avoid `@puppeteer/browsers` which pulls in vulnerable tar-fs/ws dependencies.
 - Keep this tool restricted to developer/worker environments. For production, prefer Xendit enabling QR API or a dedicated secure worker environment.
+
+Security note:
+
+- Current `npm audit` reports high severity vulnerabilities in `tar-fs` and `ws`.
+- These issues are transitively introduced by `puppeteer-core` through `@puppeteer/browsers`.
+- We are intentionally not applying `npm audit fix --force` because it upgrades to `puppeteer-core@25.x`, which is a breaking change for this worker.
+- This worker should remain a dev/QA utility until a safer upstream fix or supported dependency version is available.
