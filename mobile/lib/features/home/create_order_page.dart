@@ -5,6 +5,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../core/models/order_model.dart';
 import '../../core/models/provider_model.dart';
+import '../auth/auth_controller.dart';
 import 'order_providers.dart';
 
 class CreateOrderPage extends ConsumerStatefulWidget {
@@ -149,6 +150,30 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(createOrderControllerProvider);
+    final authState = ref.watch(authControllerProvider);
+
+    if (authState.userRole != 'CUSTOMER') {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Buat Order')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.block, size: 72, color: Colors.red),
+                SizedBox(height: 16),
+                Text(
+                  'Hanya pelanggan (CUSTOMER) dapat membuat order.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Buat Order')),

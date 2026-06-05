@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 GitHub Project Auto-Setup Script
-Mengatur GitHub Project #6 dengan views, labels, dan team configuration otomatis
+Mengatur GitHub Project 'Project_Aplikasi_TukangDekat' dengan views, labels, dan team configuration otomatis
 """
 
 import requests
@@ -22,7 +22,7 @@ class GitHubProjectSetup:
         self.base_url = "https://api.github.com"
 
     def create_labels(self):
-        """Buat semua labels yang diperlukan"""
+        """Buat semua labels yang diperlukan di repositori"""
         print("\n📋 Creating Labels...")
         
         labels = [
@@ -60,26 +60,30 @@ class GitHubProjectSetup:
             except Exception as e:
                 print(f"  ❌ Exception creating {label['name']}: {str(e)}")
         
-        print(f"\n✅ Created {created} new labels")
+        print(f"\n✅ Finished processing labels ({created} new created)")
         return created > 0
 
     def get_project_id(self) -> Optional[str]:
-        """Dapatkan Project ID"""
-        print("\n🔍 Finding Project #6...")
+        """Dapatkan Project ID berdasarkan nama text 'Project_Aplikasi_TukangDekat'"""
+        target_project_name = "Project_Aplikasi_TukangDekat"
+        print(f"\n🔍 Finding Project: '{target_project_name}'...")
         
         try:
-            # Get user projects
+            # Mencari proyek berbasis REST API v3
             url = f"{self.base_url}/users/{self.owner}/projects"
             response = requests.get(url, headers=self.headers)
             
             if response.status_code == 200:
                 projects = response.json()
                 for project in projects:
-                    if project.get('number') == 6:
-                        print(f"  ✅ Found Project #6: {project['id']}")
+                    if project.get('name') == target_project_name:
+                        print(f"  ✅ Found Project '{target_project_name}': ID {project['id']}")
                         return project['id']
             
-            print("  ❌ Project #6 not found")
+            # Catatan: Jika proyek Anda adalah tipe Projects v2 terbaru, 
+            # REST API lama mungkin merespon kosong karena v2 mewajibkan protokol GraphQL.
+            print(f"  ℹ️  Project '{target_project_name}' tidak terdeteksi via REST API v3 legacy.")
+            print("     Konfigurasi visual disarankan diselesaikan via Copilot Prompt.")
             return None
         except Exception as e:
             print(f"  ❌ Error getting project: {str(e)}")
@@ -87,21 +91,14 @@ class GitHubProjectSetup:
 
     def get_project_views(self, project_id: str) -> Dict:
         """Dapatkan daftar views di project"""
-        print("\n📺 Fetching Project Views...")
-        
         try:
             url = f"{self.base_url}/projects/{project_id}/columns"
             response = requests.get(url, headers=self.headers)
-            
             if response.status_code == 200:
                 views = response.json()
-                print(f"  ✅ Found {len(views)} views")
                 return {view.get('name'): view for view in views}
-            
-            print(f"  ℹ️  No views found or API limitation")
             return {}
-        except Exception as e:
-            print(f"  ⚠️  Warning: {str(e)}")
+        except Exception:
             return {}
 
     def setup_summary(self):
@@ -111,9 +108,9 @@ class GitHubProjectSetup:
         print("="*60)
         
         summary = {
-            "project": "Project #6 (radenelsa7-bot)",
+            "project": "Project_Aplikasi_TukangDekat",
             "status": "✅ READY",
-            "labels_created": "✅ 11 labels",
+            "labels_created": "✅ 11 standard labels applied",
             "views": {
                 "1": "🗂️ Semua Tugas (grouped by Status)",
                 "2": "🚚 Kanban Board (Board layout)",
@@ -124,63 +121,60 @@ class GitHubProjectSetup:
                 "7": "🧪 QA & Testing (Testing filter)"
             },
             "teams": {
-                "PM": "radenelsa7-bot",
-                "Backend": "NabilahAsana, Fajar1180, Fatinasy7",
-                "Frontend": "tetepsafarudin, faznalaisal44, nabilramadhan05",
-                "QA": "aldyrmdny-lab"
+                "PM (Project Manager)": "radenelsa7-bot (R.Elsa Balqis)",
+                "Backend Developer"  : "NabilahAsana, Fajar1180, Fatinasy7",
+                "Frontend Developer" : "tetepsafarudin, faznalaisal44, nabilramadhan05",
+                "QA / Tester"        : "aldyrmdny-lab"
             },
             "automation": {
                 "workflow_1": "🤖 project-automation.yml (auto-assign)",
-                "workflow_2": "🏷️ setup-labels.yml (create labels)",
-                "triggers": "issues opened/labeled, daily cleanup"
+                "triggers": "issues opened/labeled, title parsing [Frontend]/[Backend]/[Testing]"
             }
         }
         
         print("\n📊 PROJECT STRUCTURE:")
-        print(f"  Project: {summary['project']}")
-        print(f"  Status: {summary['status']}")
-        print(f"  Labels: {summary['labels_created']}")
+        print(f"  Project Name : {summary['project']}")
+        print(f"  Owner Status : {summary['status']}")
+        print(f"  Labels Info  : {summary['labels_created']}")
         
-        print("\n📺 VIEWS:")
+        print("\n📺 SUGGESTED VIEWS TO CHECK ON WEB:")
         for num, view in summary['views'].items():
             print(f"  {num}. {view}")
         
-        print("\n👥 TEAMS:")
+        print("\n👥 REGISTERED TEAMS:")
         for role, members in summary['teams'].items():
             print(f"  {role}: {members}")
-        
-        print("\n🤖 AUTOMATION:")
+            
+        print("\n🤖 AUTOMATION LAYOUT:")
         for workflow, desc in summary['automation'].items():
             print(f"  {desc}")
         
         print("\n" + "="*60)
-        print("✅ SETUP COMPLETE!")
+        print("✅ REPOSITORY LABELS INITIALIZATION COMPLETE!")
         print("="*60)
         
-        print("\n📝 NEXT MANUAL STEPS:")
-        print("  1. Go to: https://github.com/users/radenelsa7-bot/projects/6")
-        print("  2. Rename 'View 1' → '🗂️ Semua Tugas'")
-        print("  3. Set Group by: Status")
-        print("  4. Create 6 new views (see QUICK_START.md)")
-        print("  5. Run 'Setup Labels' workflow in Actions tab")
-        print("  6. Test auto-assignment with [Frontend]/[Backend]/[Testing] labels")
+        print("\n📝 NEXT MANUAL STEPS FOR MANAGEMENT:")
+        print(f"  1. Buka browser: https://github.com/users/{self.owner}/projects")
+        print("  2. Pilih papan 'Project_Aplikasi_TukangDekat'")
+        print("  3. Jalankan gabungan PROMPT COPILOT yang kita buat sebelumnya untuk")
+        print("     membangun seluruh tab view (1 s/d 7) di atas secara instan!")
         print("\n")
 
     def run(self):
         """Jalankan setup lengkap"""
         print("\n" + "🚀 "*20)
-        print("GITHUB PROJECT AUTO-SETUP")
+        print("GITHUB PROJECT AUTO-SETUP INITIALIZER")
         print("🚀 "*20)
         
-        # Create labels
+        # Buat label penanda tugas di repo
         self.create_labels()
         
-        # Get project info
+        # Cari project ID jika tersedia
         project_id = self.get_project_id()
         if project_id:
-            views = self.get_project_views(project_id)
+            self.get_project_views(project_id)
         
-        # Show summary
+        # Tampilkan resume tim & panduan
         self.setup_summary()
 
 
@@ -192,24 +186,24 @@ def main():
     print("\n🔐 GitHub Project Auto-Setup")
     print("="*60)
     
-    # Get GitHub token
+    # Ambil token keamanan
     token = os.getenv('GITHUB_TOKEN')
     if not token:
         print("\n❌ Error: GITHUB_TOKEN environment variable not set")
-        print("   Set token: export GITHUB_TOKEN='your_token'")
+        print("   Set token dahulu di Git Bash:")
+        print("   export GITHUB_TOKEN=\"<YOUR_GITHUB_TOKEN>\"")
+
         sys.exit(1)
     
-    # Get owner
+    # Konfigurasi repositori target sesuai kepemilikan Anda
     owner = os.getenv('GITHUB_OWNER', 'radenelsa7-bot')
     repo = os.getenv('GITHUB_REPO', 'PM_UAS_rekayasa_Sistem_Informasi')
     
-    print(f"\n📍 Owner: {owner}")
-    print(f"📍 Repo: {repo}")
+    print(f"📍 Owner Target : {owner}")
+    print(f"📍 Repo Target  : {repo}")
     
-    # Run setup
     setup = GitHubProjectSetup(token=token, owner=owner, repo=repo)
     setup.run()
-
 
 if __name__ == "__main__":
     main()
