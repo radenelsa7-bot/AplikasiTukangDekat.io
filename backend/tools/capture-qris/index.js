@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const yargs = require('yargs');
 const fetch = require('node-fetch');
 
@@ -15,7 +15,13 @@ const argv = yargs
   const timeout = argv.timeout;
 
   try {
-    const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const launchOptions = { args: ['--no-sandbox', '--disable-setuid-sandbox'] };
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    } else {
+      console.warn('PUPPETEER_EXECUTABLE_PATH not set — attempting to launch bundled Chromium may fail.');
+    }
+    const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 800 });
     await page.goto(url, { waitUntil: 'networkidle2', timeout });
