@@ -47,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/order/{orderId}', [PaymentController::class, 'getPayments']);
         Route::get('/{paymentId}', [PaymentController::class, 'getPaymentStatus']);
         Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS']);
+        Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware('throttle:3,1');
     });
 
     // Review
