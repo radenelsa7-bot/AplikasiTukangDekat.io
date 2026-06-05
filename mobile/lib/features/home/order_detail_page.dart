@@ -648,6 +648,7 @@ class OrderDetailPage extends ConsumerWidget {
   void _showQrisDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> qrisData, int orderId, int paymentId) {
     final qrisImage = qrisData['qris_image'] as String?;
     final checkoutUrl = qrisData['checkout_url'] as String?;
+    final qrisHint = qrisData['qris_hint'] as String?;
     Uint8List? imageBytes;
     if (qrisImage != null && qrisImage.startsWith('data:image')) {
       final parts = qrisImage.split(',');
@@ -662,7 +663,18 @@ class OrderDetailPage extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) {
+        // If gateway suggests opening checkout URL, trigger opening after frame rendered
+              if (qrisHint == 'open_checkout_url' && checkoutUrl != null && checkoutUrl.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            final uri = Uri.tryParse(checkoutUrl);
+            if (uri != null) {
+              await launchUrl(uri, mode: LaunchMode.inAppWebView);
+            }
+          });
+        }
+
+        return AlertDialog(
         title: const Text('QRIS Pembayaran'),
         content: SizedBox(
           width: double.maxFinite,
@@ -701,7 +713,7 @@ class OrderDetailPage extends ConsumerWidget {
                   return;
                 }
 
-                final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                final opened = await launchUrl(uri, mode: LaunchMode.inAppWebView);
                 if (!opened && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Gagal membuka halaman pembayaran')),
