@@ -60,6 +60,7 @@
 - [x] HTTP health check endpoint
 - [x] Database migration status verification
 - [ ] Full smoke test validation (running tests)
+- [ ] Production queue worker testing (pending staging)
 
 #### Documentation
 - [x] Supervisor configuration documented
@@ -101,7 +102,7 @@
 
 ---
 
-**Status:** In Progress — Documentation complete and CI trigger configured; ready for smoke execution once staging secrets are available
+**Status:** In Progress — Documentation and smoke artifacts complete; staging smoke execution pending environment access and Docker lokal tidak tersedia di lingkungan ini
 **Last Updated:** 6 Juni 2026
 **Next Review:** 8 Juni 2026
 
@@ -130,4 +131,51 @@ php artisan deploy:smoke --url="https://staging.example.com"
 
 - Jalankan smoke test pada staging environment dan laporkan hasilnya agar bisa ditandai selesai.
 - (Opsional) Tambahkan job GitHub Actions untuk menjalankan smoke validation pada commit ke `feature/backend-123-deploy-smoke` bila secrets staging tersedia.
+
+### Smoke Test Results
+
+**Run date:** _pending_
+
+- **Target environment:** staging
+- **Base URL tested:** _provide here, e.g. https://staging.example.com_
+- **Command used:** `./deploy/smoke-test.sh` or `php artisan deploy:smoke --url="<base_url>"`
+
+- **Summary:** _pending — run required_
+
+- **Details / notable failures:**
+	- _If any test failed, paste stderr/stdout or failed endpoint details here._
+
+- **Exit code:** _pending_
+
+If you run the smoke test on staging, paste the outputs above and I will update this file to mark `Full smoke test validation` and `Production queue worker testing` as completed when appropriate.
+
+### Local run attempt (automated)
+
+- **Attempt date:** 6 Juni 2026
+- **Action:** Attempted to run `deploy/smoke-test.sh` and `php artisan deploy:smoke` from local workspace
+- **Environment:** Windows PowerShell on developer workstation
+
+- **Outcome:** FAILED to execute smoke tests locally due to missing runtime/tools
+
+- **Observed errors:**
+	- Running `bash ./deploy/smoke-test.sh` failed: `/bin/bash` not available (no WSL/bash).
+	- Running `php -v` / `php artisan` failed: `php` not found in PATH.
+
+- **Conclusion / Next steps:**
+	1. Run the smoke test on the staging server where PHP, Composer, and required services are installed, or enable WSL/bash and PHP locally.
+ 2. On staging, execute:
+
+```bash
+# from backend root on staging
+./deploy/smoke-test.sh
+# or
+php artisan deploy:smoke --url="https://staging.example.com"
+```
+
+	3. Paste the summary output (exit code, passed/failed counts, errors) into the `Smoke Test Results` section above and I will mark `Full smoke test validation` and `Production queue worker testing` accordingly.
+
+### ⛔ Blockers
+
+- Local smoke test via Docker cannot be executed in this environment because Docker is not installed.
+- Staging environment access is required to complete full smoke validation and queue worker production testing.
 

@@ -35,6 +35,10 @@ Notes
 - Pull request #38 is open and ready for review.
 - Smoke test execution is pending staging environment access.
 
+Blockers
+- Local smoke test via Docker cannot be executed in this environment because Docker is not installed.
+- Staging environment access is required to complete smoke validation and production queue worker testing.
+
 Next steps (to be done on staging environment)
 - Execute smoke test and record results in this file or `backend/DEPLOY_STATUS.md`.
 - If smoke test passes, mark `Full smoke test validation` and `Production queue worker testing` as completed in `backend/DEPLOY_STATUS.md`.
