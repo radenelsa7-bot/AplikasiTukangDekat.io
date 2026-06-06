@@ -13,10 +13,7 @@ import 'order_providers.dart';
 class OrderDetailPage extends ConsumerWidget {
   final int orderId;
 
-  const OrderDetailPage({
-    super.key,
-    required this.orderId,
-  });
+  const OrderDetailPage({super.key, required this.orderId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,11 +22,8 @@ class OrderDetailPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Order')),
       body: orderAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
-        error: (err, st) => Center(
-          child: Text('Error: $err'),
-        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, st) => Center(child: Text('Error: $err')),
         data: (order) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -45,8 +39,7 @@ class OrderDetailPage extends ConsumerWidget {
                       children: [
                         Text(
                           'Status Order',
-                          style:
-                              Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         Container(
@@ -55,8 +48,9 @@ class OrderDetailPage extends ConsumerWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(order.status)
-                                .withValues(alpha: 0.2),
+                            color: _getStatusColor(
+                              order.status,
+                            ).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -74,117 +68,124 @@ class OrderDetailPage extends ConsumerWidget {
                 const SizedBox(height: 16),
 
                 // Order info
-                _buildSection(
-                  context,
-                  'Informasi Order',
-                  [
-                    _buildInfo('Kode Order', order.orderCode),
-                    _buildInfo('Alamat', order.address),
-                    _buildInfo(
-                      'Jadwal',
-                      DateFormat('dd MMM yyyy HH:mm')
-                        .format(DateTime.parse(order.scheduleAt)),
-                    ),
-                    if (order.notes != null && order.notes!.isNotEmpty)
-                      _buildInfo('Catatan', order.notes!),
-                  ],
-                ),
+                _buildSection(context, 'Informasi Order', [
+                  _buildInfo('Kode Order', order.orderCode),
+                  _buildInfo('Alamat', order.address),
+                  _buildInfo(
+                    'Jadwal',
+                    DateFormat(
+                      'dd MMM yyyy HH:mm',
+                    ).format(DateTime.parse(order.scheduleAt)),
+                  ),
+                  if (order.notes != null && order.notes!.isNotEmpty)
+                    _buildInfo('Catatan', order.notes!),
+                ]),
                 const SizedBox(height: 16),
 
                 // Pricing
-                _buildSection(
-                  context,
-                  'Pricing',
-                  [
-                    _buildInfo(
-                      'Harga Estimasi',
-                      'Rp${order.estimatedPrice}',
-                    ),
-                    if (order.finalPrice != null)
-                      _buildInfo(
-                        'Harga Final',
-                        'Rp${order.finalPrice}',
-                      ),
-                  ],
-                ),
+                _buildSection(context, 'Pricing', [
+                  _buildInfo('Harga Estimasi', 'Rp${order.estimatedPrice}'),
+                  if (order.finalPrice != null)
+                    _buildInfo('Harga Final', 'Rp${order.finalPrice}'),
+                ]),
                 const SizedBox(height: 16),
 
                 // Payments
                 if (order.payments.isNotEmpty)
-                  _buildSection(
-                    context,
-                    'Pembayaran',
-                    [
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: order.payments.length,
-                        itemBuilder: (context, index) {
-                          final payment = order.payments[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(payment.paymentType),
-                                      Text(
-                                        'Rp${payment.amount}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                  _buildSection(context, 'Pembayaran', [
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: order.payments.length,
+                      itemBuilder: (context, index) {
+                        final payment = order.payments[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(payment.paymentType),
+                                    Text(
+                                      'Rp${payment.amount}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Status: ${payment.status}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: payment.status == 'COMPLETED'
-                                              ? Colors.green
-                                              : Colors.orange,
-                                        ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Status: ${payment.status}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: payment.status == 'COMPLETED'
+                                            ? Colors.green
+                                            : Colors.orange,
                                       ),
-                                      if (payment.paidAt != null)
-                                        Text(
-                                          DateFormat('dd MMM HH:mm')
-                                              .format(DateTime.parse(
-                                                  payment.paidAt!)),
-                                          style:
-                                              const TextStyle(fontSize: 12),
+                                    ),
+                                    if (payment.paidAt != null)
+                                      Text(
+                                        DateFormat('dd MMM HH:mm').format(
+                                          DateTime.parse(payment.paidAt!),
                                         ),
-                                      // If user is customer and payment unpaid, show Pay button
-                                      Builder(builder: (ctx) {
-                                        final authState = ref.watch(authControllerProvider);
-                                        if (authState.userRole == 'CUSTOMER' && payment.status == 'UNPAID') {
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    // If user is customer and payment unpaid, show Pay button
+                                    Builder(
+                                      builder: (ctx) {
+                                        final authState = ref.watch(
+                                          authControllerProvider,
+                                        );
+                                        if (authState.userRole == 'CUSTOMER' &&
+                                            payment.status == 'UNPAID') {
                                           return ElevatedButton(
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: Colors.green,
-                                              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                                              textStyle: const TextStyle(fontSize: 12),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 6,
+                                                    horizontal: 12,
+                                                  ),
+                                              textStyle: const TextStyle(
+                                                fontSize: 12,
+                                              ),
                                             ),
                                             onPressed: () async {
-                                              final api = ref.read(apiServiceProvider);
+                                              final api = ref.read(
+                                                apiServiceProvider,
+                                              );
                                               try {
-                                                final qris = await api.generateQRIS(payment.id);
+                                                final qris = await api
+                                                    .generateQRIS(payment.id);
                                                 if (ctx.mounted) {
-                                                  _showQrisDialog(ctx, ref, qris, order.id, payment.id);
+                                                  _showQrisDialog(
+                                                    ctx,
+                                                    ref,
+                                                    qris,
+                                                    order.id,
+                                                    payment.id,
+                                                  );
                                                 }
                                               } catch (e) {
                                                 if (ctx.mounted) {
-                                                  ScaffoldMessenger.of(ctx).showSnackBar(
-                                                    SnackBar(content: Text('Gagal generate QRIS: $e')),
+                                                  ScaffoldMessenger.of(
+                                                    ctx,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Gagal generate QRIS: $e',
+                                                      ),
+                                                    ),
                                                   );
                                                 }
                                               }
@@ -194,17 +195,17 @@ class OrderDetailPage extends ConsumerWidget {
                                         }
 
                                         return const SizedBox.shrink();
-                                      }),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                          ),
+                        );
+                      },
+                    ),
+                  ]),
                 const SizedBox(height: 20),
 
                 // Provider action buttons
@@ -248,24 +249,20 @@ class OrderDetailPage extends ConsumerWidget {
       error: (err, st) => const SizedBox.shrink(),
       data: (review) {
         if (review != null) {
-          return _buildSection(
-            context,
-            'Ulasan Anda',
-            [
-              Row(
-                children: List.generate(5, (index) {
-                  return Icon(
-                    index < review.rating ? Icons.star : Icons.star_border,
-                    color: Colors.amber,
-                    size: 20,
-                  );
-                }),
-              ),
-              const SizedBox(height: 8),
-              if ((review.comment ?? '').isNotEmpty)
-                _buildInfo('Komentar', review.comment!),
-            ],
-          );
+          return _buildSection(context, 'Ulasan Anda', [
+            Row(
+              children: List.generate(5, (index) {
+                return Icon(
+                  index < review.rating ? Icons.star : Icons.star_border,
+                  color: Colors.amber,
+                  size: 20,
+                );
+              }),
+            ),
+            const SizedBox(height: 8),
+            if ((review.comment ?? '').isNotEmpty)
+              _buildInfo('Komentar', review.comment!),
+          ]);
         }
 
         return Card(
@@ -420,7 +417,7 @@ class OrderDetailPage extends ConsumerWidget {
                     final controller = TextEditingController(
                       text: order.estimatedPrice.toString(),
                     );
-                    
+
                     showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
@@ -440,30 +437,37 @@ class OrderDetailPage extends ConsumerWidget {
                           ),
                           TextButton(
                             onPressed: () async {
-                              final finalPrice = int.tryParse(controller.text) ?? 0;
+                              final finalPrice =
+                                  int.tryParse(controller.text) ?? 0;
                               if (finalPrice <= 0) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Harga tidak valid')),
+                                  const SnackBar(
+                                    content: Text('Harga tidak valid'),
+                                  ),
                                 );
                                 return;
                               }
-                              
+
                               final success = await ref
                                   .read(orderActionControllerProvider.notifier)
                                   .completeOrder(order.id, finalPrice);
-                              
+
                               if (context.mounted) {
                                 Navigator.pop(ctx);
                                 if (success) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Pekerjaan selesai')),
+                                    const SnackBar(
+                                      content: Text('Pekerjaan selesai'),
+                                    ),
                                   );
                                   // ignore: unused_result
                                   ref.refresh(orderDetailProvider(order.id));
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(actionState.errorMessage ?? 'Error'),
+                                      content: Text(
+                                        actionState.errorMessage ?? 'Error',
+                                      ),
                                     ),
                                   );
                                 }
@@ -485,11 +489,7 @@ class OrderDetailPage extends ConsumerWidget {
     );
   }
 
-  void _showReviewDialog(
-    BuildContext context,
-    WidgetRef ref,
-    int orderId,
-  ) {
+  void _showReviewDialog(BuildContext context, WidgetRef ref, int orderId) {
     final commentController = TextEditingController();
     int selectedRating = 5;
 
@@ -549,7 +549,9 @@ class OrderDetailPage extends ConsumerWidget {
                 TextButton(
                   onPressed: () async {
                     try {
-                      await ref.read(apiServiceProvider).createReview(
+                      await ref
+                          .read(apiServiceProvider)
+                          .createReview(
                             orderId: orderId,
                             rating: selectedRating,
                             comment: commentController.text.trim().isEmpty
@@ -561,7 +563,9 @@ class OrderDetailPage extends ConsumerWidget {
                       if (context.mounted) {
                         Navigator.pop(dialogContext);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Ulasan berhasil dikirim')),
+                          const SnackBar(
+                            content: Text('Ulasan berhasil dikirim'),
+                          ),
                         );
                       }
                     } catch (e) {
@@ -590,17 +594,12 @@ class OrderDetailPage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: children,
-            ),
+            child: Column(children: children),
           ),
         ),
       ],
@@ -645,7 +644,13 @@ class OrderDetailPage extends ConsumerWidget {
     }
   }
 
-  void _showQrisDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> qrisData, int orderId, int paymentId) {
+  void _showQrisDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> qrisData,
+    int orderId,
+    int paymentId,
+  ) {
     final qrisImage = qrisData['qris_image'] as String?;
     final checkoutUrl = qrisData['checkout_url'] as String?;
     final qrisHint = qrisData['qris_hint'] as String?;
@@ -665,7 +670,9 @@ class OrderDetailPage extends ConsumerWidget {
       context: context,
       builder: (ctx) {
         // If gateway suggests opening checkout URL, trigger opening after frame rendered
-              if (qrisHint == 'open_checkout_url' && checkoutUrl != null && checkoutUrl.isNotEmpty) {
+        if (qrisHint == 'open_checkout_url' &&
+            checkoutUrl != null &&
+            checkoutUrl.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             final uri = Uri.tryParse(checkoutUrl);
             if (uri != null) {
@@ -675,78 +682,89 @@ class OrderDetailPage extends ConsumerWidget {
         }
 
         return AlertDialog(
-        title: const Text('QRIS Pembayaran'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (imageBytes != null)
-                Image.memory(imageBytes, width: 200, height: 200),
-              if (imageBytes == null && qrisData['qris_code'] != null)
-                SelectableText(qrisData['qris_code']),
-              if (checkoutUrl != null && checkoutUrl.isNotEmpty) ...[
+          title: const Text('QRIS Pembayaran'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (imageBytes != null)
+                  Image.memory(imageBytes, width: 200, height: 200),
+                if (imageBytes == null && qrisData['qris_code'] != null)
+                  SelectableText(qrisData['qris_code']),
+                if (checkoutUrl != null && checkoutUrl.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  SelectableText(checkoutUrl, textAlign: TextAlign.center),
+                ],
                 const SizedBox(height: 12),
-                SelectableText(
-                  checkoutUrl,
-                  textAlign: TextAlign.center,
-                ),
+                Text('Jumlah: Rp${qrisData['amount'] ?? ''}'),
               ],
-              const SizedBox(height: 12),
-              Text('Jumlah: Rp${qrisData['amount'] ?? ''}'),
-            ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
-          ),
-          if (checkoutUrl != null && checkoutUrl.isNotEmpty)
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+            if (checkoutUrl != null && checkoutUrl.isNotEmpty)
+              TextButton(
+                onPressed: () async {
+                  final uri = Uri.tryParse(checkoutUrl);
+                  if (uri == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('URL pembayaran tidak valid'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final opened = await launchUrl(
+                    uri,
+                    mode: LaunchMode.inAppWebView,
+                  );
+                  if (!opened && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Gagal membuka halaman pembayaran'),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Buka Pembayaran'),
+              ),
             TextButton(
               onPressed: () async {
-                final uri = Uri.tryParse(checkoutUrl);
-                if (uri == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('URL pembayaran tidak valid')),
-                  );
-                  return;
-                }
-
-                final opened = await launchUrl(uri, mode: LaunchMode.inAppWebView);
-                if (!opened && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Gagal membuka halaman pembayaran')),
-                  );
+                // Simulate gateway callback for testing
+                try {
+                  await ref
+                      .read(apiServiceProvider)
+                      .simulatePaymentCallback(paymentId);
+                  // ignore: unused_result
+                  ref.refresh(orderDetailProvider(orderId));
+                  if (context.mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Pembayaran disimulasikan sebagai berhasil',
+                        ),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal simulasi pembayaran: $e')),
+                    );
+                  }
                 }
               },
-              child: const Text('Buka Pembayaran'),
+              child: const Text('Saya sudah bayar (simulasi)'),
             ),
-          TextButton(
-                onPressed: () async {
-              // Simulate gateway callback for testing
-              try {
-                await ref.read(apiServiceProvider).simulatePaymentCallback(paymentId);
-                // ignore: unused_result
-                ref.refresh(orderDetailProvider(orderId));
-                if (context.mounted) {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Pembayaran disimulasikan sebagai berhasil')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Gagal simulasi pembayaran: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Saya sudah bayar (simulasi)'),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 }
