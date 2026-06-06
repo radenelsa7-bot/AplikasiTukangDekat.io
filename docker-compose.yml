@@ -28,11 +28,11 @@ services:
 
       # --- DI SINI PERUBAHAN UTAMA KONEKSI DATABASE ---
       - DB_CONNECTION=mysql
-      - DB_HOST=db                     # DIUBAH: Menunjuk ke service 'db' di bawah
+      - DB_HOST=db                     # Menunjuk ke service 'db' di bawah
       - DB_PORT=3306
-      - DB_DATABASE=db_tukangdekat     # DISAMAKAN: Nama database projectmu
+      - DB_DATABASE=db_tukangdekat     # Nama database projectmu
       - DB_USERNAME=root
-      - DB_PASSWORD=rahasia            # DIUBAH: Harus diisi, tidak boleh kosong di Docker
+      - DB_PASSWORD=rahasia            # Password MySQL di Docker
 
       - SESSION_DRIVER=database
       - SESSION_LIFETIME=120
@@ -84,13 +84,30 @@ services:
     container_name: laravel_db
     restart: unless-stopped
     environment:
-      - MYSQL_DATABASE=db_tukangdekat     # DISAMAKAN: Otomatis membuat database ini saat nyala
-      - MYSQL_ROOT_PASSWORD=rahasia       # DISAMAKAN: Password root MySQL kamu
+      - MYSQL_DATABASE=db_tukangdekat     # Otomatis membuat database ini saat nyala
+      - MYSQL_ROOT_PASSWORD=rahasia       # Password root MySQL kamu
     ports:
       - "3306:3306"
     volumes:
       - dbdata:/var/lib/mysql
 
+  # --- TAMBAHAN BARU: Service 3 untuk n8n ---
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: tukangdekat_n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment:
+      - N8N_SECURE_COOKIE=false
+    depends_on:
+      - db # n8n baru menyala setelah database siap (opsional, tapi bagus untuk dependensi)
+
+# --- TAMBAHAN BARU: Mendaftarkan volume n8n_data ---
 volumes:
   dbdata:
+    driver: local
+  n8n_data:
     driver: local
