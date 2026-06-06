@@ -9,6 +9,7 @@ Summary
 
 What I updated
 - `backend/DEPLOY_STATUS.md`: updated status, added step-by-step smoke-test instructions and environment requirements.
+- `backend/.github/workflows/ci-staging.yml`: improved staging CI workflow to skip when secrets are missing, preventing false failures on non-deploy branches.
 - Confirmed presence of:
   - `deploy/smoke-test.sh` (script to run smoke test)
   - `app/Console/Commands/DeploySmokeTest.php` (artisan `deploy:smoke` command)

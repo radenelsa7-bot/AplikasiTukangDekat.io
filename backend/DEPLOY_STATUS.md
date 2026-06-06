@@ -39,6 +39,7 @@
 - [x] Ansible playbooks for deployment
 - [x] GitHub Secrets documentation
 - [x] Runbook for operations
+- [x] CI staging workflow improvement to skip when secrets are not configured
 
 ---
 
