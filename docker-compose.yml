@@ -7,7 +7,8 @@ services:
     image: laravel-backend
     container_name: laravel_app
     ports:
-      - "8000:9000"
+      - "8000:8000"
+    command: php artisan serve --host=0.0.0.0 --port=8000
     restart: unless-stopped
     tty: true
     environment:
