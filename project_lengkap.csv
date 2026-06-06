@@ -40,7 +40,7 @@ Title,Assignees,Status
 "[Frontend] Setup Flutter project & struktur folder",tetepsafarudin,Todo
 "[Frontend] Desain wireframe & UI kit (Figma)",tetepsafarudin,Todo
 "[Testing] Buat Test Plan dokumen",aldyrmdny-lab,Todo
-"[Backend] API Auth: Register, Login, Logout (FR-01, FR-02, FR-03)",NabilahAsana,Todo
+"[Backend] API Auth: Register, Login, Logout (FR-01, FR-02, FR-03)",NabilahAsana,Done
 "[Backend] API Service Catalog: Categories & Provider List (FR-08, FR-09, FR-10)",NabilahAsana,Todo
 "[Backend] Model & Eloquent Relationships",Fatinasy7,Todo
 "[Frontend] Screen: Login & Register",faznalaisal44,Todo
