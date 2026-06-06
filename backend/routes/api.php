@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Review
     Route::prefix('reviews')->group(function () {
         Route::post('/order/{orderId}', [ReviewController::class, 'createReview']);
+        Route::get('/provider/{providerId}/summary', [ReviewController::class, 'getProviderReviewSummary']);
         Route::get('/provider/{providerId}', [ReviewController::class, 'getProviderReviews']);
         Route::get('/order/{orderId}', [ReviewController::class, 'getOrderReview']);
     });
