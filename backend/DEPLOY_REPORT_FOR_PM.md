@@ -32,6 +32,8 @@ Expected outcome: exit code 0 and printed information about health check and art
 Notes
 - I pushed the documentation update to branch `feature/backend-123-deploy-smoke` on the remote.
 - GitHub Actions are now configured to run the staging workflow for this branch when repository secrets are available.
+- Pull request #38 is open and ready for review.
+- Smoke test execution is pending staging environment access.
 
 Next steps (to be done on staging environment)
 - Execute smoke test and record results in this file or `backend/DEPLOY_STATUS.md`.
