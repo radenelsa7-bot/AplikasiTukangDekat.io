@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
 use App\Models\Payment;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
@@ -141,7 +142,7 @@ class PaymentGatewayService
             ];
         } catch (RequestException $e) {
             // Log the error for debugging
-            \Log::error('Xendit QR Code API Error', [
+            Log::error('Xendit QR Code API Error', [
                 'status' => $e->response?->status(),
                 'body' => $e->response?->body(),
                 'payload' => $qrPayload,
@@ -196,7 +197,7 @@ class PaymentGatewayService
                     'raw_response' => $invoiceResponse,
                 ];
             } catch (RequestException $invoiceError) {
-                \Log::error('Xendit Invoice Fallback Error', [
+                Log::error('Xendit Invoice Fallback Error', [
                     'status' => $invoiceError->response?->status(),
                     'body' => $invoiceError->response?->body(),
                 ]);
@@ -304,8 +305,10 @@ class PaymentGatewayService
         $secret = (string) config('services.payments.webhook_secret', '');
 
         if ($secret === '') {
-            return true;
+            // fail-closed: jika secret webhook tidak dikonfigurasi, jangan proses webhook untuk driver non-midtrans
+            return false;
         }
+
 
         $headerName = config('services.payments.webhook_signature_header', 'X-Payment-Signature');
         $signature = (string) $request->header($headerName, '');

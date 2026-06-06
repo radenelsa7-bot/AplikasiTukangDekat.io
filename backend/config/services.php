@@ -55,4 +55,9 @@ return [
         'xendit_charge_url' => env('XENDIT_CHARGE_URL', rtrim(env('XENDIT_BASE_URL', ''), '/')),
     ],
 
+    'payouts' => [
+        'alert_webhook' => env('PAYOUT_ALERT_WEBHOOK'),
+        'alert_email' => env('PAYOUT_ALERT_EMAIL'),
+    ],
+
 ];
