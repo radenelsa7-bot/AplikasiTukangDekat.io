@@ -53,4 +53,9 @@ return [
         'midtrans_is_production' => env('MIDTRANS_IS_PRODUCTION', false),
     ],
 
+    'payouts' => [
+        'alert_webhook' => env('PAYOUT_ALERT_WEBHOOK'),
+        'alert_email' => env('PAYOUT_ALERT_EMAIL'),
+    ],
+
 ];
