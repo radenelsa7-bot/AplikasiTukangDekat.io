@@ -10,9 +10,14 @@ Repository ini digunakan untuk pengerjaan proyek **TukangDekat** (UTS: analisis 
   - `diagrams/` → file `.drawio` + export `.png/.svg` (use case, activity, ERD)
   - `database/` → skema database (MySQL), catatan migrasi
 
-## Quick Start (UAS)
+## Cara Menjalankan Proyek (Ringkas)
 
-### 1) Backend (Laravel + Sanctum)
+Dokumen ini berisi ringkasan. Untuk panduan yang lebih lengkap dan aman untuk tim, lihat:
+- `HELP_RUN_PROJECT.md`
+- `QUICK_START.md`
+
+
+### 1) Backend (Laravel API)
 > Prasyarat: PHP 8.2+, Composer, MySQL
 
 ```bash
@@ -21,7 +26,7 @@ cp .env.example .env
 composer install
 php artisan key:generate
 php artisan migrate
-php artisan serve
+php artisan serve --host=127.0.0.1 --port=8000
 ```
 
 ### 2) Mobile (Flutter)
@@ -30,7 +35,7 @@ php artisan serve
 ```bash
 cd mobile
 flutter pub get
-flutter run
+flutter run -d chrome
 ```
 
 ## Catatan Integrasi

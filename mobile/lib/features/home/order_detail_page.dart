@@ -665,7 +665,7 @@ class OrderDetailPage extends ConsumerWidget {
       context: context,
       builder: (ctx) {
         // If gateway suggests opening checkout URL, trigger opening after frame rendered
-              if (qrisHint == 'open_checkout_url' && checkoutUrl != null && checkoutUrl.isNotEmpty) {
+        if (qrisHint == 'open_checkout_url' && checkoutUrl != null && checkoutUrl.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             final uri = Uri.tryParse(checkoutUrl);
             if (uri != null) {
@@ -674,8 +674,9 @@ class OrderDetailPage extends ConsumerWidget {
           });
         }
 
+
         return AlertDialog(
-        title: const Text('QRIS Pembayaran'),
+          title: const Text('QRIS Pembayaran'),
         content: SizedBox(
           width: double.maxFinite,
           child: Column(
