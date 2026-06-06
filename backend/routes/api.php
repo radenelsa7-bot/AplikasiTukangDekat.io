@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\TreasurerController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\MetricsController;
 
 // Public routes (authentication)
 Route::prefix('auth')->group(function () {
@@ -71,6 +72,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Webhook routes (tanpa authentication)
 Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback']);
+
+// Monitoring metrics endpoint
+Route::get(config('monitoring.metrics_path', '/metrics'), [MetricsController::class, 'show']);
 
 // Fallback untuk testing
 Route::get('/user', function (Request $request) {
