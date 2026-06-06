@@ -154,7 +154,12 @@ bash "Setup_tukangdekat(FatinAsyifa).sh"
    - [ ] Run full test suite
    - [ ] Create & merge PR
 
-2. **Start Planning for n8n Integration**
+2. **Inisiasi feature/backend-124-n8n-integration**
+   - [x] Branch `feature/backend-124-n8n-integration` dibuat
+   - [x] `backend/N8N_INTEGRATION_PLAN.md` ditambahkan
+   - [ ] Implementasi endpoint n8n dan audit logs
+
+3. **Start Planning for n8n Integration**
    - [ ] Review n8n documentation
    - [ ] Design workflow architecture
    - [ ] Research WA gateway providers

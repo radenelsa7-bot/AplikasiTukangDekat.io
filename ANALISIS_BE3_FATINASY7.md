@@ -136,7 +136,12 @@ Siapkan migrasi staging, aktifkan queue worker, lalu jalankan smoke test setelah
    - Smoke test pasca deploy masih menunggu staging execution
    - Queue worker verification masih pending di staging
 
-2. ✅ Mulai planning **Week 4 - n8n Integration**
+2. 🔄 Inisiasi **feature/backend-124-n8n-integration**
+   - Branch baru `feature/backend-124-n8n-integration` telah dibuat
+   - Dokumen rencana `backend/N8N_INTEGRATION_PLAN.md` telah ditambahkan
+   - Prioritas: implementasi endpoint n8n dan NotificationLog audit
+
+3. ✅ Mulai planning **Week 4 - n8n Integration**
    - Review n8n documentation
    - Design workflow architecture
    - Research WA gateway options
