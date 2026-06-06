@@ -3,7 +3,7 @@
 **Tanggal:** 4 Juni 2026  
 **Nama:** Fatinasy7  
 **Role:** Backend Developer 3 (BE3)  
-**Status:** Sedang Mengerjakan feature/backend-123-deploy-smoke
+**Status:** Sedang Dikerjakan feature/backend-123-deploy-smoke (Branch pushed, PR #38 open)
 
 ---
 
@@ -19,6 +19,7 @@
 ### Sedang Dikerjakan 🔄
 1. **feature/backend-123-deploy-smoke** (Prioritas: HIGH)
    - Branch aktif: `feature/backend-123-deploy-smoke`
+   - Pull request: #38 (open)
    - Milestone: Backend – Deploy & Monitoring (7 Juni 2026)
    - Label: `role: Backend`, `priority: high`, `testing`, `module: notification`
 
@@ -88,7 +89,7 @@ Siapkan migrasi staging, aktifkan queue worker, lalu jalankan smoke test setelah
   - Monitor queue status
 
 - [ ] **Tambahkan smoke test pasca deploy**
-  - Create smoke test script (`smoke-test.sh` atau Postman collection)
+  - Create smoke test script (`smoke-test.sh` atau Postman collection) ✅ sudah tersedia
   - Test critical endpoints:
     - POST /api/auth/login
     - GET /api/categories
@@ -99,12 +100,13 @@ Siapkan migrasi staging, aktifkan queue worker, lalu jalankan smoke test setelah
   - Integration test dengan real database
 
 - [ ] **Catat hasil verifikasi deployment**
-  - Buat deployment report
+  - Buat deployment report ✅ sudah tersedia (`backend/DEPLOY_REPORT_FOR_PM.md`)
   - Document success/failure metrics
-  - Update DEPLOY_STATUS.md
+  - Update DEPLOY_STATUS.md ✅ sudah diperbarui
 
 ### Acceptance Criteria
 - [x] CI staging workflow berjalan tanpa error
+- [x] Documentation updated and PR created (#38)
 - [ ] Database migration berhasil di staging
 - [ ] Queue worker aktif dan memproses job
 - [ ] Smoke test semua endpoint kritis lulus
@@ -128,11 +130,11 @@ Siapkan migrasi staging, aktifkan queue worker, lalu jalankan smoke test setelah
 ## 🎯 Prioritas Pengerjaan
 
 ### Immediate (Minggu Ini)
-1. ✅ Selesaikan **feature/backend-123-deploy-smoke**
-   - Implement queue worker activation
-   - Add comprehensive smoke test
-   - Create deployment verification report
-   - Buat pull request & merge
+1. 🔄 Lanjutkan **feature/backend-123-deploy-smoke**
+   - PR #38 sudah dibuat dan terhubung
+   - Dokumentasi deployment sudah diperbarui
+   - Smoke test pasca deploy masih menunggu staging execution
+   - Queue worker verification masih pending di staging
 
 2. ✅ Mulai planning **Week 4 - n8n Integration**
    - Review n8n documentation
