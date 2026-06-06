@@ -8,6 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/api_service.dart';
 import '../../core/models/order_model.dart';
 import '../auth/auth_controller.dart';
+import '../../shared/widgets/site_footer.dart';
+import '../../shared/widgets/site_header.dart';
 import 'order_providers.dart';
 
 class OrderDetailPage extends ConsumerWidget {
@@ -20,7 +22,7 @@ class OrderDetailPage extends ConsumerWidget {
     final orderAsync = ref.watch(orderDetailProvider(orderId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Order')),
+      appBar: const TukangDekatHeader(title: Text('Detail Order')),
       body: orderAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, st) => Center(child: Text('Error: $err')),
@@ -219,6 +221,7 @@ class OrderDetailPage extends ConsumerWidget {
           );
         },
       ),
+      bottomNavigationBar: const TukangDekatFooter(),
     );
   }
 

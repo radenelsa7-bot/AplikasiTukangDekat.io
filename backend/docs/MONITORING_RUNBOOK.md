@@ -1,18 +1,18 @@
-# Monitoring Runbook
+# Runbook Monitoring
 
-## Overview
+## Ringkasan
 
-This runbook documents the monitoring and alerting setup for the TukangDekat backend payout pipeline.
+Runbook ini mendokumentasikan setup monitoring dan alerting untuk pipeline payout backend TukangDekat.
 
-## Metrics Endpoint
+## Endpoint Metrics
 
-- Endpoint: `/api/metrics` by default (the actual route is configured in `config/monitoring.php` and exposed under the API prefix)
-- Override via `MONITORING_METRICS_PATH` in `.env` if needed
-- Format: plain text Prometheus exposition format
-- Example:
+- Endpoint: `/api/metrics` secara default (route dikonfigurasi di `config/monitoring.php` dan diekspos di bawah prefix API)
+- Bisa override melalui `MONITORING_METRICS_PATH` di `.env`
+- Format: teks plain Prometheus exposition format
+- Contoh:
   - `curl http://localhost:8000/api/metrics`
 
-## Metrics Provided
+## Metrik yang Disediakan
 
 - `tukangdekat_app_metrics_generated_timestamp`
 - `tukangdekat_monitoring_window_minutes`
@@ -30,26 +30,26 @@ This runbook documents the monitoring and alerting setup for the TukangDekat bac
 
 ## Alerting
 
-1. Configure `PAYOUT_ALERT_EMAIL` or `PAYOUT_ALERT_WEBHOOK` in `.env`.
-2. Use the existing command:
+1. Konfigurasikan `PAYOUT_ALERT_EMAIL` atau `PAYOUT_ALERT_WEBHOOK` di `.env`.
+2. Gunakan perintah berikut:
    - `php artisan payouts:alert --since=60`
-3. This command sends an email/webhook when failed payout attempts in the window reach or exceed the configured alert threshold in `config/monitoring.php`.
-4. If failures exceed `MONITORING_PAYOUT_FAILURE_CRITICAL_THRESHOLD`, the alert is marked as `critical`; otherwise it is `warning`.
+3. Perintah ini mengirim email/webhook ketika jumlah gagal payout dalam window mencapai atau melebihi threshold yang dikonfigurasi di `config/monitoring.php`.
+4. Jika kegagalan melebihi `MONITORING_PAYOUT_FAILURE_CRITICAL_THRESHOLD`, alert akan ditandai sebagai `critical`; jika tidak, akan ditandai sebagai `warning`.
 
-## Deployment Verification
+## Verifikasi Deploy
 
-- Ensure `PROMETHEUS_ENABLED=true` if using Prometheus.
-- Verify `config/monitoring.php` values:
+- Pastikan `PROMETHEUS_ENABLED=true` jika menggunakan Prometheus.
+- Verifikasi nilai di `config/monitoring.php`:
   - `MONITORING_PAYOUT_FAILURE_WINDOW`
   - `MONITORING_PAYOUT_FAILURE_ALERT_THRESHOLD`
   - `MONITORING_PAYOUT_FAILURE_CRITICAL_THRESHOLD`
 
 ## Troubleshooting
 
-- If `/api/metrics` returns 500, check Laravel logs in `storage/logs/laravel.log`.
-- If failure counts look incorrect, verify the `provider_payout_attempts` table is populated.
-- If alerts are not sent, verify `PAYOUT_ALERT_EMAIL` or `PAYOUT_ALERT_WEBHOOK` is set and the mail/webhook service is reachable.
+- Jika `/api/metrics` mengembalikan 500, periksa log Laravel di `storage/logs/laravel.log`.
+- Jika jumlah kegagalan terlihat salah, pastikan tabel `provider_payout_attempts` terisi dengan benar.
+- Jika alert tidak terkirim, pastikan `PAYOUT_ALERT_EMAIL` atau `PAYOUT_ALERT_WEBHOOK` terpasang dan layanan email/webhook dapat dijangkau.
 
-## Notes
+## Catatan
 
-This runbook is part of BE1 work for backend monitoring and reliability. It should be kept in sync with `backend/RUNBOOK.md` and `backend/config/monitoring.php`.
+Runbook ini adalah bagian dari pekerjaan BE1 untuk monitoring dan reliability backend. Harap disinkronkan dengan `backend/RUNBOOK.md` dan `backend/config/monitoring.php`.

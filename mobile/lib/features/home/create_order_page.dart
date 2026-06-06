@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
+import '../../shared/widgets/site_footer.dart';
+import '../../shared/widgets/site_header.dart';
 import '../../core/models/order_model.dart';
 import '../../core/models/provider_model.dart';
 import '../auth/auth_controller.dart';
@@ -83,10 +85,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     }
     if (_selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pilih jam'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Pilih jam'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -109,7 +108,9 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     );
 
     // Format ke Y-m-d H:i:s untuk backend
-    final scheduleAtFormatted = DateFormat('yyyy-MM-dd HH:mm:ss').format(scheduleAt);
+    final scheduleAtFormatted = DateFormat(
+      'yyyy-MM-dd HH:mm:ss',
+    ).format(scheduleAt);
 
     final request = CreateOrderRequest(
       providerId: widget.providerId,
@@ -139,10 +140,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       final errorMsg =
           ref.read(createOrderControllerProvider).errorMessage ?? 'Order gagal';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMsg),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
       );
     }
   }
@@ -203,7 +201,9 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                   items: widget.services.map((service) {
                     return DropdownMenuItem(
                       value: service,
-                      child: Text('${service.name} - Rp${service.basePrice}/${service.priceUnit}'),
+                      child: Text(
+                        '${service.name} - Rp${service.basePrice}/${service.priceUnit}',
+                      ),
                     );
                   }).toList(),
                   onChanged: (ProviderService? newService) {
@@ -347,6 +347,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
           ),
         ),
       ),
+      bottomNavigationBar: const TukangDekatFooter(),
     );
   }
 }

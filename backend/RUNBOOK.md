@@ -115,7 +115,8 @@ Alerting & Monitoring:
 - The app schedules `payouts:alert --since=60` every 10 minutes by default.
 - Check Prometheus-compatible metrics at `/api/metrics` by default.
 - Override the metrics route segment with `MONITORING_METRICS_PATH` in `.env` if required.
-- Use `backend/docs/MONITORING_RUNBOOK.md` for monitoring runbook details.
+- Gunakan `backend/docs/MONITORING_RUNBOOK.md` untuk detail runbook monitoring.
+- Gunakan `backend/docs/TESTING_RUNBOOK.md` untuk prosedur pengujian dan validasi.
 
 6) Manual operations
 

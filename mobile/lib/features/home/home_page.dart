@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../shared/widgets/site_footer.dart';
+import '../../shared/widgets/site_header.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_page.dart';
 import '../admin/admin_verification_page.dart';
@@ -30,9 +32,16 @@ class HomePage extends ConsumerWidget {
       length: tabs.length,
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        appBar: AppBar(
+        appBar: TukangDekatHeader(
           title: const Text('TukangDekat'),
-          bottom: TabBar(tabs: tabs),
+          bottom: TabBar(
+            tabs: tabs,
+            indicatorColor: Theme.of(context).colorScheme.secondary,
+            labelColor: Theme.of(context).colorScheme.onPrimary,
+            unselectedLabelColor: Theme.of(
+              context,
+            ).colorScheme.onPrimary.withOpacity(0.7),
+          ),
           actions: [
             IconButton(
               tooltip: 'Logout',
@@ -48,9 +57,8 @@ class HomePage extends ConsumerWidget {
             ),
           ],
         ),
-        body: TabBarView(
-          children: pages,
-        ),
+        body: TabBarView(children: pages),
+        bottomNavigationBar: const TukangDekatFooter(),
       ),
     );
   }
@@ -62,10 +70,7 @@ class HomePage extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          Text(
-            'Profil Akun',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          Text('Profil Akun', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
           Card(
             child: Padding(
