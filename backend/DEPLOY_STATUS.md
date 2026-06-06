@@ -89,14 +89,41 @@
 
 ## ? Implementation Completed
 
-? SmokeTestFeature.php - 15 comprehensive endpoint tests
-? Supervisor.conf - Updated with 3 worker processes
-? DeploySmokeTest command - Artisan deploy:smoke command
-? smoke-test.sh script - Bash test script
-? DEPLOY_STATUS.md - This comprehensive documentation
+- SmokeTestFeature.php - 15 comprehensive endpoint tests
+- Supervisor.conf - Updated with 3 worker processes
+- DeploySmokeTest command - Artisan `deploy:smoke` command
+- smoke-test.sh script - Bash test script
+- DEPLOY_STATUS.md - This comprehensive documentation
 
 ---
 
-**Status:** ?? In Progress - Ready for Testing
-**Last Updated:** 4 Juni 2026
-**Next Review:** 5 Juni 2026
+**Status:** In Progress — Ready for smoke execution (needs staging environment)
+**Last Updated:** 6 Juni 2026
+**Next Review:** 8 Juni 2026
+
+### Catatan Pelaksanaan Smoke Test
+
+- Skrip smoke test sudah tersedia di `deploy/smoke-test.sh` dan juga ada command artisan `php artisan deploy:smoke --url="<base_url>"`.
+- Untuk menjalankan smoke test secara manual pada server staging/production lakukan:
+
+```bash
+# jalankan pada root project (backend)
+./deploy/smoke-test.sh
+# atau
+php artisan deploy:smoke --url="https://staging.example.com"
+```
+
+- Persyaratan lingkungan untuk verifikasi smoke test:
+	- `php` dan `composer` tersedia di server (versi PHP minimal 8.1 direkomendasikan)
+	- database dan redis terkonfigurasi serta dapat diakses
+	- service queue (systemd / supervisor) aktif dan berjalan
+
+- Hasil smoke test akan mengembalikan exit code `0` pada keberhasilan. Jika gagal, periksa log `journalctl` (systemd) atau `/var/log/laravel-queue.log` (supervisor) dan jalankan artisan commands yang dicantumkan pada `deploy/README.md`.
+
+---
+
+### Tindak Lanjut yang Direkomendasikan
+
+- Jalankan smoke test pada staging environment dan laporkan hasilnya agar bisa ditandai selesai.
+- (Opsional) Tambahkan job GitHub Actions untuk menjalankan smoke validation pada commit ke `feature/backend-123-deploy-smoke` bila secrets staging tersedia.
+
