@@ -95,6 +95,8 @@
 - DeploySmokeTest command - Artisan `deploy:smoke` command
 - smoke-test.sh script - Bash test script
 - DEPLOY_STATUS.md - This comprehensive documentation
+- CI staging workflow improvement to skip when secrets are not configured
+- Pull request opened: #38
 
 ---
 
