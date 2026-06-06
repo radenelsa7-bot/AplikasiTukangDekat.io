@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Order;
 use App\Models\Review;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -14,12 +16,54 @@ class ReviewFactory extends Factory
 
   public function definition(): array
   {
+    $order = Order::factory()->completed()->create();
+
     return [
-      'order_id' => null,
-      'customer_id' => null,
-      'provider_id' => null,
-      'rating' => $this->faker->numberBetween(1, 5),
-      'comment' => $this->faker->optional()->sentence(),
+      'order_id' => $order->id,
+      'customer_id' => $order->customer_id,
+      'provider_id' => $order->provider_id,
+      'rating' => $this->faker->numberBetween(3, 5),
+      'comment' => $this->faker->optional(0.8)->sentence(),
     ];
+  }
+
+  /**
+   * Create a review with low rating.
+   */
+  public function lowRating(): static
+  {
+    return $this->state(fn (array $attributes) => [
+      'rating' => $this->faker->numberBetween(1, 2),
+    ]);
+  }
+
+  /**
+   * Create a review with medium rating.
+   */
+  public function mediumRating(): static
+  {
+    return $this->state(fn (array $attributes) => [
+      'rating' => $this->faker->numberBetween(3, 3),
+    ]);
+  }
+
+  /**
+   * Create a review with high rating.
+   */
+  public function highRating(): static
+  {
+    return $this->state(fn (array $attributes) => [
+      'rating' => $this->faker->numberBetween(4, 5),
+    ]);
+  }
+
+  /**
+   * Create a review without comment.
+   */
+  public function withoutComment(): static
+  {
+    return $this->state(fn (array $attributes) => [
+      'comment' => null,
+    ]);
   }
 }
