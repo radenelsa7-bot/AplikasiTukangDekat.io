@@ -7,73 +7,61 @@ use App\Models\Order;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use App\Http\Requests\Review\CreateReviewRequest;
+use App\Traits\ApiResponse;
 
 class ReviewController extends Controller
 {
+  use ApiResponse;
   /**
    * Create review untuk order
    */
-  public function createReview(Request $request, $orderId)
+  public function createReview(CreateReviewRequest $request, $orderId)
   {
     $user = Auth::user();
-
-    if ($user->role !== 'CUSTOMER') {
-      return response()->json([
-        'message' => 'only customer can create review',
-      ], 403);
-    }
 
     $order = Order::find($orderId);
 
     if (!$order) {
-      return response()->json([
-        'message' => 'order not found',
-      ], 404);
+      return $this->error('Order not found', 404);
     }
 
     if ($order->customer_id !== $user->id) {
-      return response()->json([
-        'message' => 'unauthorized',
-      ], 403);
+      return $this->error('Unauthorized', 403);
     }
 
-    if ($order->status !== 'COMPLETED' && $order->status !== 'CLOSED') {
-      return response()->json([
-        'message' => 'order not completed yet',
-      ], 400);
+    // Spec requires reviews only when order is CLOSED
+    if ($order->status !== 'CLOSED') {
+      return $this->error('Order must be CLOSED to add a review', 400);
     }
 
-    // Check apakah sudah ada review
+    // Ensure single review per order (also enforced by DB unique index)
     if ($order->review) {
-      return response()->json([
-        'message' => 'review already exists for this order',
-      ], 400);
+      return $this->error('Review already exists for this order', 400);
     }
 
-    $validated = $request->validate([
-      'rating' => 'required|integer|between:1,5',
-      'comment' => 'nullable|string',
-    ]);
+    $validated = $request->validated();
 
-    $review = Review::create([
-      'order_id' => $order->id,
-      'customer_id' => $user->id,
-      'provider_id' => $order->provider_id,
-      'rating' => $validated['rating'],
-      'comment' => $validated['comment'] ?? null,
-    ]);
+    $review = null;
 
-    // Update provider avg_rating
-    $providerProfile = $order->provider->providerProfile;
-    if ($providerProfile) {
-      $avgRating = Review::where('provider_id', $order->provider_id)->avg('rating');
-      $providerProfile->update(['avg_rating' => round($avgRating, 2)]);
-    }
+    DB::transaction(function () use ($order, $user, $validated, &$review) {
+      $review = Review::create([
+        'order_id' => $order->id,
+        'customer_id' => $user->id,
+        'provider_id' => $order->provider_id,
+        'rating' => $validated['rating'],
+        'comment' => $validated['comment'] ?? null,
+      ]);
 
-    return response()->json([
-      'message' => 'review created',
-      'data' => $review,
-    ], 201);
+      $providerProfile = $order->provider->providerProfile;
+      if ($providerProfile) {
+        $avgRating = Review::where('provider_id', $order->provider_id)->avg('rating');
+        $providerProfile->update(['avg_rating' => round($avgRating, 2)]);
+      }
+    });
+
+    return $this->success($review, 'Review created', 201);
   }
 
   /**
@@ -81,14 +69,14 @@ class ReviewController extends Controller
    */
   public function getProviderReviews($providerId)
   {
+    $perPage = request()->query('per_page', 20);
+
     $reviews = Review::where('provider_id', $providerId)
       ->with(['customer', 'order'])
       ->latest()
-      ->get();
+      ->paginate($perPage);
 
-    return response()->json([
-      'data' => $reviews,
-    ], 200);
+    return $this->paginated($reviews, 'Provider reviews');
   }
 
   /**
@@ -101,13 +89,9 @@ class ReviewController extends Controller
       ->first();
 
     if (!$review) {
-      return response()->json([
-        'message' => 'review not found',
-      ], 404);
+      return $this->notFound('Review not found');
     }
 
-    return response()->json([
-      'data' => $review,
-    ], 200);
+    return $this->success($review, 'Order review');
   }
 }

@@ -7,11 +7,16 @@ use App\Models\Payment;
 use App\Services\PaymentGatewayService;
 use App\Services\PaymentFinanceService;
 use App\Services\N8nNotificationService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use App\Traits\ApiResponse;
 
 class PaymentController extends Controller
 {
+  use ApiResponse;
   public function __construct(
     private readonly PaymentGatewayService $paymentGatewayService,
     private readonly PaymentFinanceService $paymentFinanceService,
@@ -24,9 +29,7 @@ class PaymentController extends Controller
   {
     $payments = Payment::where('order_id', $orderId)->get();
 
-    return response()->json([
-      'data' => $payments,
-    ], 200);
+    return $this->success($payments, 'Payments for order');
   }
 
   /**
@@ -37,9 +40,7 @@ class PaymentController extends Controller
     $payment = Payment::with(['order.customer', 'order.provider'])->find($paymentId);
 
     if (!$payment) {
-      return response()->json([
-        'message' => 'payment not found',
-      ], 404);
+      return $this->notFound('Payment not found');
     }
 
     $qrisData = $this->paymentGatewayService->generateQrisPayload($payment);
@@ -52,10 +53,7 @@ class PaymentController extends Controller
       'checkout_url' => $qrisData['checkout_url'] ?? $payment->checkout_url,
       'status' => $payment->status === 'UNPAID' ? 'PENDING' : $payment->status,
     ]);
-
-    return response()->json([
-      'data' => $qrisData,
-    ], 200);
+    return $this->success($qrisData, 'QRIS generated');
   }
 
   /**
@@ -65,7 +63,7 @@ class PaymentController extends Controller
   public function webhookPaymentCallback(Request $request)
   {
     if (!$this->paymentGatewayService->verifyWebhook($request)) {
-      return response()->json(['message' => 'invalid signature'], 403);
+      return $this->forbidden('Invalid signature');
     }
 
     $data = $request->all();
@@ -75,7 +73,7 @@ class PaymentController extends Controller
     $status = $data['status'] ?? $data['transaction_status'] ?? $data['payment_status'] ?? null;
 
     if (!$paymentId && !$externalPaymentId) {
-      return response()->json(['message' => 'invalid payload'], 400);
+      return $this->validationError(['payment_id' => ['Invalid payload: missing payment identifiers']]);
     }
 
     $payment = Payment::when($paymentId, function ($query) use ($paymentId) {
@@ -85,42 +83,52 @@ class PaymentController extends Controller
     })->first();
 
     if (!$payment) {
-      return response()->json(['message' => 'payment not found'], 404);
+      return $this->notFound('Payment not found');
     }
 
     $newStatus = $this->paymentGatewayService->mapStatus($status);
 
-    $payment->update([
-      'status' => $newStatus,
-      'external_payment_id' => $externalPaymentId,
-      'provider' => $payment->provider ?: strtoupper(config('services.payments.driver', 'simulation')),
-      'paid_at' => ($newStatus === 'PAID') ? now() : $payment->paid_at,
-    ]);
-
-    // Jika payment berhasil, update order status
-    if ($newStatus === 'PAID') {
-      $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
-
-      $order = $payment->order;
-
-      app(N8nNotificationService::class)->dispatch(
-        'payment_' . strtolower($payment->payment_type) . '_paid',
-        [
-          'order_id' => $order->id,
-          'payment_id' => $payment->id,
-          'payment_type' => $payment->payment_type,
-          'amount' => $payment->amount,
-          'order_status' => $order->status,
-        ]
-      );
-
-      // Jika FINAL payment sudah dibayar, tutup order
-      if ($payment->payment_type === 'FINAL') {
-        $order->update(['status' => 'CLOSED']);
-      }
+    if ($payment->status === $newStatus) {
+      return $this->success(['status' => $payment->status], 'Payment already processed');
     }
 
-    return response()->json(['message' => 'payment processed'], 200);
+    if ($payment->status === 'PAID' && $newStatus !== 'PAID') {
+      return $this->success(['status' => $payment->status], 'Payment already settled');
+    }
+
+    $previousStatus = $payment->status;
+
+    DB::transaction(function () use ($payment, $newStatus, $externalPaymentId, $previousStatus) {
+      $payment->update([
+        'status' => $newStatus,
+        'external_payment_id' => $externalPaymentId,
+        'provider' => $payment->provider ?: strtoupper(config('services.payments.driver', 'simulation')),
+        'paid_at' => ($newStatus === 'PAID') ? now() : $payment->paid_at,
+      ]);
+
+      if ($newStatus === 'PAID' && $previousStatus !== 'PAID') {
+        $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
+
+        $order = $payment->order;
+
+        app(N8nNotificationService::class)->dispatch(
+          'payment_' . strtolower($payment->payment_type) . '_paid',
+          [
+            'order_id' => $order->id,
+            'payment_id' => $payment->id,
+            'payment_type' => $payment->payment_type,
+            'amount' => $payment->amount,
+            'order_status' => $order->status,
+          ]
+        );
+
+        if ($payment->payment_type === 'FINAL') {
+          $order->update(['status' => 'CLOSED']);
+        }
+      }
+    });
+
+    return $this->success(null, 'Payment processed');
   }
 
   /**
@@ -131,14 +139,10 @@ class PaymentController extends Controller
     $payment = Payment::with(['order.customer', 'order.provider'])->find($paymentId);
 
     if (!$payment) {
-      return response()->json([
-        'message' => 'payment not found',
-      ], 404);
+      return $this->notFound('Payment not found');
     }
 
-    return response()->json([
-      'data' => $payment,
-    ], 200);
+    return $this->success($payment, 'Payment status');
   }
 
   /**
@@ -149,34 +153,33 @@ class PaymentController extends Controller
     $payment = Payment::find($paymentId);
 
     if (!$payment) {
-      return response()->json(['message' => 'payment not found'], 404);
+      return $this->notFound('Payment not found');
     }
 
     $checkoutUrl = $payment->checkout_url;
 
     if (!$checkoutUrl) {
-      return response()->json(['message' => 'checkout_url not available for this payment'], 400);
+      return $this->error('checkout_url not available for this payment', 400);
     }
 
     $cacheKey = "qris_capture_result:{$paymentId}";
     $lockKey = "qris_capture_lock:{$paymentId}";
 
     if (Cache::has($cacheKey)) {
-      return response()->json(Cache::get($cacheKey), 200);
+      return $this->success(Cache::get($cacheKey), 'QRIS capture cached');
     }
 
     if ($payment->qris_image && $payment->qris_captured_at) {
       $result = [
-        'message' => 'qris already captured',
         'qris_image' => $payment->qris_image,
         'qris_captured_at' => $payment->qris_captured_at->toDateTimeString(),
       ];
       Cache::put($cacheKey, $result, now()->addMinutes(60));
-      return response()->json($result, 200);
+      return $this->success($result, 'QRIS already captured');
     }
 
     if (!Cache::add($lockKey, true, 30)) {
-      return response()->json(['message' => 'capture already in progress, please retry in a moment'], 429);
+      return $this->tooManyRequests('Capture already in progress, please retry in a moment');
     }
 
     try {
@@ -184,7 +187,7 @@ class PaymentController extends Controller
       $nodeScript = base_path('tools/capture-qris/index.js');
 
       if (!file_exists($nodeScript)) {
-        return response()->json(['message' => 'capture worker not installed'], 500);
+        return $this->internalServerError('Capture worker not installed');
       }
 
       // Build command (escape URL)
@@ -196,14 +199,14 @@ class PaymentController extends Controller
       exec($cmd, $output, $returnVar);
 
       if ($returnVar !== 0) {
-        return response()->json(['message' => 'capture worker failed', 'output' => implode("\n", $output)], 500);
+        return $this->internalServerError('Capture worker failed', null);
       }
 
       $raw = implode("\n", $output);
       $data = json_decode($raw, true);
 
       if (!$data || empty($data['qris_image'])) {
-        return response()->json(['message' => 'no qris_image captured', 'raw' => $raw], 500);
+        return $this->internalServerError('No qris_image captured');
       }
 
       $payment->update([
@@ -212,11 +215,10 @@ class PaymentController extends Controller
       ]);
 
       $result = [
-        'message' => 'qris captured',
         'qris_image' => $data['qris_image'],
       ];
       Cache::put($cacheKey, $result, now()->addMinutes(60));
-      return response()->json($result, 200);
+      return $this->success($result, 'QRIS captured');
     } finally {
       Cache::forget($lockKey);
     }

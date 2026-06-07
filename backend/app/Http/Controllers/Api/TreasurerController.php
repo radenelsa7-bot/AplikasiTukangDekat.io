@@ -7,34 +7,18 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Traits\ApiResponse;
 
 class TreasurerController extends Controller
 {
-    private function ensureTreasurer(): ?\Illuminate\Http\JsonResponse
-    {
-        // Check web session auth (web routes use web guard) or Sanctum token (API routes)
-        $user = Auth::user() ?? Auth::guard('web')->user();
-        if (!$user) {
-            Log::error('No user found in TreasurerController.ensureTreasurer');
-            Log::error('Auth::user: ' . (Auth::user() ? 'found' : 'null'));
-            Log::error('Auth guard web: ' . (Auth::guard('web')->user() ? 'found' : 'null'));
-        }
-
-        if (!$user || $user->role !== 'TREASURER') {
-            return response()->json([
-                'message' => 'only treasurer can access this resource',
-                'debug_user' => $user ? $user->email : null,
-                'debug_role' => $user ? $user->role : null,
-            ], 403);
-        }
-
-        return null;
-    }
+    use ApiResponse;
 
     public function paymentReport(Request $request)
     {
-        if ($response = $this->ensureTreasurer()) {
-            return $response;
+        // Route uses role.treasurer; defensive check only
+        $user = Auth::user() ?? Auth::guard('web')->user();
+        if (!$user || $user->role !== 'TREASURER') {
+            return $this->forbidden('Only treasurer can access this resource');
         }
 
         $validated = $request->validate([
@@ -101,9 +85,17 @@ class TreasurerController extends Controller
         $perPage = (int) ($validated['per_page'] ?? 20);
         $payments = $query->latest()->paginate($perPage);
 
+        $exportLimit = 5000;
+        $totalForExport = null;
+
         // Jika diminta ekspor CSV, kembalikan file stream CSV dari semua hasil query (tanpa paginasi)
         if ($request->query('export') === 'csv') {
-            $exportQuery = (clone $query)->latest()->get();
+            $totalForExport = (clone $query)->count();
+            if ($totalForExport > $exportLimit) {
+                return $this->error('Export limit exceeded. Please narrow the filter to fewer records.', 413, null, ['limit' => $exportLimit, 'count' => $totalForExport]);
+            }
+
+            $exportQuery = (clone $query)->latest()->cursor();
             $filename = 'treasurer_payments_' . now()->format('Ymd_His') . '.csv';
 
             $headers = [
@@ -149,8 +141,8 @@ class TreasurerController extends Controller
                     $p->payment_reference ?? '',
                     $customerName,
                     $providerName,
-                    $p->created_at->toDateTimeString(),
-                    $p->updated_at->toDateTimeString(),
+                    $p->created_at?->toDateTimeString() ?? '',
+                    $p->updated_at?->toDateTimeString() ?? '',
                 ]);
             }
 
@@ -168,7 +160,12 @@ class TreasurerController extends Controller
 
         // Jika diminta ekspor XLS (SpreadsheetML/XML) tanpa membutuhkan ekstensi zip
         if ($request->query('export') === 'xls' || $request->query('export') === 'excel') {
-            $exportQuery = (clone $query)->latest()->get();
+            $totalForExport = $totalForExport ?? (clone $query)->count();
+            if ($totalForExport > $exportLimit) {
+                return $this->error('Export limit exceeded. Please narrow the filter to fewer records.', 413, null, ['limit' => $exportLimit, 'count' => $totalForExport]);
+            }
+
+            $exportQuery = (clone $query)->latest()->cursor();
             $filename = 'treasurer_payments_' . now()->format('Ymd_His') . '.xls';
 
             $escape = function ($v) {
@@ -227,7 +224,6 @@ class TreasurerController extends Controller
                 ];
 
                 foreach ($cols as $c) {
-                    // detect numeric
                     $type = is_numeric($c) ? 'Number' : 'String';
                     $xml .= "        <Cell><Data ss:Type=\"{$type}\">" . $escape($c) . "</Data></Cell>\n";
                 }
@@ -244,8 +240,8 @@ class TreasurerController extends Controller
             return response($xml, 200, $headers);
         }
 
-        return response()->json([
-            'data' => $payments->items(),
+        return $this->success([
+            'payments' => $payments->items(),
             'summary' => $summary,
             'breakdown' => [
                 'by_status' => $byStatus,
@@ -265,6 +261,6 @@ class TreasurerController extends Controller
                 'order_id' => $validated['order_id'] ?? null,
                 'provider_id' => $validated['provider_id'] ?? null,
             ],
-        ], 200);
+        ], 'Payment report');
     }
 }

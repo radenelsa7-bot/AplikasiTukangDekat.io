@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceCategory;
 use App\Models\ProviderProfile;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
 {
+  use ApiResponse;
   /**
    * Get semua service categories
    */
@@ -16,10 +18,7 @@ class CatalogController extends Controller
   {
     $categories = ServiceCategory::where('is_active', true)
       ->get();
-
-    return response()->json([
-      'data' => $categories,
-    ], 200);
+    return $this->success($categories, 'Categories');
   }
 
   /**
@@ -30,9 +29,7 @@ class CatalogController extends Controller
     $category = ServiceCategory::find($categoryId);
 
     if (!$category) {
-      return response()->json([
-        'message' => 'category not found',
-      ], 404);
+      return $this->notFound('Category not found');
     }
 
     $providers = ProviderProfile::whereHas('services', function ($query) use ($categoryId) {
@@ -44,9 +41,7 @@ class CatalogController extends Controller
       }])
       ->get();
 
-    return response()->json([
-      'data' => $providers,
-    ], 200);
+    return $this->success($providers, 'Providers by category');
   }
 
   /**
@@ -60,14 +55,10 @@ class CatalogController extends Controller
       ->find($providerId);
 
     if (!$provider) {
-      return response()->json([
-        'message' => 'provider not found',
-      ], 404);
+      return $this->notFound('Provider not found');
     }
 
-    return response()->json([
-      'data' => $provider,
-    ], 200);
+    return $this->success($provider, 'Provider detail');
   }
 
   /**
@@ -78,9 +69,7 @@ class CatalogController extends Controller
     $query = $request->query('q', '');
 
     if (empty($query)) {
-      return response()->json([
-        'message' => 'Query parameter q is required.',
-      ], 400);
+      return $this->validationError(['q' => ['Query parameter q is required.']]);
     }
 
     $providers = ProviderProfile::where('is_verified', true)
@@ -94,8 +83,6 @@ class CatalogController extends Controller
       ->with('services')
       ->get();
 
-    return response()->json([
-      'data' => $providers,
-    ], 200);
+    return $this->success($providers, 'Search results');
   }
 }

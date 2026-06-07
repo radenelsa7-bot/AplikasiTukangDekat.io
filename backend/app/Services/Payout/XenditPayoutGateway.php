@@ -50,7 +50,6 @@ class XenditPayoutGateway implements PayoutGatewayInterface
             if ($res) {
                 try {
                     try {
-                        @file_put_contents(base_path('storage/gateway_debug_precreate.txt'), json_encode(['pre' => true]));
                         $pathValue = null;
                         if (is_object($res) && method_exists($res, 'effectiveUri')) {
                             try {
@@ -68,9 +67,7 @@ class XenditPayoutGateway implements PayoutGatewayInterface
                             'response_body' => $res->json() ?? ['body' => $res->body()],
                             'status_code' => $res->status(),
                         ]);
-                        @file_put_contents(base_path('storage/gateway_debug_postcreate.txt'), json_encode(['post' => true]));
                     } catch (\Throwable $e) {
-                        @file_put_contents(base_path('storage/gateway_debug_create_err.txt'), $e->getMessage());
                         Log::warning('xendit.persist_response_failed', ['err' => $e->getMessage()]);
                     }
                 } catch (\Throwable $e) {

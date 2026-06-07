@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\ProviderProfile;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -14,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
     /**
      * Register user baru
      */
@@ -44,13 +46,10 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json([
-            'message' => 'registered',
-            'data' => [
-                'user_id' => $user->id,
-                'role' => $user->role,
-            ],
-        ], 201);
+        return $this->success([
+            'user_id' => $user->id,
+            'role' => $user->role,
+        ], 'User registered successfully', 201);
     }
 
     /**
@@ -66,21 +65,16 @@ class AuthController extends Controller
         $user = User::query()->where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
-            return response()->json([
-                'message' => 'The provided credentials are incorrect.',
-            ], 401);
+            return $this->unauthorized('The provided credentials are incorrect.');
         }
 
         if ($user->status !== 'ACTIVE') {
-            return response()->json([
-                'message' => 'Your account is not active.',
-            ], 403);
+            return $this->forbidden('Your account is not active.');
         }
 
         $token = $user->createToken('api-token')->plainTextToken;
 
-        return response()->json([
-            'message' => 'ok',
+        return $this->success([
             'token' => $token,
             'token_type' => 'Bearer',
             'user' => [
@@ -89,7 +83,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'role' => $user->role,
             ],
-        ], 200);
+        ], 'Login successful', 200);
     }
 
     /**
@@ -103,22 +97,21 @@ class AuthController extends Controller
         ]);
 
         if (!Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']], $request->boolean('remember'))) {
-            return response()->json(['message' => 'invalid_credentials'], 401);
+            return $this->unauthorized('Invalid credentials');
         }
 
         $request->session()->regenerate();
 
         $user = $request->user();
 
-        return response()->json([
-            'message' => 'ok',
+        return $this->success([
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
             ],
-        ], 200);
+        ], 'Session login successful', 200);
     }
 
     /**
@@ -132,9 +125,7 @@ class AuthController extends Controller
             $token->delete();
         }
 
-        return response()->json([
-            'message' => 'logged_out',
-        ], 200);
+        return $this->success(null, 'Logged out successfully', 200);
     }
 
     /**
@@ -147,6 +138,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['message' => 'logged_out'], 200);
+        return $this->success(null, 'Session logout successful', 200);
     }
 }
