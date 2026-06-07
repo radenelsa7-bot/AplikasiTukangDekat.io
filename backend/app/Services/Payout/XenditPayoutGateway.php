@@ -182,14 +182,6 @@ class XenditPayoutGateway implements PayoutGatewayInterface
                         $lastRes = null;
                     }
 
-                    if (env('XENDIT_DEBUG', false) && $lastRes) {
-                        try {
-                            Log::debug('xendit.request', ['path' => $path, 'request' => $requestBody, 'status' => $lastRes->status(), 'body' => $lastRes->body()]);
-                        } catch (\Throwable $e) {
-                            Log::warning('xendit.debug.log_failed', ['err' => $e->getMessage()]);
-                        }
-                    }
-
                     // If we got a response, check for validation error handling first
                     if ($lastRes) {
                         $jsonBody = null;
@@ -280,9 +272,6 @@ class XenditPayoutGateway implements PayoutGatewayInterface
 
         // Retry JSON
         $res = $this->postToPath($path, $sanitized);
-        if (env('XENDIT_DEBUG', false)) {
-            Log::debug('xendit.request.sanitized', ['path' => $path, 'request' => $sanitized, 'status' => $res->status(), 'body' => $res->body()]);
-        }
 
         try {
             $jsonBody2 = $res->json();
@@ -296,10 +285,6 @@ class XenditPayoutGateway implements PayoutGatewayInterface
                 'Authorization' => 'Basic ' . base64_encode($this->apiKey . ':'),
                 'X-IDEMPOTENCY-KEY' => 'idem_' . sha1(($sanitized['external_id'] ?? uniqid('', true)) . $path),
             ])->timeout(15)->post($this->baseUrl . $path, $sanitized);
-
-            if (env('XENDIT_DEBUG', false)) {
-                Log::debug('xendit.request.sanitized.form', ['path' => $path, 'request' => $sanitized, 'status' => $res->status(), 'body' => $res->body()]);
-            }
         }
 
         return $res;

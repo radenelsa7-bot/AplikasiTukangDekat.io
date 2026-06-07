@@ -22,23 +22,23 @@ Route::prefix('auth')->group(function () {
 
 // Catalog routes (public)
 Route::prefix('catalog')->group(function () {
-    Route::get('/categories', [CatalogController::class, 'getCategories']);
-    Route::get('/categories/{categoryId}/providers', [CatalogController::class, 'getProvidersByCategory']);
-    Route::get('/providers/search', [CatalogController::class, 'searchProviders']);
-    Route::get('/providers/{providerId}', [CatalogController::class, 'getProviderDetail']);
-    Route::get('/providers/{providerId}/reviews', [ReviewController::class, 'getProviderReviews']);
+    Route::get('/categories', [CatalogController::class, 'getCategories'])->middleware('throttle:60,1');
+    Route::get('/categories/{categoryId}/providers', [CatalogController::class, 'getProvidersByCategory'])->middleware('throttle:30,1');
+    Route::get('/providers/search', [CatalogController::class, 'searchProviders'])->middleware('throttle:30,1');
+    Route::get('/providers/{providerId}', [CatalogController::class, 'getProviderDetail'])->middleware('throttle:30,1');
+    Route::get('/providers/{providerId}/reviews', [ReviewController::class, 'getProviderReviews'])->middleware('throttle:30,1');
 });
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     // Auth
-    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('throttle:10,1');
 
     // Order
     Route::prefix('orders')->group(function () {
         Route::post('/', [OrderController::class, 'createOrder'])->middleware(['throttle:10,1', 'role.customer']);
-        Route::get('/my-orders', [OrderController::class, 'getMyOrders']);
-        Route::get('/{orderId}', [OrderController::class, 'getOrder']);
+        Route::get('/my-orders', [OrderController::class, 'getMyOrders'])->middleware('throttle:20,1');
+        Route::get('/{orderId}', [OrderController::class, 'getOrder'])->middleware('throttle:30,1');
         Route::post('/{orderId}/respond', [OrderController::class, 'respondToOrder'])->middleware(['throttle:10,1', 'role.provider']);
         Route::post('/{orderId}/start-work', [OrderController::class, 'startWork'])->middleware(['throttle:10,1', 'role.provider']);
         Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder'])->middleware(['throttle:10,1', 'role.provider']);
@@ -56,17 +56,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/{orderId}/review', [ReviewController::class, 'createReview'])
         ->middleware(['throttle:10,1', 'role.customer']);
 
-    Route::get('/{orderId}/review', [ReviewController::class, 'getOrderReview']);
+    Route::get('/{orderId}/review', [ReviewController::class, 'getOrderReview'])->middleware('throttle:30,1');
 
     // Admin
     Route::prefix('admin')->middleware('role.admin')->group(function () {
-        Route::get('/providers/pending', [AdminController::class, 'getPendingProviders']);
-        Route::patch('/providers/{providerId}/verification', [AdminController::class, 'updateVerification']);
+        Route::get('/providers/pending', [AdminController::class, 'getPendingProviders'])->middleware('throttle:30,1');
+        Route::patch('/providers/{providerId}/verification', [AdminController::class, 'updateVerification'])->middleware('throttle:20,1');
     });
 
     // Treasurer (API for web requests)
     Route::prefix('treasurer')->middleware('role.treasurer')->group(function () {
-        Route::get('/payments/report', [TreasurerController::class, 'paymentReport']);
+        Route::get('/payments/report', [TreasurerController::class, 'paymentReport'])->middleware('throttle:20,1');
     });
 });
 

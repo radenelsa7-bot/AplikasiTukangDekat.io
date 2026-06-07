@@ -12,6 +12,8 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\LoginRequest;
 
 class AuthController extends Controller
 {
@@ -19,48 +21,43 @@ class AuthController extends Controller
     /**
      * Register user baru
      */
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'email' => 'required|string|email|unique:users',
-            'phone' => 'required|string|max:30',
-            'password' => 'required|string|min:6|confirmed',
-            'role' => 'required|in:CUSTOMER,PROVIDER',
-        ]);
+        $validated = $request->validated();
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-            'status' => 'ACTIVE',
-        ]);
-
-        // Jika provider, buat provider profile
-        if ($validated['role'] === 'PROVIDER') {
-            ProviderProfile::create([
-                'user_id' => $user->id,
-                'is_verified' => false,
+        try {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'password' => Hash::make($validated['password']),
+                'role' => $validated['role'],
+                'status' => 'ACTIVE',
             ]);
-        }
 
-        return $this->success([
-            'user_id' => $user->id,
-            'role' => $user->role,
-        ], 'User registered successfully', 201);
+            // Jika provider, buat provider profile
+            if ($validated['role'] === 'PROVIDER') {
+                ProviderProfile::create([
+                    'user_id' => $user->id,
+                    'is_verified' => false,
+                ]);
+            }
+
+            return $this->success([
+                'user_id' => $user->id,
+                'role' => $user->role,
+            ], 'User registered successfully', 201);
+        } catch (\Throwable $e) {
+            return $this->internalServerError('Failed to register user');
+        }
     }
 
     /**
      * Login user
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $validated = $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         $user = User::query()->where('email', $validated['email'])->first();
 
@@ -89,12 +86,9 @@ class AuthController extends Controller
     /**
      * Session-based login for Sanctum SPA (web)
      */
-    public function sessionLogin(Request $request): JsonResponse
+    public function sessionLogin(LoginRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         if (!Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']], $request->boolean('remember'))) {
             return $this->unauthorized('Invalid credentials');

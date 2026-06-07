@@ -8,6 +8,7 @@ use App\Services\N8nNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\ApiResponse;
+use App\Http\Requests\Admin\UpdateVerificationRequest;
 
 class AdminController extends Controller
 {
@@ -23,11 +24,9 @@ class AdminController extends Controller
     return $this->success($providers, 'Pending providers');
   }
 
-  public function updateVerification(Request $request, $providerId)
+  public function updateVerification(UpdateVerificationRequest $request, $providerId)
   {
-    $validated = $request->validate([
-      'is_verified' => 'required|boolean',
-    ]);
+    $validated = $request->validated();
 
     $provider = ProviderProfile::with('user')->find($providerId);
 
