@@ -66,26 +66,32 @@ class ProviderSeeder extends Seeder
       $userData = $providerData['user'];
       $profileData = $providerData['profile'];
 
-      // Create user
-      $user = User::create(array_merge($userData, [
-        'password' => Hash::make('password123'),
-        'role' => 'PROVIDER',
-        'status' => 'ACTIVE',
-      ]));
+      // Create or update user by unique email
+      $user = User::updateOrCreate(
+        ['email' => $userData['email']],
+        array_merge($userData, [
+          'password' => Hash::make('password123'),
+          'role' => 'PROVIDER',
+          'status' => 'ACTIVE',
+        ])
+      );
 
-      // Create provider profile
-      $profile = ProviderProfile::create(array_merge($profileData, [
-        'user_id' => $user->id,
-        'is_verified' => true,
-        'avg_rating' => 0,
-      ]));
+      // Create or update provider profile
+      $profile = ProviderProfile::updateOrCreate(
+        ['user_id' => $user->id],
+        array_merge($profileData, [
+          'is_verified' => true,
+          'avg_rating' => 0,
+        ])
+      );
 
-      // Create services
+      // Create services without duplicating existing entries
       foreach ($categoryIds as $categoryId) {
-        ProviderService::create([
+        ProviderService::firstOrCreate([
           'provider_profile_id' => $profile->id,
           'category_id' => $categoryId,
           'name' => 'Service Standard',
+        ], [
           'base_price' => 150000,
           'price_unit' => 'per kunjungan',
           'is_active' => true,

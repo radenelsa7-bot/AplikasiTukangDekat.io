@@ -1,14 +1,9 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>Payout Detail</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50">
-  <div class="max-w-4xl mx-auto p-6">
+@extends('layouts.admin')
+
+@section('title', 'Payout Detail')
+
+@section('content')
+<div class="max-w-4xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-4">Payout #{{ $p->id }} - {{ optional($p->provider)->name }}</h1>
     <div class="bg-white p-4 rounded shadow mb-4">
       <div>Jumlah: Rp {{ number_format($p->amount,0,',','.') }}</div>
@@ -35,8 +30,10 @@
       </table>
     </div>
   </div>
+@endsection
 
-  <script>
+@push('scripts')
+<script>
     function csrfToken(){ return document.querySelector('meta[name="csrf-token"]').getAttribute('content'); }
     document.getElementById('retryBtn')?.addEventListener('click', async function(){
       if (!confirm('Retry payout?')) return;
@@ -47,5 +44,4 @@
       alert('Retry dispatched'); location.reload();
     });
   </script>
-</body>
-</html>
+@endpush

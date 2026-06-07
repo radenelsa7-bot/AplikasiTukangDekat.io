@@ -1,0 +1,19 @@
+Subject: Request to enable QRIS / QR Charges API for sandbox account
+
+Hello Xendit Support team,
+
+I need server-side QR generation via the QR API. My sandbox account returns invoices with "available_qr_codes" but POST /v2/qr/charges returns 404 and invoice responses don't include `qr_string`/`qr_image`.
+
+Please enable the QRIS/QR Charges API for my sandbox account or advise the correct endpoint/permission to programmatically obtain `qr_string` or `qr_image`.
+
+Details:
+- Environment: Sandbox
+- Example invoice id: 6a228135e11e6baf5e5d2eec
+- Example external_id: PAY-2-BD5HAA
+- Example API call attempted: POST https://api.xendit.co/v2/qr/charges with Basic Auth (secret_key:)
+- Expected: API responds with `qr_string` or `qr_image` (base64 or URL) for the invoice/external_id.
+
+If you need account email or other verification info, please tell me what to provide.
+
+Thanks,
+[Muhammad Fajar Nurjaman / fajarnurjaman25@gmail.coml]

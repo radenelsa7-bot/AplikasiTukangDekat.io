@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../shared/widgets/site_footer.dart';
+import '../../shared/widgets/site_header.dart';
 import 'admin_providers.dart';
 
 class AdminVerificationPage extends ConsumerWidget {
@@ -12,15 +14,12 @@ class AdminVerificationPage extends ConsumerWidget {
     final actionState = ref.watch(adminVerificationControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: TukangDekatHeader(
         title: const Text('Verifikasi Provider'),
         actions: [
           IconButton(
             tooltip: 'Refresh',
-            onPressed: () {
-              // ignore: unused_result
-              ref.refresh(pendingProvidersProvider);
-            },
+            onPressed: () => ref.refresh(pendingProvidersProvider),
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -43,7 +42,8 @@ class AdminVerificationPage extends ConsumerWidget {
             itemCount: providers.length,
             itemBuilder: (context, index) {
               final provider = providers[index];
-              final isProcessing = actionState.processingProviderId == provider.id;
+              final isProcessing =
+                  actionState.processingProviderId == provider.id;
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -71,12 +71,15 @@ class AdminVerificationPage extends ConsumerWidget {
                               children: [
                                 Text(
                                   provider.businessName,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
                                 ),
                                 const SizedBox(height: 4),
-                                Text(provider.ownerName ?? 'Pemilik tidak diketahui'),
+                                Text(
+                                  provider.ownerName ??
+                                      'Pemilik tidak diketahui',
+                                ),
                                 const SizedBox(height: 4),
                                 Text('Area: ${provider.area ?? '-'}'),
                               ],
@@ -91,13 +94,19 @@ class AdminVerificationPage extends ConsumerWidget {
                         children: [
                           Chip(
                             label: Text(
-                              provider.isVerified ? 'Terverifikasi' : 'Belum diverifikasi',
+                              provider.isVerified
+                                  ? 'Terverifikasi'
+                                  : 'Belum diverifikasi',
                             ),
                             backgroundColor: provider.isVerified
                                 ? Colors.green.shade100
                                 : Colors.orange.shade100,
                           ),
-                          Chip(label: Text('Rating ${provider.avgRating.toString()}')),
+                          Chip(
+                            label: Text(
+                              'Rating ${provider.avgRating.toString()}',
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -109,15 +118,22 @@ class AdminVerificationPage extends ConsumerWidget {
                                   ? null
                                   : () async {
                                       final success = await ref
-                                          .read(adminVerificationControllerProvider.notifier)
+                                          .read(
+                                            adminVerificationControllerProvider
+                                                .notifier,
+                                          )
                                           .setVerification(
                                             providerId: provider.id,
                                             isVerified: true,
                                           );
                                       if (success && context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           const SnackBar(
-                                            content: Text('Provider berhasil diverifikasi'),
+                                            content: Text(
+                                              'Provider berhasil diverifikasi',
+                                            ),
                                           ),
                                         );
                                       }
@@ -126,7 +142,9 @@ class AdminVerificationPage extends ConsumerWidget {
                                   ? const SizedBox(
                                       width: 16,
                                       height: 16,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
                                     )
                                   : const Icon(Icons.verified),
                               label: const Text('Verifikasi'),
@@ -142,6 +160,7 @@ class AdminVerificationPage extends ConsumerWidget {
           );
         },
       ),
+      bottomNavigationBar: const TukangDekatFooter(),
     );
   }
 }
