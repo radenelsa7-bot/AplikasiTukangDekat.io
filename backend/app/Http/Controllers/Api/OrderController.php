@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use App\Traits\ApiResponse;
+use App\Http\Requests\Order\CreateOrderRequest;
+use App\Http\Requests\Order\RespondToOrderRequest;
+use App\Http\Requests\Order\CompleteOrderRequest;
 
 class OrderController extends Controller
 {
@@ -26,24 +29,11 @@ class OrderController extends Controller
   /**
    * Buat order baru
    */
-  public function createOrder(Request $request)
+  public function createOrder(CreateOrderRequest $request)
   {
     $user = Auth::user();
 
-    // Route enforces role.customer, but double-check
-    if ($user->role !== 'CUSTOMER') {
-      return $this->forbidden('Only customers can create orders');
-    }
-
-    $validated = $request->validate([
-      'provider_id' => ['required', 'integer', Rule::exists('users', 'id')->where('role', 'PROVIDER')],
-      'provider_service_id' => 'nullable|exists:provider_services,id',
-      'category_id' => 'required|exists:service_categories,id',
-      'schedule_at' => 'required|date_format:Y-m-d H:i:s',
-      'address' => 'required|string',
-      'notes' => 'nullable|string',
-      'estimated_price' => 'required|integer|min:1',
-    ]);
+    $validated = $request->validated();
 
     try {
       $result = DB::transaction(function () use ($validated, $user) {
@@ -137,7 +127,7 @@ class OrderController extends Controller
   /**
    * Provider terima/tolak order
    */
-  public function respondToOrder(Request $request, $orderId)
+  public function respondToOrder(RespondToOrderRequest $request, $orderId)
   {
     $user = Auth::user();
 
@@ -151,9 +141,7 @@ class OrderController extends Controller
       return $this->forbidden('Unauthorized');
     }
 
-    $validated = $request->validate([
-      'action' => 'required|in:accept,reject',
-    ]);
+    $validated = $request->validated();
 
     if ($order->status !== 'CREATED') {
       return $this->conflict('Order cannot be responded to in its current status');
@@ -243,7 +231,7 @@ class OrderController extends Controller
   /**
    * Provider selesaikan pekerjaan
    */
-  public function completeOrder(Request $request, $orderId)
+  public function completeOrder(CompleteOrderRequest $request, $orderId)
   {
     $user = Auth::user();
 
@@ -261,9 +249,7 @@ class OrderController extends Controller
       return $this->conflict('Order can only be completed after work has started');
     }
 
-    $validated = $request->validate([
-      'final_price' => 'required|integer|min:1',
-    ]);
+    $validated = $request->validated();
 
     try {
       return DB::transaction(function () use ($order, $validated) {
