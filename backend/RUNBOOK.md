@@ -107,12 +107,16 @@ sudo cp deploy/laravel-queue.service /etc/systemd/system/laravel-queue.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now laravel-queue.service
 sudo journalctl -u laravel-queue -f
-
-Alerting:
-
-- Configure `PAYOUT_ALERT_WEBHOOK` or `PAYOUT_ALERT_EMAIL` in `.env` to receive alerts when failed payouts occur frequently.
-- The app schedules `payouts:alert --since=60` every 10 minutes by default.
 ```
+
+Alerting & Monitoring:
+
+- Configure `PAYOUT_ALERT_WEBHOOK` or `PAYOUT_ALERT_EMAIL` in `.env` to receive alerts when failed payouts exceed the configured threshold.
+- The app schedules `payouts:alert --since=60` every 10 minutes by default.
+- Check Prometheus-compatible metrics at `/api/metrics` by default.
+- Override the metrics route segment with `MONITORING_METRICS_PATH` in `.env` if required.
+- Gunakan `backend/docs/MONITORING_RUNBOOK.md` untuk detail runbook monitoring.
+- Gunakan `backend/docs/TESTING_RUNBOOK.md` untuk prosedur pengujian dan validasi.
 
 6) Manual operations
 

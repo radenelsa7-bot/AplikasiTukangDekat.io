@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
@@ -21,7 +23,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'required|string|email|unique:users',
             'phone' => 'required|string|max:30',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:6|confirmed',
             'role' => 'required|in:CUSTOMER,PROVIDER',
         ]);
 
@@ -64,9 +66,15 @@ class AuthController extends Controller
         $user = User::query()->where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+            return response()->json([
+                'message' => 'The provided credentials are incorrect.',
+            ], 401);
+        }
+
+        if ($user->status !== 'ACTIVE') {
+            return response()->json([
+                'message' => 'Your account is not active.',
+            ], 403);
         }
 
         $token = $user->createToken('api-token')->plainTextToken;
@@ -74,6 +82,36 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'ok',
             'token' => $token,
+            'token_type' => 'Bearer',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+        ], 200);
+    }
+
+    /**
+     * Session-based login for Sanctum SPA (web)
+     */
+    public function sessionLogin(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
+
+        if (!Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']], $request->boolean('remember'))) {
+            return response()->json(['message' => 'invalid_credentials'], 401);
+        }
+
+        $request->session()->regenerate();
+
+        $user = $request->user();
+
+        return response()->json([
+            'message' => 'ok',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -97,5 +135,18 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'logged_out',
         ], 200);
+    }
+
+    /**
+     * Session-based logout for Sanctum SPA (web)
+     */
+    public function sessionLogout(Request $request): JsonResponse
+    {
+        Auth::guard()->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json(['message' => 'logged_out'], 200);
     }
 }

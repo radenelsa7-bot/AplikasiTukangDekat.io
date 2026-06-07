@@ -9,11 +9,15 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\TreasurerController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\MetricsController;
 
 // Public routes (authentication)
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    // Session-based auth (SPA) - no CSRF needed in API routes
+    Route::post('/session-login', [AuthController::class, 'sessionLogin']);
+    Route::post('/session-logout', [AuthController::class, 'sessionLogout']);
 });
 
 // Catalog routes (public)
@@ -37,6 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{orderId}/respond', [OrderController::class, 'respondToOrder']);
         Route::post('/{orderId}/start-work', [OrderController::class, 'startWork']);
         Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder']);
+        // Review: create review for an order
+        Route::post('/{orderId}/review', [ReviewController::class, 'createReview']);
     });
 
     // Payment
@@ -44,11 +50,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/order/{orderId}', [PaymentController::class, 'getPayments']);
         Route::get('/{paymentId}', [PaymentController::class, 'getPaymentStatus']);
         Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS']);
+        Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware('throttle:3,1');
     });
 
     // Review
     Route::prefix('reviews')->group(function () {
-        Route::post('/order/{orderId}', [ReviewController::class, 'createReview']);
+        Route::get('/provider/{providerId}/summary', [ReviewController::class, 'getProviderReviewSummary']);
         Route::get('/provider/{providerId}', [ReviewController::class, 'getProviderReviews']);
         Route::get('/order/{orderId}', [ReviewController::class, 'getOrderReview']);
     });
@@ -68,7 +75,15 @@ Route::middleware('auth:sanctum')->group(function () {
 // Webhook routes (tanpa authentication)
 Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback']);
 
+// Monitoring metrics endpoint
+Route::get(config('monitoring.metrics_path', '/metrics'), [MetricsController::class, 'show']);
+
 // Fallback untuk testing
 Route::get('/user', function (Request $request) {
     return $request->user();
+})->middleware('auth:sanctum');
+
+// Session user endpoint (for SPA)
+Route::get('/user-session', function (Request $request) {
+    return $request->user() ?: response()->json(['error' => 'Not authenticated'], 401);
 })->middleware('auth:sanctum');
