@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../shared/widgets/app_button.dart';
-import '../../shared/widgets/app_text_field.dart';
 import 'auth_controller.dart';
 import 'auth_state.dart';
 import 'login_page.dart';
@@ -183,7 +181,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0F3460).withOpacity(0.2),
+                color: Color.fromRGBO(15, 52, 96, 0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -310,8 +308,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 icon: Icons.lock_outline,
                 obscureText: true,
                 validator: (v) {
-                  if ((v ?? '').isEmpty)
+                  if ((v ?? '').isEmpty) {
                     return 'Konfirmasi password wajib diisi';
+                  }
                   return null;
                 },
               ),
@@ -329,7 +328,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF8C42).withOpacity(0.3),
+                      color: Color.fromRGBO(255, 140, 66, 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -394,7 +393,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEE5E5),
                     border: Border.all(
-                      color: const Color(0xFFFF8C42).withOpacity(0.3),
+                      color: Color.fromRGBO(255, 140, 66, 0.3),
                     ),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -526,8 +525,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            const Color(0xFFFF8C42).withOpacity(0.2),
-            const Color(0xFF0F3460).withOpacity(0),
+            Color.fromRGBO(255, 140, 66, 0.2),
+            Color.fromRGBO(15, 52, 96, 0),
           ],
         ),
       ),
@@ -535,7 +534,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         child: Icon(
           Icons.group_add,
           size: 100,
-          color: const Color(0xFFFF8C42).withOpacity(0.7),
+          color: Color.fromRGBO(255, 140, 66, 0.7),
         ),
       ),
     );

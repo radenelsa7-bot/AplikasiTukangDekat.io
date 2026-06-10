@@ -34,3 +34,22 @@ docker compose exec backend composer install
 
 # 3. Jalankan migrasi database beserta data benih (seeder) awal
 docker compose exec backend php artisan migrate --seed
+```
+
+## 🔧 Troubleshooting Login
+
+Jika aplikasi Flutter/web menampilkan kesalahan login atau error koneksi database seperti:
+
+- `SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: db_tukangdekat)`
+- `Login failed`
+
+Maka kemungkinan besar backend tidak terkoneksi dengan container MySQL yang benar. Untuk kasus ini, perbaikan meliputi:
+
+1. Mengubah `backend/.env` agar `DB_HOST=db` dan `DB_PASSWORD=rahasia`.
+2. Mengubah service `backend` di `docker-compose.yml` agar menjalankan HTTP server:
+   - `php artisan serve --host=0.0.0.0 --port=8000`
+3. Membersihkan cache konfigurasi Laravel di dalam container:
+   - `docker compose exec backend php artisan config:clear`
+   - `docker compose exec backend php artisan optimize:clear`
+
+Dokumentasi lengkap perbaikan tersedia di: [LOGIN_ERROR_FIX.md](./LOGIN_ERROR_FIX.md)
