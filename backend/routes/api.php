@@ -41,6 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{orderId}/respond', [OrderController::class, 'respondToOrder']);
         Route::post('/{orderId}/start-work', [OrderController::class, 'startWork']);
         Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder']);
+        // Review: create review for an order
+        Route::post('/{orderId}/review', [ReviewController::class, 'createReview']);
     });
 
     // Payment
@@ -53,7 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Review
     Route::prefix('reviews')->group(function () {
-        Route::post('/order/{orderId}', [ReviewController::class, 'createReview']);
+        Route::get('/provider/{providerId}/summary', [ReviewController::class, 'getProviderReviewSummary']);
         Route::get('/provider/{providerId}', [ReviewController::class, 'getProviderReviews']);
         Route::get('/order/{orderId}', [ReviewController::class, 'getOrderReview']);
     });
