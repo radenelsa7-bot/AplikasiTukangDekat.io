@@ -38,8 +38,8 @@ class TreasurerExportTest extends TestCase
     $res = $this->actingAs($treasurer, 'sanctum')->get('/api/treasurer/payments/report?export=csv');
     $res->assertStatus(200);
     $this->assertStringContainsString('text/csv', $res->headers->get('Content-Type'));
-    // log content for debugging in CI logs if needed
-    \Illuminate\Support\Facades\Log::debug('treasurer.csv.content', ['content' => $res->getContent()]);
+    // log content for debugging in CI logs if needed, using errorlog to avoid file permission issues
+    \Illuminate\Support\Facades\Log::channel('errorlog')->debug('treasurer.csv.content', ['content' => $res->getContent()]);
     $this->assertStringContainsString('payment_id', $res->getContent());
     $this->assertStringContainsString((string)$payment->id, $res->getContent());
   }

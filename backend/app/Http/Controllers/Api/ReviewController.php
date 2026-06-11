@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Review;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -52,7 +53,7 @@ class ReviewController extends Controller
 
     $validated = $request->validate([
       'rating' => 'required|integer|between:1,5',
-      'comment' => 'nullable|string',
+      'comment' => 'nullable|string|max:1000',
     ]);
 
     $review = Review::create([
@@ -89,6 +90,47 @@ class ReviewController extends Controller
     return response()->json([
       'data' => $reviews,
     ], 200);
+  }
+
+  /**
+   * Get summary rating untuk provider
+   */
+  public function getProviderReviewSummary($providerId)
+  {
+    $provider = User::find($providerId);
+
+    if (!$provider) {
+      return response()->json([
+        'message' => 'provider not found',
+      ], 404);
+    }
+
+    $reviewsQuery = Review::where('provider_id', $providerId);
+    $totalReviews = $reviewsQuery->count();
+    $averageRating = $reviewsQuery->avg('rating') ?: 0;
+    $distribution = $reviewsQuery
+      ->selectRaw('rating, COUNT(*) as count')
+      ->groupBy('rating')
+      ->orderByDesc('rating')
+      ->pluck('count', 'rating')
+      ->toArray();
+
+    $distribution = array_replace(array_fill(1, 5, 0), $distribution);
+
+    $avgRatingFormatted = $averageRating ? (float) round((float) $averageRating, 2) : 0.0;
+
+    $data = [
+      'data' => [
+        'provider_id' => (int) $providerId,
+        'average_rating' => $avgRatingFormatted,
+        'total_reviews' => $totalReviews,
+        'distribution' => $distribution,
+      ],
+    ];
+
+    return response(json_encode($data, JSON_PRESERVE_ZERO_FRACTION))
+      ->header('Content-Type', 'application/json')
+      ->setStatusCode(200);
   }
 
   /**

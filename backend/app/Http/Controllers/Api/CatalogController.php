@@ -23,6 +23,22 @@ class CatalogController extends Controller
   }
 
   /**
+   * Get semua providers yang verified
+   */
+  public function getProviders()
+  {
+    $providers = ProviderProfile::where('is_verified', true)
+      ->with(['user', 'services' => function ($query) {
+        $query->where('is_active', true);
+      }])
+      ->get();
+
+    return response()->json([
+      'data' => $providers,
+    ], 200);
+  }
+
+  /**
    * Get providers berdasarkan category
    */
   public function getProvidersByCategory($categoryId)
