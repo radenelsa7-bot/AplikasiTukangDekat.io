@@ -30,9 +30,9 @@ class TukangDekatFooter extends StatelessWidget {
               ),
               Row(
                 children: const [
-                  _FooterLink(label: 'Beranda'),
-                  _FooterLink(label: 'Pesanan'),
-                  _FooterLink(label: 'Akun'),
+                  _FooterLink(label: ''),
+                  _FooterLink(label: ''),
+                  _FooterLink(label: ''),
                 ],
               ),
             ],
