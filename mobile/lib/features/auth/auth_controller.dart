@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+
 import '../../core/services/api_service.dart';
 import '../../core/services/auth_storage_service.dart';
 import 'auth_state.dart';
 
-final authControllerProvider =
-    StateNotifierProvider<AuthController, AuthState>((ref) {
-  return AuthController(ref);
-});
+final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
+  (ref) {
+    return AuthController(ref);
+  },
+);
 
 class AuthController extends StateNotifier<AuthState> {
   AuthController(this._ref) : super(const AuthState());
@@ -79,19 +81,18 @@ class AuthController extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final apiService = _ref.read(apiServiceProvider);
-      final response = await apiService.login(
-        email: email,
-        password: password,
-      );
+      final response = await apiService.login(email: email, password: password);
 
       if (response.token != null && response.user != null) {
         // Save token dan user data
         await _ref.read(authStorageProvider).saveToken(response.token!);
-        await _ref.read(authStorageProvider).saveUserData(
-          userId: response.user!.id,
-          userRole: response.user!.role,
-          userEmail: response.user!.email,
-        );
+        await _ref
+            .read(authStorageProvider)
+            .saveUserData(
+              userId: response.user!.id,
+              userRole: response.user!.role,
+              userEmail: response.user!.email,
+            );
 
         // Set token di Dio
         apiService.setToken(response.token!);
@@ -112,7 +113,8 @@ class AuthController extends StateNotifier<AuthState> {
         return false;
       }
     } on DioException catch (e) {
-      final errorMsg = e.response?.data['email']?[0] ??
+      final errorMsg =
+          e.response?.data['email']?[0] ??
           e.response?.data['message'] ??
           'Login failed';
       state = state.copyWith(isLoading: false, errorMessage: errorMsg);
