@@ -129,13 +129,14 @@ Jika `N8N_WEBHOOK_URL` dikonfigurasi di `backend/.env`, backend juga akan mengir
 - `order_rejected`
 - `work_started`
 - `order_completed`
-- `payment_dp_paid`
-- `payment_final_paid`
+- `dp_paid`
+- `final_paid`
 
 ### Env yang Diperlukan
 ```bash
 N8N_WEBHOOK_URL=https://your-n8n-domain/webhook/...
 N8N_WEBHOOK_SECRET=optional-shared-secret
+N8N_EVENT_SECRET=optional-event-secret
 ```
 
 ### Bentuk Muatan

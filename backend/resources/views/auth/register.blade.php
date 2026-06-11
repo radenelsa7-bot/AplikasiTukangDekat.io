@@ -1,12 +1,9 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Register - TukangDekat</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+@extends('layouts.customer')
+
+@section('title', 'Register - TukangDekat')
+
+@section('content')
+<div class="min-h-[calc(100vh-10rem)] flex items-center justify-center py-10">
   <div class="w-full max-w-md p-6 bg-white rounded shadow">
     <h1 class="text-xl font-bold mb-4">Register</h1>
     <div id="alert" class="hidden mb-3 text-sm"></div>
@@ -41,8 +38,11 @@
     </form>
     <div class="mt-4 text-sm text-gray-600">This registers via API for development use; adjust fields to match your API.</div>
   </div>
+</div>
+@endsection
 
-  <script>
+@push('scripts')
+<script>
     const alertEl = document.getElementById('alert');
     function showAlert(msg, ok=true){ alertEl.classList.remove('hidden'); alertEl.textContent = msg; alertEl.className = ok? 'mb-3 text-sm text-green-700':'mb-3 text-sm text-red-700'; }
 
@@ -64,5 +64,4 @@
       }catch(err){ showAlert(err.message || 'Network error', false); }
     });
   </script>
-</body>
-</html>
+@endpush

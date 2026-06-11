@@ -61,11 +61,19 @@ class OrderController extends Controller
       'status' => 'UNPAID',
     ]);
 
+    $provider = $order->provider;
+
     app(N8nNotificationService::class)->dispatch('order_created', [
       'order_id' => $order->id,
       'order_code' => $order->order_code,
       'customer_id' => $order->customer_id,
       'provider_id' => $order->provider_id,
+      'customer_name' => $user->name,
+      'customer_email' => $user->email,
+      'customer_phone' => $user->phone,
+      'provider_name' => $provider?->name,
+      'provider_email' => $provider?->email,
+      'provider_phone' => $provider?->phone,
       'estimated_price' => $order->estimated_price,
       'dp_amount' => $dpAmount,
       'status' => $order->status,
@@ -167,6 +175,10 @@ class OrderController extends Controller
         'order_id' => $order->id,
         'order_code' => $order->order_code,
         'provider_id' => $order->provider_id,
+        'provider_name' => $user->name,
+        'provider_email' => $user->email,
+        'customer_name' => $order->customer?->name,
+        'customer_email' => $order->customer?->email,
         'status' => $order->status,
       ]);
 
@@ -192,6 +204,10 @@ class OrderController extends Controller
         'order_id' => $order->id,
         'order_code' => $order->order_code,
         'provider_id' => $order->provider_id,
+        'provider_name' => $user->name,
+        'provider_email' => $user->email,
+        'customer_name' => $order->customer?->name,
+        'customer_email' => $order->customer?->email,
         'status' => $order->status,
         'refund_count' => $refundPayments->count(),
       ]);
@@ -301,8 +317,13 @@ class OrderController extends Controller
       'order_id' => $order->id,
       'order_code' => $order->order_code,
       'provider_id' => $order->provider_id,
+      'provider_name' => $user->name,
+      'provider_email' => $user->email,
+      'customer_name' => $order->customer?->name,
+      'customer_email' => $order->customer?->email,
       'final_price' => $validated['final_price'],
       'final_amount' => $finalAmount,
+      'remaining_amount' => $finalAmount,
       'status' => $order->status,
     ]);
 
