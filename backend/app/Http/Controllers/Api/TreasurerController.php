@@ -111,103 +111,54 @@ class TreasurerController extends Controller
         'Content-Disposition' => "attachment; filename=\"{$filename}\"",
       ];
 
-      // When running unit tests, return the full CSV as a string so tests can assert content
-      if (app()->runningUnitTests()) {
-        $out = fopen('php://temp', 'r+');
+      $out = fopen('php://temp', 'r+');
+      fputcsv($out, [
+        'payment_id',
+        'order_id',
+        'payment_type',
+        'status',
+        'amount',
+        'platform_fee',
+        'provider_payout',
+        'refund_amount',
+        'refund_status',
+        'payment_reference',
+        'customer',
+        'provider',
+        'created_at',
+        'updated_at'
+      ]);
+
+      foreach ($exportQuery as $p) {
+        $customerName = optional($p->order->customer)->name ?? optional($p->order->customer)->email ?? '';
+        $providerName = optional($p->order->provider)->name ?? optional($p->order->provider)->email ?? '';
+
         fputcsv($out, [
-          'payment_id',
-          'order_id',
-          'payment_type',
-          'status',
-          'amount',
-          'platform_fee',
-          'provider_payout',
-          'refund_amount',
-          'refund_status',
-          'payment_reference',
-          'customer',
-          'provider',
-          'created_at',
-          'updated_at'
+          $p->id,
+          $p->order_id,
+          $p->payment_type,
+          $p->status,
+          $p->amount,
+          $p->platform_fee,
+          $p->provider_payout,
+          $p->refund_amount,
+          $p->refund_status,
+          $p->payment_reference ?? '',
+          $customerName,
+          $providerName,
+          $p->created_at->toDateTimeString(),
+          $p->updated_at->toDateTimeString(),
         ]);
-
-        foreach ($exportQuery as $p) {
-          $customerName = optional($p->order->customer)->name ?? optional($p->order->customer)->email ?? '';
-          $providerName = optional($p->order->provider)->name ?? optional($p->order->provider)->email ?? '';
-
-          fputcsv($out, [
-            $p->id,
-            $p->order_id,
-            $p->payment_type,
-            $p->status,
-            $p->amount,
-            $p->platform_fee,
-            $p->provider_payout,
-            $p->refund_amount,
-            $p->refund_status,
-            $p->payment_reference ?? '',
-            $customerName,
-            $providerName,
-            $p->created_at->toDateTimeString(),
-            $p->updated_at->toDateTimeString(),
-          ]);
-        }
-
-        rewind($out);
-        $content = stream_get_contents($out);
-        fclose($out);
-
-        // include charset for consistency with other responses
-        $headers['Content-Type'] = 'text/csv; charset=utf-8';
-
-        return response($content, 200, $headers);
       }
 
-      $callback = function () use ($exportQuery) {
-        $out = fopen('php://output', 'w');
-        fputcsv($out, [
-          'payment_id',
-          'order_id',
-          'payment_type',
-          'status',
-          'amount',
-          'platform_fee',
-          'provider_payout',
-          'refund_amount',
-          'refund_status',
-          'payment_reference',
-          'customer',
-          'provider',
-          'created_at',
-          'updated_at'
-        ]);
+      rewind($out);
+      $content = stream_get_contents($out);
+      fclose($out);
 
-        foreach ($exportQuery as $p) {
-          $customerName = optional($p->order->customer)->name ?? optional($p->order->customer)->email ?? '';
-          $providerName = optional($p->order->provider)->name ?? optional($p->order->provider)->email ?? '';
+      // include charset for consistency with other responses
+      $headers['Content-Type'] = 'text/csv; charset=utf-8';
 
-          fputcsv($out, [
-            $p->id,
-            $p->order_id,
-            $p->payment_type,
-            $p->status,
-            $p->amount,
-            $p->platform_fee,
-            $p->provider_payout,
-            $p->refund_amount,
-            $p->refund_status,
-            $p->payment_reference ?? '',
-            $customerName,
-            $providerName,
-            $p->created_at->toDateTimeString(),
-            $p->updated_at->toDateTimeString(),
-          ]);
-        }
-
-        fclose($out);
-      };
-
-      return response()->streamDownload($callback, $filename, $headers);
+      return response($content, 200, $headers);
     }
 
     // Jika diminta ekspor XLS (SpreadsheetML/XML) tanpa membutuhkan ekstensi zip

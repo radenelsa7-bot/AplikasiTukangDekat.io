@@ -8,14 +8,12 @@ return new class extends Migration {
   public function up()
   {
     Schema::table('payments', function (Blueprint $table) {
-      // Only add columns if provider_payout already exists
-      if (Schema::hasColumn('payments', 'provider_payout')) {
-        if (!Schema::hasColumn('payments', 'provider_payout_processed')) {
-          $table->boolean('provider_payout_processed')->default(false)->after('provider_payout');
-        }
-        if (!Schema::hasColumn('payments', 'provider_paid_at')) {
-          $table->timestamp('provider_paid_at')->nullable()->after('provider_payout_processed');
-        }
+      if (!Schema::hasColumn('payments', 'provider_payout_processed')) {
+        $table->boolean('provider_payout_processed')->default(false);
+      }
+
+      if (!Schema::hasColumn('payments', 'provider_paid_at')) {
+        $table->timestamp('provider_paid_at')->nullable();
       }
     });
   }

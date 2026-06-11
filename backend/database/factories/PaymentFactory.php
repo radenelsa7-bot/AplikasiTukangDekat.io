@@ -22,8 +22,11 @@ class PaymentFactory extends Factory
       'payment_type' => 'DP',
       'amount' => $this->faker->numberBetween(10000, 200000),
       'status' => 'PAID',
-      'provider' => null,
-      'external_payment_id' => null,
+      'provider' => 'SIMULATION',
+      'external_payment_id' => 'PAY-' . $this->faker->unique()->randomNumber(6),
+      'qris_code' => null,
+      'qris_image' => null,
+      'checkout_url' => null,
       'paid_at' => now(),
     ];
   }

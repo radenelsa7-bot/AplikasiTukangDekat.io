@@ -47,6 +47,9 @@ class PaymentController extends Controller
       'provider' => $qrisData['provider'] ?? $payment->provider,
       'external_payment_id' => $qrisData['reference'] ?? $payment->external_payment_id,
       'status' => $payment->status === 'UNPAID' ? 'PENDING' : $payment->status,
+      'qris_code' => $qrisData['qris_code'] ?? $payment->qris_code,
+      'qris_image' => $qrisData['qris_image'] ?? $payment->qris_image,
+      'checkout_url' => $qrisData['checkout_url'] ?? $payment->checkout_url,
     ]);
 
     return response()->json([
@@ -135,5 +138,43 @@ class PaymentController extends Controller
     return response()->json([
       'data' => $payment,
     ], 200);
+  }
+
+  /**
+   * Capture/confirm QRIS payment manually (untuk testing atau UI confirmation)
+   */
+  public function captureQris(Request $request, $paymentId)
+  {
+    $payment = Payment::with(['order'])->find($paymentId);
+
+    if (!$payment) {
+      return response()->json(['message' => 'payment not found'], 404);
+    }
+
+    // Simulasi payment capture dari frontend
+    $payment->update([
+      'status' => 'PAID',
+      'paid_at' => now(),
+    ]);
+
+    $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
+
+    // Trigger notification
+    app(N8nNotificationService::class)->dispatch(
+      'payment_' . strtolower($payment->payment_type) . '_paid',
+      [
+        'order_id' => $payment->order_id,
+        'payment_id' => $payment->id,
+        'payment_type' => $payment->payment_type,
+        'amount' => $payment->amount,
+      ]
+    );
+
+    // Close order if FINAL payment
+    if ($payment->payment_type === 'FINAL') {
+      $payment->order->update(['status' => 'CLOSED']);
+    }
+
+    return response()->json(['message' => 'payment captured', 'data' => $payment], 200);
   }
 }

@@ -22,6 +22,7 @@ Route::prefix('auth')->group(function () {
 // Catalog routes (public)
 Route::prefix('catalog')->group(function () {
     Route::get('/categories', [CatalogController::class, 'getCategories']);
+    Route::get('/providers', [CatalogController::class, 'getProviders']);
     Route::get('/categories/{categoryId}/providers', [CatalogController::class, 'getProvidersByCategory']);
     Route::get('/providers/search', [CatalogController::class, 'searchProviders']);
     Route::get('/providers/{providerId}', [CatalogController::class, 'getProviderDetail']);
@@ -52,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Review
     Route::prefix('reviews')->group(function () {
         Route::post('/order/{orderId}', [ReviewController::class, 'createReview']);
+        Route::get('/provider/{providerId}/summary', [ReviewController::class, 'getProviderReviewSummary']);
         Route::get('/provider/{providerId}', [ReviewController::class, 'getProviderReviews']);
         Route::get('/order/{orderId}', [ReviewController::class, 'getOrderReview']);
     });

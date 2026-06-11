@@ -26,6 +26,9 @@ class Payment extends Model
     'status',
     'provider',
     'external_payment_id',
+    'qris_code',
+    'qris_image',
+    'checkout_url',
     'paid_at',
   ];
 
