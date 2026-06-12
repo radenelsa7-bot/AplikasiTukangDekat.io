@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\ProviderProfile;
 use Illuminate\Http\Request;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Validation\ValidationException;
@@ -17,15 +19,9 @@ class AuthController extends Controller
     /**
      * Register user baru
      */
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'email' => 'required|string|email|unique:users',
-            'phone' => 'required|string|max:30',
-            'password' => 'required|string|min:6|confirmed',
-            'role' => 'required|in:CUSTOMER,PROVIDER',
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
             'name' => $validated['name'],
@@ -44,43 +40,32 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json([
-            'message' => 'registered',
-            'data' => [
-                'user_id' => $user->id,
-                'role' => $user->role,
-            ],
-        ], 201);
+        return $this->createdResponse([
+            'user_id' => $user->id,
+            'role' => $user->role,
+        ], 'registered');
     }
 
     /**
      * Login user
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $validated = $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         $user = User::query()->where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
-            return response()->json([
-                'message' => 'The provided credentials are incorrect.',
-            ], 401);
+            return $this->errorResponse('The provided credentials are incorrect.', 401);
         }
 
         if ($user->status !== 'ACTIVE') {
-            return response()->json([
-                'message' => 'Your account is not active.',
-            ], 403);
+            return $this->errorResponse('Your account is not active.', 403);
         }
 
         $token = $user->createToken('api-token')->plainTextToken;
 
-        return response()->json([
-            'message' => 'ok',
+        return $this->successResponse([
             'token' => $token,
             'token_type' => 'Bearer',
             'user' => [
@@ -89,36 +74,32 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'role' => $user->role,
             ],
-        ], 200);
+        ], 'ok', 200);
     }
 
     /**
      * Session-based login for Sanctum SPA (web)
      */
-    public function sessionLogin(Request $request): JsonResponse
+    public function sessionLogin(LoginRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         if (!Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']], $request->boolean('remember'))) {
-            return response()->json(['message' => 'invalid_credentials'], 401);
+            return $this->errorResponse('invalid_credentials', 401);
         }
 
         $request->session()->regenerate();
 
         $user = $request->user();
 
-        return response()->json([
-            'message' => 'ok',
+        return $this->successResponse([
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
             ],
-        ], 200);
+        ], 'ok', 200);
     }
 
     /**
@@ -132,9 +113,7 @@ class AuthController extends Controller
             $token->delete();
         }
 
-        return response()->json([
-            'message' => 'logged_out',
-        ], 200);
+        return $this->successResponse(null, 'logged_out', 200);
     }
 
     /**
@@ -147,6 +126,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['message' => 'logged_out'], 200);
+        return $this->successResponse(null, 'logged_out', 200);
     }
 }
