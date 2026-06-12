@@ -36,22 +36,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Order
     Route::prefix('orders')->group(function () {
-        Route::post('/', [OrderController::class, 'createOrder']);
+        Route::post('/', [OrderController::class, 'createOrder'])->middleware('role:write');
         Route::get('/my-orders', [OrderController::class, 'getMyOrders']);
         Route::get('/{orderId}', [OrderController::class, 'getOrder']);
-        Route::post('/{orderId}/respond', [OrderController::class, 'respondToOrder']);
-        Route::post('/{orderId}/start-work', [OrderController::class, 'startWork']);
-        Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder']);
+        Route::post('/{orderId}/respond', [OrderController::class, 'respondToOrder'])->middleware('role:write');
+        Route::post('/{orderId}/start-work', [OrderController::class, 'startWork'])->middleware('role:write');
+        Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder'])->middleware('role:write');
         // Review: create review for an order
-        Route::post('/{orderId}/review', [ReviewController::class, 'createReview']);
+        Route::post('/{orderId}/review', [ReviewController::class, 'createReview'])->middleware('role:write');
     });
 
     // Payment
     Route::prefix('payments')->group(function () {
         Route::get('/order/{orderId}', [PaymentController::class, 'getPayments']);
         Route::get('/{paymentId}', [PaymentController::class, 'getPaymentStatus']);
-        Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS']);
-        Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware('throttle:3,1');
+        Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS'])->middleware(['throttle:3,1', 'role:write']);
+        Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware(['throttle:3,1', 'role:write']);
     });
 
     // Review
@@ -62,13 +62,13 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Admin
-    Route::prefix('admin')->group(function () {
+    Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('/providers/pending', [AdminController::class, 'getPendingProviders']);
         Route::patch('/providers/{providerId}/verification', [AdminController::class, 'updateVerification']);
     });
 
     // Treasurer (API for web requests)
-    Route::prefix('treasurer')->group(function () {
+    Route::prefix('treasurer')->middleware('role:readonly')->group(function () {
         Route::get('/payments/report', [TreasurerController::class, 'paymentReport']);
     });
 });

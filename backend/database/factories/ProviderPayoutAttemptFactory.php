@@ -17,7 +17,7 @@ class ProviderPayoutAttemptFactory extends Factory
   {
     return [
       'provider_payout_id' => ProviderPayout::factory()->create()->id,
-      'status' => 'attempted',
+      'status' => 'PENDING',
       'transaction_reference' => $this->faker->uuid(),
       'error_message' => null,
       'meta' => [
@@ -32,8 +32,8 @@ class ProviderPayoutAttemptFactory extends Factory
    */
   public function success(): static
   {
-    return $this->state(fn (array $attributes) => [
-      'status' => 'success',
+    return $this->state(fn(array $attributes) => [
+      'status' => 'SENT',
       'error_message' => null,
     ]);
   }
@@ -43,8 +43,8 @@ class ProviderPayoutAttemptFactory extends Factory
    */
   public function failed(): static
   {
-    return $this->state(fn (array $attributes) => [
-      'status' => 'failed',
+    return $this->state(fn(array $attributes) => [
+      'status' => 'FAILED',
       'error_message' => $this->faker->randomElement([
         'Insufficient balance',
         'Invalid account',
@@ -59,8 +59,8 @@ class ProviderPayoutAttemptFactory extends Factory
    */
   public function pending(): static
   {
-    return $this->state(fn (array $attributes) => [
-      'status' => 'pending',
+    return $this->state(fn(array $attributes) => [
+      'status' => 'PENDING',
       'error_message' => null,
     ]);
   }

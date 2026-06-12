@@ -6,28 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\ProviderProfile;
 use App\Services\N8nNotificationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
-  private function ensureAdmin(): ?\Illuminate\Http\JsonResponse
-  {
-    $user = Auth::user();
-
-    if (!$user || $user->role !== 'ADMIN') {
-      return response()->json([
-        'message' => 'only admin can access this resource',
-      ], 403);
-    }
-
-    return null;
-  }
-
   public function getPendingProviders(Request $request)
   {
-    if ($response = $this->ensureAdmin()) {
-      return $response;
-    }
 
     $providers = ProviderProfile::with('user')
       ->where('is_verified', false)
@@ -41,10 +24,6 @@ class AdminController extends Controller
 
   public function updateVerification(Request $request, $providerId)
   {
-    if ($response = $this->ensureAdmin()) {
-      return $response;
-    }
-
     $validated = $request->validate([
       'is_verified' => 'required|boolean',
     ]);

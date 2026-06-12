@@ -116,15 +116,16 @@ class ReviewController extends Controller
       ->toArray();
 
     $distribution = array_replace(array_fill(1, 5, 0), $distribution);
+    $distribution = array_map('intval', $distribution);
 
     return response()->json([
       'data' => [
-        'provider_id' => $providerId,
-        'average_rating' => round((float) $averageRating, 2),
-        'total_reviews' => $totalReviews,
+        'provider_id' => (int) $providerId,
+        'average_rating' => (float) round((float) $averageRating, 2),
+        'total_reviews' => (int) $totalReviews,
         'distribution' => $distribution,
       ],
-    ], 200);
+    ], 200, [], JSON_PRESERVE_ZERO_FRACTION);
   }
 
   /**

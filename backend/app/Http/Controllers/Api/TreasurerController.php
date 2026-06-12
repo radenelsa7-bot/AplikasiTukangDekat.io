@@ -5,37 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class TreasurerController extends Controller
 {
-    private function ensureTreasurer(): ?\Illuminate\Http\JsonResponse
-    {
-        // Check web session auth (web routes use web guard) or Sanctum token (API routes)
-        $user = Auth::user() ?? Auth::guard('web')->user();
-        if (!$user) {
-            Log::error('No user found in TreasurerController.ensureTreasurer');
-            Log::error('Auth::user: ' . (Auth::user() ? 'found' : 'null'));
-            Log::error('Auth guard web: ' . (Auth::guard('web')->user() ? 'found' : 'null'));
-        }
-
-        if (!$user || $user->role !== 'TREASURER') {
-            return response()->json([
-                'message' => 'only treasurer can access this resource',
-                'debug_user' => $user ? $user->email : null,
-                'debug_role' => $user ? $user->role : null,
-            ], 403);
-        }
-
-        return null;
-    }
-
     public function paymentReport(Request $request)
     {
-        if ($response = $this->ensureTreasurer()) {
-            return $response;
-        }
 
         $validated = $request->validate([
             'start_date' => 'nullable|date_format:Y-m-d',

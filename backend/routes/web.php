@@ -103,7 +103,3 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->back()->with('status', 'Payouts processed');
     })->name('admin.treasurer.process_payouts');
 });
-
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/api/treasurer/payments/report', [App\Http\Controllers\Api\TreasurerController::class, 'paymentReport'])->name('api.treasurer.report');
-});
