@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Treasurer\PaymentReportRequest;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,37 +16,24 @@ class TreasurerController extends Controller
         // Check web session auth (web routes use web guard) or Sanctum token (API routes)
         $user = Auth::user() ?? Auth::guard('web')->user();
         if (!$user) {
-            Log::error('No user found in TreasurerController.ensureTreasurer');
-            Log::error('Auth::user: ' . (Auth::user() ? 'found' : 'null'));
-            Log::error('Auth guard web: ' . (Auth::guard('web')->user() ? 'found' : 'null'));
+            Log::warning('No user found in TreasurerController.ensureTreasurer');
         }
 
         if (!$user || $user->role !== 'TREASURER') {
-            return response()->json([
-                'message' => 'only treasurer can access this resource',
-                'debug_user' => $user ? $user->email : null,
-                'debug_role' => $user ? $user->role : null,
-            ], 403);
+            Log::warning('Unauthorized treasurer access attempt', ['user' => $user ? $user->id : null]);
+            return $this->forbiddenResponse('only treasurer can access this resource');
         }
 
         return null;
     }
 
-    public function paymentReport(Request $request)
+    public function paymentReport(PaymentReportRequest $request)
     {
         if ($response = $this->ensureTreasurer()) {
             return $response;
         }
 
-        $validated = $request->validate([
-            'start_date' => 'nullable|date_format:Y-m-d',
-            'end_date' => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
-            'status' => 'nullable|in:UNPAID,PENDING,PAID,FAILED,EXPIRED',
-            'payment_type' => 'nullable|in:DP,FINAL',
-            'order_id' => 'nullable|integer|exists:orders,id',
-            'provider_id' => 'nullable|integer|exists:users,id',
-            'per_page' => 'nullable|integer|min:1|max:100',
-        ]);
+        $validated = $request->validated();
 
         $query = Payment::with(['order.customer', 'order.provider']);
 
@@ -244,8 +232,8 @@ class TreasurerController extends Controller
             return response($xml, 200, $headers);
         }
 
-        return response()->json([
-            'data' => $payments->items(),
+        return $this->successResponse([
+            'payments' => $payments->items(),
             'summary' => $summary,
             'breakdown' => [
                 'by_status' => $byStatus,
@@ -265,6 +253,6 @@ class TreasurerController extends Controller
                 'order_id' => $validated['order_id'] ?? null,
                 'provider_id' => $validated['provider_id'] ?? null,
             ],
-        ], 200);
+        ], 'ok', 200);
     }
 }
