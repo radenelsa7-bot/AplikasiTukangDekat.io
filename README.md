@@ -36,6 +36,19 @@ docker compose exec backend composer install
 docker compose exec backend php artisan migrate --seed
 ```
 
+### 2) Akun seed data
+Seeder default membuat akun test dengan password yang sama.
+Gunakan kredensial berikut untuk login setelah `php artisan migrate --seed` selesai:
+
+- Admin: `admin@example.com` / `password`
+- Customer: `fajar@example.com` / `password123`
+- Customer: `nabila@example.com` / `password123`
+- Customer: `aldo@example.com` / `password123`
+- Provider: `andi.listrik@example.com` / `password123`
+- Provider: `budi.plumbing@example.com` / `password123`
+- Provider: `citra.ac@example.com` / `password123`
+
+
 ## 🔧 Troubleshooting Login
 
 Jika aplikasi Flutter/web menampilkan kesalahan login atau error koneksi database seperti:

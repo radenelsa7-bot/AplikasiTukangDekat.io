@@ -6,6 +6,7 @@ services:
       dockerfile: Dockerfile
     image: laravel-backend
     container_name: laravel_app
+    working_dir: /var/www
     ports:
       - "8000:8000"
     command: php artisan serve --host=0.0.0.0 --port=8000

@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\User;
 use App\Services\PaymentFinanceService;
 use App\Services\N8nNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
@@ -30,7 +33,9 @@ class OrderController extends Controller
     }
 
     $validated = $request->validate([
-      'provider_id' => 'required|exists:users,id',
+      'provider_id' => ['required', 'integer', Rule::exists('users', 'id')->where(function ($query) {
+        $query->where('role', 'PROVIDER')->where('status', 'ACTIVE');
+      })],
       'provider_service_id' => 'nullable|exists:provider_services,id',
       'category_id' => 'required|exists:service_categories,id',
       'schedule_at' => 'required|date_format:Y-m-d H:i:s',
@@ -39,27 +44,38 @@ class OrderController extends Controller
       'estimated_price' => 'required|integer|min:1',
     ]);
 
-    $order = Order::create([
-      'order_code' => Order::generateCode(),
-      'customer_id' => $user->id,
-      'provider_id' => $validated['provider_id'],
-      'category_id' => $validated['category_id'],
-      'provider_service_id' => $validated['provider_service_id'] ?? null,
-      'schedule_at' => $validated['schedule_at'],
-      'address' => $validated['address'],
-      'notes' => $validated['notes'] ?? null,
-      'estimated_price' => $validated['estimated_price'],
-      'status' => 'CREATED',
-    ]);
+    $provider = User::with('providerProfile')->find($validated['provider_id']);
+    if (!$provider || !$provider->providerProfile?->is_verified) {
+      return response()->json([
+        'message' => 'provider must be a verified active provider',
+      ], 422);
+    }
 
-    // Buat payment DP (50%)
-    $dpAmount = intval($validated['estimated_price'] * 0.5);
-    Payment::create([
-      'order_id' => $order->id,
-      'payment_type' => 'DP',
-      'amount' => $dpAmount,
-      'status' => 'UNPAID',
-    ]);
+    $order = DB::transaction(function () use ($validated, $user) {
+      $order = Order::create([
+        'order_code' => Order::generateCode(),
+        'customer_id' => $user->id,
+        'provider_id' => $validated['provider_id'],
+        'category_id' => $validated['category_id'],
+        'provider_service_id' => $validated['provider_service_id'] ?? null,
+        'schedule_at' => $validated['schedule_at'],
+        'address' => $validated['address'],
+        'notes' => $validated['notes'] ?? null,
+        'estimated_price' => $validated['estimated_price'],
+        'status' => 'CREATED',
+      ]);
+
+      // Buat payment DP (50%)
+      $dpAmount = intval($validated['estimated_price'] * 0.5);
+      Payment::create([
+        'order_id' => $order->id,
+        'payment_type' => 'DP',
+        'amount' => $dpAmount,
+        'status' => 'UNPAID',
+      ]);
+
+      return $order;
+    });
 
     $provider = $order->provider;
 
@@ -95,6 +111,7 @@ class OrderController extends Controller
    */
   public function getOrder($orderId)
   {
+    $user = Auth::user();
     $order = Order::with(['customer', 'provider', 'payments'])
       ->find($orderId);
 
@@ -102,6 +119,12 @@ class OrderController extends Controller
       return response()->json([
         'message' => 'order not found',
       ], 404);
+    }
+
+    if ($user->role !== 'ADMIN' && $user->role !== 'TREASURER' && $order->customer_id !== $user->id && $order->provider_id !== $user->id) {
+      return response()->json([
+        'message' => 'unauthorized',
+      ], 403);
     }
 
     return response()->json([
@@ -162,6 +185,12 @@ class OrderController extends Controller
       return response()->json([
         'message' => 'unauthorized',
       ], 403);
+    }
+
+    if ($order->status !== 'CREATED') {
+      return response()->json([
+        'message' => 'order can only be accepted or rejected when it is newly created',
+      ], 422);
     }
 
     $validated = $request->validate([
@@ -246,6 +275,12 @@ class OrderController extends Controller
       ], 403);
     }
 
+    if ($order->status !== 'ACCEPTED') {
+      return response()->json([
+        'message' => 'work can only start after order is accepted',
+      ], 422);
+    }
+
     $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
     if (!$dpPayment || $dpPayment->status !== 'PAID') {
       return response()->json([
@@ -281,7 +316,7 @@ class OrderController extends Controller
       ], 403);
     }
 
-    $order = Order::find($orderId);
+    $order = Order::with('payments')->find($orderId);
 
     if (!$order) {
       return response()->json([
@@ -295,23 +330,45 @@ class OrderController extends Controller
       ], 403);
     }
 
+    if ($order->status !== 'IN_PROGRESS') {
+      return response()->json([
+        'message' => 'order can only be completed after work has started',
+      ], 422);
+    }
+
     $validated = $request->validate([
       'final_price' => 'required|integer|min:1',
     ]);
 
-    $order->update([
-      'status' => 'COMPLETED',
-      'final_price' => $validated['final_price'],
-    ]);
+    $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
+    if (!$dpPayment || $dpPayment->status !== 'PAID') {
+      return response()->json([
+        'message' => 'dp payment must be paid before order can be completed',
+      ], 422);
+    }
 
-    // Buat payment final
-    $finalAmount = $validated['final_price'] - ($order->payments()->where('payment_type', 'DP')->first()->amount ?? 0);
-    Payment::create([
-      'order_id' => $order->id,
-      'payment_type' => 'FINAL',
-      'amount' => $finalAmount,
-      'status' => 'UNPAID',
-    ]);
+    $finalAmount = $validated['final_price'] - $dpPayment->amount;
+    if ($finalAmount < 0) {
+      return response()->json([
+        'message' => 'final price cannot be lower than dp payment amount',
+      ], 422);
+    }
+
+    DB::transaction(function () use ($order, $validated, $finalAmount) {
+      $order->update([
+        'status' => 'COMPLETED',
+        'final_price' => $validated['final_price'],
+      ]);
+
+      if ($finalAmount > 0) {
+        Payment::create([
+          'order_id' => $order->id,
+          'payment_type' => 'FINAL',
+          'amount' => $finalAmount,
+          'status' => 'UNPAID',
+        ]);
+      }
+    });
 
     app(N8nNotificationService::class)->dispatch('order_completed', [
       'order_id' => $order->id,

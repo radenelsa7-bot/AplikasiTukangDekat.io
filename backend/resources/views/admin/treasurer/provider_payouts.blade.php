@@ -1,8 +1,9 @@
 @extends('layouts.admin')
 
-@section('title', 'Provider Payouts')
+@section('title', 'Provider Payouts - TukangDekat')
+@section('page_title', 'Provider Payouts')
 
-@section('content')
+@section('admin_content')
 <div class="max-w-6xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-4">Daftar Provider Payouts</h1>
 

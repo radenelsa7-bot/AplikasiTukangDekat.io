@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Payment;
 use App\Services\PaymentGatewayService;
 use App\Services\PaymentFinanceService;
 use App\Services\N8nNotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
@@ -22,6 +25,17 @@ class PaymentController extends Controller
    */
   public function getPayments($orderId)
   {
+    $user = Auth::user();
+    $order = Order::with(['customer', 'provider'])->find($orderId);
+
+    if (!$order) {
+      return response()->json(['message' => 'order not found'], 404);
+    }
+
+    if ($user->role !== 'ADMIN' && $user->role !== 'TREASURER' && $order->customer_id !== $user->id && $order->provider_id !== $user->id) {
+      return response()->json(['message' => 'unauthorized'], 403);
+    }
+
     $payments = Payment::where('order_id', $orderId)->get();
 
     return response()->json([
@@ -40,6 +54,10 @@ class PaymentController extends Controller
       return response()->json([
         'message' => 'payment not found',
       ], 404);
+    }
+
+    if ($response = $this->authorizePaymentAccess($payment, false)) {
+      return $response;
     }
 
     $qrisData = $this->paymentGatewayService->generateQrisPayload($payment);
@@ -88,49 +106,92 @@ class PaymentController extends Controller
       return response()->json(['message' => 'payment not found'], 404);
     }
 
-    $newStatus = $this->paymentGatewayService->mapStatus($status);
+    // Idempotency: compute a stable event hash and record it before processing.
+    $driver = $this->paymentGatewayService->driver();
+    $sigHeader = (string) $request->header(config('services.payments.webhook_signature_header', 'X-Payment-Signature'), '');
+    $rawSignature = $sigHeader !== '' ? $sigHeader : (string) ($request->input('signature_key') ?? '');
+    $extIdForHash = $externalPaymentId ?? ($paymentId ?? '');
+    $eventHash = hash('sha256', implode('|', [$driver, $extIdForHash, (string) ($status ?? ''), $rawSignature]));
 
-    $payment->update([
-      'status' => $newStatus,
-      'external_payment_id' => $externalPaymentId,
-      'provider' => $payment->provider ?: strtoupper(config('services.payments.driver', 'simulation')),
-      'paid_at' => ($newStatus === 'PAID') ? now() : $payment->paid_at,
+    $inserted = \Illuminate\Support\Facades\DB::table('processed_webhook_events')->insertOrIgnore([
+      'event_hash' => $eventHash,
+      'driver' => $driver,
+      'external_id' => $extIdForHash,
+      'status' => $status,
+      'created_at' => now(),
+      'updated_at' => now(),
     ]);
 
-    // Jika payment berhasil, update order status
-    if ($newStatus === 'PAID') {
-      $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
+    // insertOrIgnore returns number of rows inserted; if zero, event was already processed
+    if ($inserted === 0) {
+      return response()->json(['message' => 'duplicate event ignored'], 200);
+    }
 
-      $order = $payment->order;
+    $newStatus = $this->paymentGatewayService->mapStatus($status);
 
-      $eventName = match (strtoupper($payment->payment_type)) {
-        'DP' => 'dp_paid',
-        'FINAL' => 'final_paid',
-        default => 'payment_' . strtolower($payment->payment_type) . '_paid',
-      };
+    // Use DB transaction to ensure payment + order updates are atomic
+    DB::beginTransaction();
+    try {
+      // Update basic payment fields
+      $payment->update([
+        'status' => $newStatus,
+        'external_payment_id' => $externalPaymentId,
+        'provider' => $payment->provider ?: strtoupper(config('services.payments.driver', 'simulation')),
+        'paid_at' => ($newStatus === 'PAID') ? now() : $payment->paid_at,
+      ]);
 
-      app(N8nNotificationService::class)->dispatch(
-        $eventName,
-        [
-          'order_id' => $order->id,
-          'order_code' => $order->order_code,
-          'payment_id' => $payment->id,
-          'payment_type' => $payment->payment_type,
-          'amount' => $payment->amount,
-          'order_status' => $order->status,
-          'customer_name' => $order->customer?->name,
-          'customer_email' => $order->customer?->email,
-          'customer_phone' => $order->customer?->phone,
-          'provider_name' => $order->provider?->name,
-          'provider_email' => $order->provider?->email,
-          'provider_phone' => $order->provider?->phone,
-        ]
-      );
+      // If payment just became PAID, apply settlement snapshot and affect order
+      if ($newStatus === 'PAID') {
+        // apply financial snapshot
+        $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
 
-      // Jika FINAL payment sudah dibayar, tutup order
-      if ($payment->payment_type === 'FINAL') {
-        $order->update(['status' => 'CLOSED']);
+        $order = $payment->order;
+
+        $eventName = match (strtoupper($payment->payment_type)) {
+          'DP' => 'dp_paid',
+          'FINAL' => 'final_paid',
+          default => 'payment_' . strtolower($payment->payment_type) . '_paid',
+        };
+
+        app(N8nNotificationService::class)->dispatch(
+          $eventName,
+          [
+            'order_id' => $order->id,
+            'order_code' => $order->order_code,
+            'payment_id' => $payment->id,
+            'payment_type' => $payment->payment_type,
+            'amount' => $payment->amount,
+            'order_status' => $order->status,
+            'customer_name' => $order->customer?->name,
+            'customer_email' => $order->customer?->email,
+            'customer_phone' => $order->customer?->phone,
+            'provider_name' => $order->provider?->name,
+            'provider_email' => $order->provider?->email,
+            'provider_phone' => $order->provider?->phone,
+          ]
+        );
+
+        // Business rule: when DP is paid and order is still CREATED, mark as ACCEPTED
+        if ($payment->payment_type === 'DP' && $order && $order->status === 'CREATED') {
+          $order->update(['status' => 'ACCEPTED']);
+          app(N8nNotificationService::class)->dispatch('order_accepted', [
+            'order_id' => $order->id,
+            'order_code' => $order->order_code,
+            'payment_id' => $payment->id,
+            'status' => $order->status,
+          ]);
+        }
+
+        // Jika FINAL payment sudah dibayar, tutup order (only if order was COMPLETED)
+        if ($payment->payment_type === 'FINAL' && $order) {
+          $order->update(['status' => 'CLOSED']);
+        }
       }
+
+      DB::commit();
+    } catch (\Throwable $e) {
+      DB::rollBack();
+      return response()->json(['message' => 'processing error', 'error' => $e->getMessage()], 500);
     }
 
     return response()->json(['message' => 'payment processed'], 200);
@@ -149,6 +210,10 @@ class PaymentController extends Controller
       ], 404);
     }
 
+    if ($response = $this->authorizePaymentAccess($payment, false)) {
+      return $response;
+    }
+
     return response()->json([
       'data' => $payment,
     ], 200);
@@ -163,6 +228,10 @@ class PaymentController extends Controller
 
     if (!$payment) {
       return response()->json(['message' => 'payment not found'], 404);
+    }
+
+    if ($response = $this->authorizePaymentAccess($payment)) {
+      return $response;
     }
 
     $checkoutUrl = $payment->checkout_url;
@@ -233,5 +302,31 @@ class PaymentController extends Controller
     } finally {
       Cache::forget($lockKey);
     }
+  }
+
+  private function authorizePaymentAccess(Payment $payment, bool $allowTreasurerRead = true)
+  {
+    $user = Auth::user();
+
+    if (!$user) {
+      return response()->json(['message' => 'unauthenticated'], 401);
+    }
+
+    // ADMIN has full access
+    if ($user->role === 'ADMIN') {
+      return null;
+    }
+
+    // TREASURER is allowed read-only access in some contexts
+    if ($user->role === 'TREASURER' && $allowTreasurerRead) {
+      return null;
+    }
+
+    // Otherwise only customer or provider related to order can access
+    if ($payment->order?->customer_id !== $user->id && $payment->order?->provider_id !== $user->id) {
+      return response()->json(['message' => 'unauthorized'], 403);
+    }
+
+    return null;
   }
 }
