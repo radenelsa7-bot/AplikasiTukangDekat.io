@@ -19,7 +19,7 @@
     </style>
     @stack('head')
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
+<body class="@yield('body_class', 'bg-slate-50 text-slate-900 min-h-screen')">
     @yield('header')
 
     <main class="min-h-[calc(100vh-10rem)]">

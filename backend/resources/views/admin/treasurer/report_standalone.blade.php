@@ -1,8 +1,9 @@
 @extends('layouts.admin')
 
-@section('title', 'Laporan Bendahara')
+@section('title', 'Laporan Bendahara - TukangDekat')
+@section('page_title', 'Laporan Bendahara')
 
-@section('content')
+@section('admin_content')
 <div class="max-w-6xl mx-auto p-6">
         <h2 class="text-2xl font-bold mb-6">Laporan Bendahara - Pembayaran</h2>
 
