@@ -166,3 +166,78 @@ Semua smoke test backend lulus dan sistem pembayaran terintegrasi penuh:
 - ✅ Deployment staging
 - ✅ Release produksi
 - ✅ Pengujian alur pembayaran penuh
+
+## UPDATE 14 Juni 2026 — Hasil Pelaksanaan Rekomendasi
+
+Saya mencoba menjalankan rekomendasi langkah selanjutnya (menjalankan test suite dan test webhook) dari branch `feature/backend-123-deploy-smoke`, namun eksekusi otomatis di environment saat ini gagal karena keterbatasan lingkungan:
+
+- Percobaan 1: `cd backend; php artisan test`
+  - Hasil: Gagal — `php` tidak ditemukan pada PATH di runner (CommandNotFoundException).
+
+- Percobaan 2: `cd backend; docker compose run --rm app php artisan test`
+  - Hasil: Gagal — Docker daemon tidak tersedia/terhenti pada host (gagal mengakses Docker API).
+
+Karena kedua cara eksekusi (PHP lokal dan Docker Compose) tidak tersedia di lingkungan eksekusi ini, saya tidak dapat menjalankan test suite secara langsung.
+
+Rekomendasi selanjutnya untuk menyelesaikan langkah yang tertunda:
+
+1. Jalankan perintah berikut pada mesin pengembang atau CI yang memiliki Docker dan php/Composer terpasang:
+```bash
+cd backend
+# Jika menggunakan Docker Compose (direkomendasikan)
+docker compose run --rm app php artisan test
+
+# Atau, jika PHP dan dependensi terpasang secara lokal
+php artisan test
+php artisan test --filter=PaymentWebhookTest
+```
+
+2. Jika tes lulus, merge branch `feature/backend-123-deploy-smoke` ke staging dan jalankan migrasi:
+```bash
+php artisan migrate --force
+```
+
+3. Uji E2E dengan aplikasi mobile dan verifikasi gateway pembayaran (MIDTRANS/XENDIT) pada staging.
+
+4. Jika Anda ingin, saya bisa membantu menulis skrip GitHub Actions untuk menjalankan test suite otomatis di CI (GitHub Actions) sehingga tes dapat dijalankan tanpa Docker lokal.
+
+Catatan: Saya telah mencoba menjalankan tes di environment ini dan mencatat hasilnya di atas. Jika Anda ingin, beri tahu apakah saya harus menambahkan hasil tes (output lengkap) ke laporan setelah Anda menyediakan log atau mengizinkan akses ke runner yang memiliki Docker/PHP.
+
+## UPDATE 14 Juni 2026 — Hasil Eksekusi di Host (User)
+
+Pengembang menjalankan perintah berikut di mesin lokal dengan Docker:
+
+```bash
+docker compose run --rm app php artisan test
+```
+
+Hasil singkat dari eksekusi (output terambil dari terminal):
+
+```
+PASS  Tests\Unit\ExampleTest
+PASS  Tests\Unit\PayoutMonitoringTest
+PASS  Tests\Unit\XenditPayoutGatewayTest
+PASS  Tests\Feature\ExampleTest
+PASS  Tests\Feature\PaymentWebhookTest
+PASS  Tests\Feature\PayoutFlowTest
+PASS  Tests\Feature\PayoutRetryTest
+PASS  Tests\Feature\ReviewRatingApiTest
+PASS  Tests\Feature\TreasurerExportTest
+
+Tests:    14 passed (59 assertions)
+Duration: 64.06s
+
+```
+
+Catatan tambahan dari log:
+- Terdapat beberapa entry log `local.ERROR` terkait job `SendProviderPayoutJob` yang mensimulasikan kegagalan gateway (`Mock failure`). Ini muncul saat pengujian payout dan juga tercatat beberapa kali saat eksekusi command agregasi.
+- Debug CSV export berhasil ditulis ke channel `local.DEBUG` (`treasurer.csv.content`).
+
+Status setelah eksekusi:
+- ✅ Semua 14 tes unit/fitur lulus pada lingkungan Docker pengembang.
+- ⚠️ Ada error simulasi pada job payout yang diharapkan (mock failure) — ini bukan kegagalan tes, tetapi behavior yang perlu dicatat jika ingin memperbaiki noise log atau menguji retry lebih lanjut.
+
+Langkah selanjutnya yang direkomendasikan:
+1. Merge branch `feature/backend-123-deploy-smoke` ke `staging` dan jalankan migrasi pada staging.
+2. Jalankan E2E mobile dan verifikasi gateway pembayaran di staging (MIDTRANS/XENDIT).
+3. Siapkan GitHub Actions CI untuk menjalankan `php artisan test` otomatis pada PR.
