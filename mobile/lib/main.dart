@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/theme/app_theme.dart';
 import 'features/auth/splash_page.dart';
+import 'features/auth/session_login_page.dart';
+import 'features/treasurer/treasurer_report_page.dart';
+import 'core/http/dio_provider.dart' as dio_provider;
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Enable persistent cookies (creates storage dir). If you prefer in-memory,
+  // comment out the next line.
+  await dio_provider.enablePersistCookies();
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -13,9 +21,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'TukangDekat',
       theme: AppTheme.light(),
       home: const SplashPage(),
+      routes: {
+        '/session-login': (_) => const SessionLoginPage(),
+        '/treasurer-report': (_) => const TreasurerReportPage(),
+      },
     );
   }
 }

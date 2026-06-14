@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../shared/widgets/app_button.dart';
-import '../../shared/widgets/app_text_field.dart';
 import 'auth_controller.dart';
 import 'auth_state.dart';
 import '../home/home_page.dart';
@@ -163,7 +161,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0F3460).withOpacity(0.2),
+                color: Color.fromRGBO(15, 52, 96, 0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -270,7 +268,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF8C42).withOpacity(0.3),
+                      color: Color.fromRGBO(255, 140, 66, 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -335,7 +333,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEE5E5),
                     border: Border.all(
-                      color: const Color(0xFFFF8C42).withOpacity(0.3),
+                      color: Color.fromRGBO(255, 140, 66, 0.3),
                     ),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -420,8 +418,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            const Color(0xFFFF8C42).withOpacity(0.2),
-            const Color(0xFF0F3460).withOpacity(0),
+            Color.fromRGBO(255, 140, 66, 0.2),
+            Color.fromRGBO(15, 52, 96, 0),
           ],
         ),
       ),
@@ -429,7 +427,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         child: Icon(
           Icons.build_circle,
           size: 100,
-          color: const Color(0xFFFF8C42).withOpacity(0.7),
+          color: Color.fromRGBO(255, 140, 66, 0.7),
         ),
       ),
     );

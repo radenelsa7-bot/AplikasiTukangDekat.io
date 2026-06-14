@@ -32,11 +32,14 @@ class CustomerSeeder extends Seeder
     ];
 
     foreach ($customers as $customer) {
-      User::create(array_merge($customer, [
-        'password' => Hash::make('password123'),
-        'role' => 'CUSTOMER',
-        'status' => 'ACTIVE',
-      ]));
+      User::updateOrCreate(
+        ['email' => $customer['email']],
+        array_merge($customer, [
+          'password' => Hash::make('password123'),
+          'role' => 'CUSTOMER',
+          'status' => 'ACTIVE',
+        ])
+      );
     }
   }
 }

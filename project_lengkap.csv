@@ -1,0 +1,91 @@
+Title,Assignees,Status
+"[Backend] API Reviews & Rating (FR-23, FR-24)",NabilahAsana,Todo
+"[Frontend] Screen: Form Buat Order",tetepsafarudin,Todo
+"[Frontend] Screen: Detail Order & Riwayat Order",tetepsafarudin,Todo
+"[Frontend] Screen: Provider – Terima/Tolak & Mulai Order",tetepsafarudin,Todo
+"[Testing] Testing Order Lifecycle (Postman + Manual)",aldyrmdny-lab,Todo
+"[PM] Review progress Week 2 & koordinasi Week 3",radenelsa7-bot,Todo
+"[Backend] Integrasi Payment Gateway QRIS – Generate QR (FR-16, FR-19)",Fajar1180,Todo
+"[Backend] Webhook Payment Callback & Status Update (FR-17, FR-20)",NabilahAsana,Todo
+"[Backend] Integrasi n8n – Event Notifikasi (FR-21, FR-22)",Fatinasy7,Todo
+"[Frontend] Screen: Pembayaran DP (QRIS)",faznalaisal44,Todo
+"[Frontend] Screen: Pembayaran Pelunasan (QRIS Final)",faznalaisal44,Todo
+"[Frontend] Screen: Rating & Review + Dashboard Admin/Treasurer",faznalaisal44,Todo
+"[Testing] Testing Payment Flow & Webhook",aldyrmdny-lab,Todo
+"[Frontend] Integrasi end-to-end flow Customer (Order → Bayar DP → Closed)",faznalaisal44,Todo
+"[Frontend] Integrasi end-to-end flow Provider",tetepsafarudin,Todo
+"[Frontend] Polish UI, responsiveness & UX improvements",tetepsafarudin,Todo
+"[Backend] Admin endpoints & Treasurer report (FR-25, FR-26)",NabilahAsana,Todo
+"[Backend] Finalisasi & hardening API (security, validation, error handling)",Fajar1180,Todo
+"[Testing] Integration Testing – Full User Journey",aldyrmdny-lab,Todo
+"[PM] Review dokumen final & persiapan demo UAS",radenelsa7-bot,Todo
+"[Testing] Final QA – Bug Fix Verification & Regression Test",aldyrmdny-lab,Todo
+"[Backend] Deploy ke VPS & konfigurasi production",Fajar1180,Todo
+"[Frontend] Build APK release untuk demo",tetepsafarudin,Todo
+"[PM] Laporan Akhir & Dokumentasi Final",radenelsa7-bot,Todo
+"[ALL] Demo & Presentasi UAS",radenelsa7-bot,Todo
+"[Backend] Finalisasi & hardening API (security, validation, error handling)",Fatinasy7,Todo
+"[Testing] Integration Testing – Full User Journey",aldyrmdny-lab,Todo
+"[PM] Review dokumen final & persiapan demo UAS",radenelsa7-bot,Todo
+"[Testing] Final QA – Bug Fix Verification & Regression Test",aldyrmdny-lab,Todo
+"[Backend] Deploy ke VPS & konfigurasi production",Fajar1180,Todo
+"[Frontend] Build APK release untuk demo",faznalaisal44,Todo
+"[PM] Laporan Akhir & Dokumentasi Final",radenelsa7-bot,Todo
+"[ALL] Demo & Presentasi UAS",radenelsa7-bot,Todo
+"[PM] Finalisasi SRS & distribusi dokumen ke tim",radenelsa7-bot,Todo
+"[PM] Setup GitHub Project Board & milestone tracking",radenelsa7-bot,Todo
+"[PM] Buat WBS & jadwal detail per anggota",radenelsa7-bot,Todo
+"[Backend] Setup Laravel project & Docker environment",NabilahAsana,Todo
+"[Backend] Database migration sesuai schema MySQL",Fajar1180,Todo
+"[Frontend] Setup Flutter project & struktur folder",tetepsafarudin,Todo
+"[Frontend] Desain wireframe & UI kit (Figma)",tetepsafarudin,Todo
+"[Testing] Buat Test Plan dokumen",aldyrmdny-lab,Todo
+"[Backend] API Auth: Register, Login, Logout (FR-01, FR-02, FR-03)",NabilahAsana,Done
+"[Backend] API Service Catalog: Categories & Provider List (FR-08, FR-09, FR-10)",NabilahAsana,Todo
+"[Backend] Model & Eloquent Relationships",Fatinasy7,Todo
+"[Frontend] Screen: Login & Register",faznalaisal44,Todo
+"[Frontend] Screen: Home & Daftar Kategori",faznalaisal44,Todo
+"[Frontend] Screen: Daftar Provider & Detail Provider",faznalaisal44,Todo
+"[Testing] Testing Auth & Service Catalog API (Postman)",aldyrmdny-lab,Todo
+"[Backend] API Orders: CRUD & Status Lifecycle (FR-11 s/d FR-14)",Fajar1180,Todo
+"[Backend] Auto-create DP Payment saat Order dibuat (BR-01)",Fatinasy7,Todo
+"[Backend] API Auth: Register, Login, Logout (FR-01, FR-02, FR-03)",Fajar1180,Todo
+"[Backend] API Service Catalog: Categories & Provider List (FR-08, FR-09, FR-10)",Fajar1180,Todo
+"[Backend] Model & Eloquent Relationships",Fajar1180,Todo
+"[Frontend] Screen: Login & Register",faznalaisal44,Todo
+"[Frontend] Screen: Home & Daftar Kategori",faznalaisal44,Todo
+"[Frontend] Screen: Daftar Provider & Detail Provider",faznalaisal44,Todo
+"[Testing] Testing Auth & Service Catalog API (Postman)",aldyrmdny-lab,Todo
+"[Backend] API Orders: CRUD & Status Lifecycle (FR-11 s/d FR-14)",Fajar1180,Todo
+"[Backend] Auto-create DP Payment saat Order dibuat (BR-01)",NabilahAsana,Todo
+"[Backend] API Reviews & Rating (FR-23, FR-24)",Fatinasy7,Todo
+"[Frontend] Screen: Form Buat Order",faznalaisal44,Todo
+"[Frontend] Screen: Detail Order & Riwayat Order",faznalaisal44,Todo
+"[Frontend] Screen: Provider – Terima/Tolak & Mulai Order",tetepsafarudin,Todo
+"[Testing] Testing Order Lifecycle (Postman + Manual)",aldyrmdny-lab,Todo
+"[Backend] Integrasi Payment Gateway QRIS – Generate QR (FR-16, FR-19)",Fajar1180,Todo
+"[Backend] Webhook Payment Callback & Status Update (FR-17, FR-20)",NabilahAsana,Todo
+"[Backend] Integrasi n8n – Event Notifikasi (FR-21, FR-22)",Fatinasy7,Todo
+"[Frontend] Screen: Pembayaran DP (QRIS)",tetepsafarudin,Todo
+"[Frontend] Screen: Pembayaran Pelunasan (QRIS Final)",tetepsafarudin,Todo
+"[Frontend] Screen: Rating & Review + Dashboard Admin/Treasurer",tetepsafarudin,Todo
+"[Testing] Testing Payment Flow & Webhook",aldyrmdny-lab,Todo
+"[Frontend] Integrasi end-to-end flow Customer (Order → Bayar DP → Closed)",tetepsafarudin,Todo
+"[Frontend] Integrasi end-to-end flow Provider",tetepsafarudin,Todo
+"[Frontend] Polish UI, responsiveness & UX improvements",tetepsafarudin,Todo
+"[Backend] Admin endpoints & Treasurer report (FR-25, FR-26)",Fatinasy7,Todo
+backend,Fatinasy7,Todo
+"[Backend] Database migration sesuai schema MySQL",Fajar1180,Todo
+"[Frontend] Setup Flutter project & struktur folder",faznalaisal44,Todo
+"[Frontend] Desain wireframe & UI kit (Figma)",tetepsafarudin,
+"[Backend] Database migration sesuai schema MySQL",Fatinasy7,Todo
+"[Backend] Database migration sesuai schema MySQL",Fatinasy7,Todo
+"[Backend] Database migration sesuai schema MySQL",Fatinasy7,Todo
+"[Frontend] Setup Flutter project & struktur folder",tetepsafarudin,Done
+"Project Management dan Penugasan Tim: Backend, Frontend, dan Testing",radenelsa7-bot,Done
+"[PM] Finalisasi SRS & distribusi dokumen ke tim",radenelsa7-bot,Done
+"[PM] Setup GitHub Project Board & milestone tracking",radenelsa7-bot,Done
+"[PM] Buat WBS & jadwal detail per anggota",radenelsa7-bot,Done
+"[Backend] Setup Laravel project & Docker environment",Fajar1180,Done
+"[Testing] Buat Test Plan dokumen",aldyrmdny-lab,Done
+"[PM] Review progress Week 2 & koordinasi Week 3",radenelsa7-bot,Done

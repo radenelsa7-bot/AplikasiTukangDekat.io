@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
-  use HasFactory;
+    use HasFactory;
 
   protected $fillable = [
     'order_id',
@@ -26,25 +26,23 @@ class Payment extends Model
     'status',
     'provider',
     'external_payment_id',
-    'qris_code',
-    'qris_image',
-    'checkout_url',
     'paid_at',
   ];
 
-  protected $casts = [
-    'amount' => 'integer',
-    'commission_percent' => 'integer',
-    'platform_fee' => 'integer',
-    'provider_payout' => 'integer',
-    'paid_at' => 'datetime',
-    'settled_at' => 'datetime',
-    'refund_amount' => 'integer',
-    'refund_requested_at' => 'datetime',
-  ];
+    protected $casts = [
+        'amount' => 'integer',
+        'commission_percent' => 'integer',
+        'platform_fee' => 'integer',
+        'provider_payout' => 'integer',
+        'paid_at' => 'datetime',
+        'qris_captured_at' => 'datetime',
+        'settled_at' => 'datetime',
+        'refund_amount' => 'integer',
+        'refund_requested_at' => 'datetime',
+    ];
 
-  public function order(): BelongsTo
-  {
-    return $this->belongsTo(Order::class);
-  }
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
 }

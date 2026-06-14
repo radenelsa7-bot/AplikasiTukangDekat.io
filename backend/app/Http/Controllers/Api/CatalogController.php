@@ -9,109 +9,80 @@ use Illuminate\Http\Request;
 
 class CatalogController extends Controller
 {
-  /**
-   * Get semua service categories
-   */
-  public function getCategories()
-  {
-    $categories = ServiceCategory::where('is_active', true)
-      ->get();
+    /**
+     * Get semua service categories
+     */
+    public function getCategories()
+    {
+        $categories = ServiceCategory::where('is_active', true)->get();
 
     return response()->json([
       'data' => $categories,
     ], 200);
   }
 
-  /**
-   * Get semua providers yang verified
-   */
-  public function getProviders()
-  {
-    $providers = ProviderProfile::where('is_verified', true)
-      ->with(['user', 'services' => function ($query) {
-        $query->where('is_active', true);
-      }])
-      ->get();
+    /**
+     * Get providers berdasarkan category
+     */
+    public function getProvidersByCategory($categoryId)
+    {
+        $category = ServiceCategory::find($categoryId);
 
-    return response()->json([
-      'data' => $providers,
-    ], 200);
-  }
+        if (!$category) {
+            return $this->notFoundResponse('category not found');
+        }
 
-  /**
-   * Get providers berdasarkan category
-   */
-  public function getProvidersByCategory($categoryId)
-  {
-    $category = ServiceCategory::find($categoryId);
+        $providers = ProviderProfile::whereHas('services', function ($query) use ($categoryId) {
+            $query->where('category_id', $categoryId)->where('is_active', true);
+        })
+            ->where('is_verified', true)
+            ->with(['services' => function ($query) use ($categoryId) {
+                $query->where('category_id', $categoryId)->where('is_active', true);
+            }])
+            ->get();
 
-    if (!$category) {
-      return response()->json([
-        'message' => 'category not found',
-      ], 404);
+        return $this->successResponse(['providers' => $providers], 'ok', 200);
     }
 
-    $providers = ProviderProfile::whereHas('services', function ($query) use ($categoryId) {
-      $query->where('category_id', $categoryId)->where('is_active', true);
-    })
-      ->where('is_verified', true)
-      ->with(['services' => function ($query) use ($categoryId) {
-        $query->where('category_id', $categoryId)->where('is_active', true);
-      }])
-      ->get();
+    /**
+     * Get detail provider
+     */
+    public function getProviderDetail($providerId)
+    {
+        $provider = ProviderProfile::with(['services' => function ($query) {
+            $query->where('is_active', true);
+        }, 'user'])
+            ->find($providerId);
 
-    return response()->json([
-      'data' => $providers,
-    ], 200);
-  }
+        if (!$provider) {
+            return $this->notFoundResponse('provider not found');
+        }
 
-  /**
-   * Get detail provider
-   */
-  public function getProviderDetail($providerId)
-  {
-    $provider = ProviderProfile::with(['services' => function ($query) {
-      $query->where('is_active', true);
-    }, 'user'])
-      ->find($providerId);
-
-    if (!$provider) {
-      return response()->json([
-        'message' => 'provider not found',
-      ], 404);
+        return $this->successResponse(['provider' => $provider], 'ok', 200);
     }
 
-    return response()->json([
-      'data' => $provider,
-    ], 200);
-  }
+    /**
+     * Search providers (by name atau area)
+     */
+    public function searchProviders(Request $request)
+    {
+        $query = $request->query('q', '');
 
-  /**
-   * Search providers (by name atau area)
-   */
-  public function searchProviders(Request $request)
-  {
-    $query = $request->query('q', '');
+        if (empty($query)) {
+            return $this->errorResponse('Query parameter q is required.', 400);
+        }
 
-    if (empty($query)) {
-      return response()->json([
-        'message' => 'Query parameter q is required.',
-      ], 400);
+        $providers = ProviderProfile::where('is_verified', true)
+            ->where(function ($q) use ($query) {
+                $q->where('business_name', 'like', "%$query%")
+                    ->orWhere('area', 'like', "%$query%")
+                    ->orWhereHas('user', function ($userQ) use ($query) {
+                        $userQ->where('name', 'like', "%$query%");
+                    });
+            })
+            ->with('services')
+            ->get();
+
+        return $this->successResponse(['providers' => $providers], 'ok', 200);
     }
-
-    $providers = ProviderProfile::where('is_verified', true)
-      ->where(function ($q) use ($query) {
-        $q->where('business_name', 'like', "%$query%")
-          ->orWhere('area', 'like', "%$query%")
-          ->orWhereHas('user', function ($userQ) use ($query) {
-            $userQ->where('name', 'like', "%$query%");
-          });
-      })
-      ->with('services')
-      ->get();
-
-    return response()->json([
-      'data' => $providers,
-    ], 200);
-  }
 }

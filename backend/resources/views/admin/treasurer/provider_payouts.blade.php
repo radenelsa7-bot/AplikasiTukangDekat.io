@@ -1,14 +1,9 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>Provider Payouts</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50">
-  <div class="max-w-6xl mx-auto p-6">
+@extends('layouts.admin')
+
+@section('title', 'Provider Payouts')
+
+@section('content')
+<div class="max-w-6xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-4">Daftar Provider Payouts</h1>
 
     <div class="mb-4">
@@ -57,8 +52,10 @@
       {{ $payouts->links() }}
     </div>
   </div>
+@endsection
 
-  <script>
+@push('scripts')
+<script>
     document.getElementById('select_all').addEventListener('change', function(e){
       document.querySelectorAll('.sel').forEach(cb => cb.checked = e.target.checked);
     });
@@ -118,5 +115,4 @@
       }
     });
   </script>
-</body>
-</html>
+@endpush

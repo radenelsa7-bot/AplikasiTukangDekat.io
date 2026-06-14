@@ -38,6 +38,7 @@ return [
     'n8n' => [
         'webhook_url' => env('N8N_WEBHOOK_URL'),
         'secret' => env('N8N_WEBHOOK_SECRET'),
+        'event_secret' => env('N8N_EVENT_SECRET'),
     ],
 
     'payments' => [
@@ -51,6 +52,13 @@ return [
         'midtrans_server_key' => env('MIDTRANS_SERVER_KEY'),
         'midtrans_client_key' => env('MIDTRANS_CLIENT_KEY'),
         'midtrans_is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+        'xendit_secret_key' => env('XENDIT_SECRET_KEY', env('XENDIT_API_KEY')),
+        'xendit_charge_url' => env('XENDIT_CHARGE_URL', rtrim(env('XENDIT_BASE_URL', ''), '/')),
+    ],
+
+    'payouts' => [
+        'alert_webhook' => env('PAYOUT_ALERT_WEBHOOK'),
+        'alert_email' => env('PAYOUT_ALERT_EMAIL'),
     ],
 
 ];

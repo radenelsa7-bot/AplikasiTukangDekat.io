@@ -1,13 +1,9 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Dashboard - TukangDekat</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 min-h-screen">
-  <div class="max-w-5xl mx-auto p-6">
+@extends('layouts.admin')
+
+@section('title', 'Dashboard - TukangDekat')
+
+@section('content')
+<div class="max-w-5xl mx-auto p-6">
     <div class="flex items-center justify-between mb-4">
       <div>
         <h1 class="text-2xl font-bold">Dashboard (UI placeholder)</h1>
@@ -27,7 +23,10 @@
 
     <div class="mt-6"></div>
   </div>
-  <script>
+@endsection
+
+@push('scripts')
+<script>
     async function fetchMe(){
       const token = localStorage.getItem('td_token');
       if(!token){ location.href = '/login'; return; }
@@ -51,5 +50,4 @@
       }catch(err){ localStorage.removeItem('td_token'); location.href = '/login'; }
     });
   </script>
-</body>
-</html>
+@endpush

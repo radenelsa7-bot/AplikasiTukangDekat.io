@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Review\CreateReviewRequest;
 use App\Models\Order;
 use App\Models\Review;
 use App\Models\User;
@@ -14,46 +15,36 @@ class ReviewController extends Controller
   /**
    * Create review untuk order
    */
-  public function createReview(Request $request, $orderId)
+  public function createReview(CreateReviewRequest $request, $orderId)
   {
     $user = Auth::user();
 
     if ($user->role !== 'CUSTOMER') {
-      return response()->json([
-        'message' => 'only customer can create review',
-      ], 403);
+      return $this->forbiddenResponse('only customer can create review');
     }
 
     $order = Order::find($orderId);
 
     if (!$order) {
-      return response()->json([
-        'message' => 'order not found',
-      ], 404);
+      return $this->notFoundResponse('order not found');
     }
 
     if ($order->customer_id !== $user->id) {
-      return response()->json([
-        'message' => 'unauthorized',
-      ], 403);
+      return $this->forbiddenResponse('unauthorized');
     }
 
     if ($order->status !== 'COMPLETED' && $order->status !== 'CLOSED') {
-      return response()->json([
-        'message' => 'order not completed yet',
-      ], 400);
+      return $this->errorResponse('order not completed yet', 400);
     }
 
     // Check apakah sudah ada review
     if ($order->review) {
-      return response()->json([
-        'message' => 'review already exists for this order',
-      ], 400);
+      return $this->errorResponse('review already exists for this order', 400);
     }
 
     $validated = $request->validate([
       'rating' => 'required|integer|between:1,5',
-      'comment' => 'nullable|string|max:1000',
+      'comment' => 'nullable|string',
     ]);
 
     $review = Review::create([
@@ -71,10 +62,7 @@ class ReviewController extends Controller
       $providerProfile->update(['avg_rating' => round($avgRating, 2)]);
     }
 
-    return response()->json([
-      'message' => 'review created',
-      'data' => $review,
-    ], 201);
+    return $this->createdResponse(['review' => $review], 'review created');
   }
 
   /**
@@ -87,9 +75,38 @@ class ReviewController extends Controller
       ->latest()
       ->get();
 
-    return response()->json([
-      'data' => $reviews,
-    ], 200);
+    return $this->successResponse(['reviews' => $reviews], 'ok', 200);
+  }
+
+  /**
+   * Get summary rating untuk provider
+   */
+  public function getProviderReviewSummary($providerId)
+  {
+    $provider = User::find($providerId);
+
+    if (!$provider) {
+      return $this->notFoundResponse('provider not found');
+    }
+
+    $reviewsQuery = Review::where('provider_id', $providerId);
+    $totalReviews = $reviewsQuery->count();
+    $averageRating = $reviewsQuery->avg('rating') ?: 0;
+    $distribution = $reviewsQuery
+      ->selectRaw('rating, COUNT(*) as count')
+      ->groupBy('rating')
+      ->orderByDesc('rating')
+      ->pluck('count', 'rating')
+      ->toArray();
+
+    $distribution = array_replace(array_fill(1, 5, 0), $distribution);
+
+    return $this->successResponse([
+      'provider_id' => $providerId,
+      'average_rating' => round((float) $averageRating, 2),
+      'total_reviews' => $totalReviews,
+      'distribution' => $distribution,
+    ], 'ok', 200);
   }
 
   /**
@@ -143,13 +160,9 @@ class ReviewController extends Controller
       ->first();
 
     if (!$review) {
-      return response()->json([
-        'message' => 'review not found',
-      ], 404);
+      return $this->notFoundResponse('review not found');
     }
 
-    return response()->json([
-      'data' => $review,
-    ], 200);
+    return $this->successResponse(['review' => $review], 'ok', 200);
   }
 }

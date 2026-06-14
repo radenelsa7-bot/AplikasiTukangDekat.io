@@ -67,4 +67,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class, 'provider_id');
     }
+
+    public function customerReviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'customer_id');
+    }
+
+    public function providerReviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'provider_id');
+    }
+
+    public function payouts(): HasMany
+    {
+        return $this->hasMany(ProviderPayout::class, 'provider_id');
+    }
 }

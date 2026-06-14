@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Order\CompleteOrderRequest;
+use App\Http\Requests\Order\CreateOrderRequest;
+use App\Http\Requests\Order\RespondOrderRequest;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
@@ -21,24 +24,22 @@ class OrderController extends Controller
   /**
    * Buat order baru
    */
-  public function createOrder(Request $request)
+  public function createOrder(CreateOrderRequest $request)
   {
     $user = Auth::user();
 
     if ($user->role !== 'CUSTOMER') {
-      return response()->json([
-        'message' => 'only customer can create order',
-      ], 403);
+      return $this->forbiddenResponse('only customer can create order');
     }
 
     $validated = $request->validate([
       'provider_id' => 'required|exists:users,id',
       'provider_service_id' => 'nullable|exists:provider_services,id',
       'category_id' => 'required|exists:service_categories,id',
-      'schedule_at' => 'required|date_format:Y-m-d H:i:s|after:now',
-      'address' => 'required|string|max:500',
-      'notes' => 'nullable|string|max:1000',
-      'estimated_price' => 'required|integer|min:1000|max:100000000',
+      'schedule_at' => 'required|date_format:Y-m-d H:i:s',
+      'address' => 'required|string',
+      'notes' => 'nullable|string',
+      'estimated_price' => 'required|integer|min:1',
     ]);
 
     // Validasi provider adalah user dengan role PROVIDER
@@ -62,53 +63,34 @@ class OrderController extends Controller
           'status' => 'CREATED',
         ]);
 
-        // Buat payment DP (50%)
-        $dpAmount = intval($validated['estimated_price'] * 0.5);
-        Payment::create([
-          'order_id' => $order->id,
-          'payment_type' => 'DP',
-          'amount' => $dpAmount,
-          'status' => 'UNPAID',
-        ]);
+    // Buat payment DP (50%)
+    $dpAmount = intval($validated['estimated_price'] * 0.5);
+    Payment::create([
+      'order_id' => $order->id,
+      'payment_type' => 'DP',
+      'amount' => $dpAmount,
+      'status' => 'UNPAID',
+    ]);
 
-        return [
-          'order' => $order,
-          'dp_amount' => $dpAmount,
-        ];
-      });
+    app(N8nNotificationService::class)->dispatch('order_created', [
+      'order_id' => $order->id,
+      'order_code' => $order->order_code,
+      'customer_id' => $order->customer_id,
+      'provider_id' => $order->provider_id,
+      'estimated_price' => $order->estimated_price,
+      'dp_amount' => $dpAmount,
+      'status' => $order->status,
+    ]);
 
-      $order = $result['order'];
-      $dpAmount = $result['dp_amount'];
-
-      app(N8nNotificationService::class)->dispatch('order_created', [
+    return response()->json([
+      'message' => 'order created',
+      'data' => [
         'order_id' => $order->id,
         'order_code' => $order->order_code,
-        'customer_id' => $order->customer_id,
-        'provider_id' => $order->provider_id,
-        'estimated_price' => $order->estimated_price,
-        'dp_amount' => $dpAmount,
         'status' => $order->status,
-      ]);
-
-      return response()->json([
-        'message' => 'order created',
-        'data' => [
-          'order_id' => $order->id,
-          'order_code' => $order->order_code,
-          'status' => $order->status,
-          'dp_amount' => $dpAmount,
-        ],
-      ], 201);
-    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-      return response()->json([
-        'message' => 'provider not found or invalid',
-      ], 422);
-    } catch (\Exception $e) {
-      return response()->json([
-        'message' => 'failed to create order',
-        'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
-      ], 500);
-    }
+        'dp_amount' => $dpAmount,
+      ],
+    ], 201);
   }
 
   /**
@@ -120,14 +102,10 @@ class OrderController extends Controller
       ->find($orderId);
 
     if (!$order) {
-      return response()->json([
-        'message' => 'order not found',
-      ], 404);
+      return $this->notFoundResponse('order not found');
     }
 
-    return response()->json([
-      'data' => $order,
-    ], 200);
+    return $this->successResponse(['order' => $order], 'ok', 200);
   }
 
   /**
@@ -148,46 +126,34 @@ class OrderController extends Controller
         ->latest()
         ->get();
     } else {
-      return response()->json([
-        'message' => 'unauthorized',
-      ], 403);
+      return $this->forbiddenResponse('unauthorized');
     }
 
-    return response()->json([
-      'data' => $orders,
-    ], 200);
+    return $this->successResponse(['orders' => $orders], 'ok', 200);
   }
 
   /**
    * Provider terima/tolak order
    */
-  public function respondToOrder(Request $request, $orderId)
+  public function respondToOrder(RespondOrderRequest $request, $orderId)
   {
     $user = Auth::user();
 
     if ($user->role !== 'PROVIDER') {
-      return response()->json([
-        'message' => 'only provider can respond to order',
-      ], 403);
+      return $this->forbiddenResponse('only provider can respond to order');
     }
 
     $order = Order::find($orderId);
 
     if (!$order) {
-      return response()->json([
-        'message' => 'order not found',
-      ], 404);
+      return $this->notFoundResponse('order not found');
     }
 
     if ($order->provider_id !== $user->id) {
-      return response()->json([
-        'message' => 'unauthorized',
-      ], 403);
+      return $this->forbiddenResponse('unauthorized');
     }
 
-    $validated = $request->validate([
-      'action' => 'required|in:accept,reject',
-    ]);
+    $validated = $request->validated();
 
     if ($validated['action'] === 'accept') {
       $order->update(['status' => 'ACCEPTED']);
@@ -196,40 +162,42 @@ class OrderController extends Controller
         'order_id' => $order->id,
         'order_code' => $order->order_code,
         'provider_id' => $order->provider_id,
+        'provider_name' => $user->name,
+        'provider_email' => $user->email,
+        'customer_name' => $order->customer?->name,
+        'customer_email' => $order->customer?->email,
         'status' => $order->status,
       ]);
 
-      return response()->json([
-        'message' => 'order accepted',
-        'data' => ['status' => $order->status],
-      ], 200);
-    } else {
-      $order->update(['status' => 'CANCELLED']);
-
-      $refundPayments = $order->payments()
-        ->where('payment_type', 'DP')
-        ->where('status', 'PAID')
-        ->get();
-
-      foreach ($refundPayments as $refundPayment) {
-        $refundPayment->update(
-          $this->paymentFinanceService->applyRefundPolicy($refundPayment, $order, 'order_rejected')
-        );
-      }
-
-      app(N8nNotificationService::class)->dispatch('order_rejected', [
-        'order_id' => $order->id,
-        'order_code' => $order->order_code,
-        'provider_id' => $order->provider_id,
-        'status' => $order->status,
-        'refund_count' => $refundPayments->count(),
-      ]);
-
-      return response()->json([
-        'message' => 'order rejected',
-        'data' => ['status' => $order->status],
-      ], 200);
+      return $this->successResponse(['status' => $order->status], 'order accepted', 200);
     }
+
+    $order->update(['status' => 'CANCELLED']);
+
+    $refundPayments = $order->payments()
+      ->where('payment_type', 'DP')
+      ->where('status', 'PAID')
+      ->get();
+
+    foreach ($refundPayments as $refundPayment) {
+      $refundPayment->update(
+        $this->paymentFinanceService->applyRefundPolicy($refundPayment, $order, 'order_rejected')
+      );
+    }
+
+    app(N8nNotificationService::class)->dispatch('order_rejected', [
+      'order_id' => $order->id,
+      'order_code' => $order->order_code,
+      'provider_id' => $order->provider_id,
+      'provider_name' => $user->name,
+      'provider_email' => $user->email,
+      'customer_name' => $order->customer?->name,
+      'customer_email' => $order->customer?->email,
+      'status' => $order->status,
+      'refund_count' => $refundPayments->count(),
+    ]);
+
+    return $this->successResponse(['status' => $order->status], 'order rejected', 200);
   }
 
   /**
@@ -240,30 +208,22 @@ class OrderController extends Controller
     $user = Auth::user();
 
     if ($user->role !== 'PROVIDER') {
-      return response()->json([
-        'message' => 'only provider can start work',
-      ], 403);
+      return $this->forbiddenResponse('only provider can start work');
     }
 
     $order = Order::with('payments')->find($orderId);
 
     if (!$order) {
-      return response()->json([
-        'message' => 'order not found',
-      ], 404);
+      return $this->notFoundResponse('order not found');
     }
 
     if ($order->provider_id !== $user->id) {
-      return response()->json([
-        'message' => 'unauthorized',
-      ], 403);
+      return $this->forbiddenResponse('unauthorized');
     }
 
     $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
     if (!$dpPayment || $dpPayment->status !== 'PAID') {
-      return response()->json([
-        'message' => 'dp payment must be paid before work can start',
-      ], 422);
+      return $this->errorResponse('dp payment must be paid before work can start', 422);
     }
 
     $order->update(['status' => 'IN_PROGRESS']);
@@ -275,41 +235,32 @@ class OrderController extends Controller
       'status' => $order->status,
     ]);
 
-    return response()->json([
-      'message' => 'work started',
-      'data' => ['status' => $order->status],
-    ], 200);
+    return $this->successResponse(['status' => $order->status], 'work started', 200);
   }
 
   /**
    * Provider selesaikan pekerjaan
    */
-  public function completeOrder(Request $request, $orderId)
+  public function completeOrder(CompleteOrderRequest $request, $orderId)
   {
     $user = Auth::user();
 
     if ($user->role !== 'PROVIDER') {
-      return response()->json([
-        'message' => 'only provider can complete order',
-      ], 403);
+      return $this->forbiddenResponse('only provider can complete order');
     }
 
     $order = Order::find($orderId);
 
     if (!$order) {
-      return response()->json([
-        'message' => 'order not found',
-      ], 404);
+      return $this->notFoundResponse('order not found');
     }
 
     if ($order->provider_id !== $user->id) {
-      return response()->json([
-        'message' => 'unauthorized',
-      ], 403);
+      return $this->forbiddenResponse('unauthorized');
     }
 
     $validated = $request->validate([
-      'final_price' => 'required|integer|min:1000|max:100000000',
+      'final_price' => 'required|integer|min:1',
     ]);
 
     // Validasi final_price >= estimated_price
@@ -347,27 +298,21 @@ class OrderController extends Controller
       $order = $result['order'];
       $finalAmount = $result['final_amount'];
 
-      app(N8nNotificationService::class)->dispatch('order_completed', [
-        'order_id' => $order->id,
-        'order_code' => $order->order_code,
-        'provider_id' => $order->provider_id,
-        'final_price' => $validated['final_price'],
-        'final_amount' => $finalAmount,
-        'status' => $order->status,
-      ]);
+    app(N8nNotificationService::class)->dispatch('order_completed', [
+      'order_id' => $order->id,
+      'order_code' => $order->order_code,
+      'provider_id' => $order->provider_id,
+      'final_price' => $validated['final_price'],
+      'final_amount' => $finalAmount,
+      'status' => $order->status,
+    ]);
 
-      return response()->json([
-        'message' => 'order completed',
-        'data' => [
-          'status' => $order->status,
-          'final_amount' => $finalAmount,
-        ],
-      ], 200);
-    } catch (\Exception $e) {
-      return response()->json([
-        'message' => 'failed to complete order',
-        'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
-      ], 500);
-    }
+    return response()->json([
+      'message' => 'order completed',
+      'data' => [
+        'status' => $order->status,
+        'final_amount' => $finalAmount,
+      ],
+    ], 200);
   }
 }
