@@ -97,3 +97,7 @@ php artisan schedule:list
 ```bash
 curl http://127.0.0.1:8000/api/metrics
 ```
+
+### Dokumentasi API Admin & Treasurer
+
+- Lihat dokumentasi endpoint admin dan treasurer di `backend/docs/admin_treasurer_endpoints.md`.

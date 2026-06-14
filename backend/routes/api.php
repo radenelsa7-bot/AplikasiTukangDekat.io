@@ -67,11 +67,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('admin')->middleware(\App\Http\Middleware\EnsureRole::class . ':ADMIN')->group(function () {
         Route::get('/providers/pending', [AdminController::class, 'getPendingProviders']);
         Route::patch('/providers/{providerId}/verification', [AdminController::class, 'updateVerification']);
+        Route::post('/providers/{providerId}/verify', [AdminController::class, 'updateVerification']);
     });
 
     // Treasurer (require TREASURER role)
     Route::prefix('treasurer')->middleware(\App\Http\Middleware\EnsureRole::class . ':TREASURER')->group(function () {
         Route::get('/payments/report', [TreasurerController::class, 'paymentReport']);
+        Route::get('/transactions', [TreasurerController::class, 'paymentReport']);
     });
 });
 

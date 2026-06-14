@@ -29,7 +29,7 @@ class PaymentFactory extends Factory
       'provider' => null,
       'external_payment_id' => null,
       'paid_at' => now(),
-    ]);
+    ];
   }
 
   /**
