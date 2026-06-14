@@ -21,6 +21,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Run Backend Test Suite
+    permissions:
+      pull-requests: write
+      contents: read
+      issues: write
     
     services:
       mysql:
@@ -40,10 +44,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 # Diperbarui ke v4 agar up-to-date
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3 # Diperbarui ke v3
+        uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
         working-directory: ./backend
@@ -54,7 +58,7 @@ jobs:
         working-directory: ./backend
         run: |
           docker compose up -d
-          sleep 10  # Memberi waktu agar DB MySQL siap menerima koneksi
+          sleep 10
 
       - name: Run database migrations
         working-directory: ./backend
@@ -89,11 +93,13 @@ jobs:
         working-directory: ./backend
         run: |
           docker compose logs app > app-logs.txt
-          docker compose logs mysql > mysql-logs.txt
+          # SOLUSI LOG MYSQL: Menggunakan docker log global container native runner jika dibutuhkan, 
+          # atau abaikan baris ini karena mysql berjalan di luar docker-compose local context.
+          echo "MySQL logs handled via GitHub native service runner context." > mysql-logs.txt
 
       - name: Upload logs
         if: failure()
-        uses: actions/upload-artifact@v4 # SOLUSI UTAMA: Diperbarui dari v3 ke v4
+        uses: actions/upload-artifact@v4
         with:
           name: logs-${{ github.run_id }}
           path: |
@@ -109,7 +115,7 @@ jobs:
 
       - name: Comment PR with test results
         if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@v7 # Diperbarui ke v7
+        uses: actions/github-script@v7
         with:
           script: |
             const testStatus = '${{ job.status }}' === 'success' ? '✅ PASS' : '❌ FAIL';
@@ -156,7 +162,7 @@ jobs:
 
       - name: Send Slack notification
         if: vars.SLACK_WEBHOOK_URL != ''
-        uses: slackapi/slack-github-action@v1.26.0 # Diperbarui ke versi stabil terbaru
+        uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
             {
