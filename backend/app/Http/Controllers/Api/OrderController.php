@@ -63,34 +63,40 @@ class OrderController extends Controller
           'status' => 'CREATED',
         ]);
 
-    // Buat payment DP (50%)
-    $dpAmount = intval($validated['estimated_price'] * 0.5);
-    Payment::create([
-      'order_id' => $order->id,
-      'payment_type' => 'DP',
-      'amount' => $dpAmount,
-      'status' => 'UNPAID',
-    ]);
+        // Buat payment DP (50%)
+        $dpAmount = intval($validated['estimated_price'] * 0.5);
+        Payment::create([
+          'order_id' => $order->id,
+          'payment_type' => 'DP',
+          'amount' => $dpAmount,
+          'status' => 'UNPAID',
+        ]);
 
-    app(N8nNotificationService::class)->dispatch('order_created', [
-      'order_id' => $order->id,
-      'order_code' => $order->order_code,
-      'customer_id' => $order->customer_id,
-      'provider_id' => $order->provider_id,
-      'estimated_price' => $order->estimated_price,
-      'dp_amount' => $dpAmount,
-      'status' => $order->status,
-    ]);
+        app(N8nNotificationService::class)->dispatch('order_created', [
+          'order_id' => $order->id,
+          'order_code' => $order->order_code,
+          'customer_id' => $order->customer_id,
+          'provider_id' => $order->provider_id,
+          'estimated_price' => $order->estimated_price,
+          'dp_amount' => $dpAmount,
+          'status' => $order->status,
+        ]);
 
-    return response()->json([
-      'message' => 'order created',
-      'data' => [
-        'order_id' => $order->id,
-        'order_code' => $order->order_code,
-        'status' => $order->status,
-        'dp_amount' => $dpAmount,
-      ],
-    ], 201);
+        return response()->json([
+          'message' => 'order created',
+          'data' => [
+            'order_id' => $order->id,
+            'order_code' => $order->order_code,
+            'status' => $order->status,
+            'dp_amount' => $dpAmount,
+          ],
+        ], 201);
+      });
+    } catch (\Throwable $e) {
+      return $this->errorResponse('internal server error', 500);
+    }
+
+    return $result;
   }
 
   /**
@@ -314,5 +320,8 @@ class OrderController extends Controller
         'final_amount' => $finalAmount,
       ],
     ], 200);
+    } catch (\Throwable $e) {
+      return $this->errorResponse('internal server error', 500);
+    }
   }
 }
