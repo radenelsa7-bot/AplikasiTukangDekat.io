@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Order\CompleteOrderRequest;
+use App\Http\Requests\Order\CreateOrderRequest;
+use App\Http\Requests\Order\RespondOrderRequest;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\User;
 use App\Services\PaymentFinanceService;
 use App\Services\N8nNotificationService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -35,6 +39,26 @@ class OrderController extends Controller
 
     $validated = $request->validated();
 
+    if ($user->role !== 'CUSTOMER') {
+      return $this->forbiddenResponse('only customer can create order');
+    }
+
+    $validated = $request->validate([
+      'provider_id' => 'required|exists:users,id',
+      'provider_service_id' => 'nullable|exists:provider_services,id',
+      'category_id' => 'required|exists:service_categories,id',
+      'schedule_at' => 'required|date_format:Y-m-d H:i:s',
+      'address' => 'required|string',
+      'notes' => 'nullable|string',
+      'estimated_price' => 'required|integer|min:1',
+    ]);
+
+    // Validasi provider adalah user dengan role PROVIDER
+    $provider = User::where('id', $validated['provider_id'])
+      ->where('role', 'PROVIDER')
+      ->firstOrFail();
+
+    // Gunakan transaction untuk atomicity
     try {
       $result = DB::transaction(function () use ($validated, $user) {
         $order = Order::create([
@@ -50,6 +74,7 @@ class OrderController extends Controller
           'status' => 'CREATED',
         ]);
 
+        // Buat payment DP (50%)
         $dpAmount = intval($validated['estimated_price'] * 0.5);
         Payment::create([
           'order_id' => $order->id,
@@ -83,6 +108,31 @@ class OrderController extends Controller
     } catch (\Throwable $e) {
       return $this->internalServerError('Failed to create order');
     }
+        app(N8nNotificationService::class)->dispatch('order_created', [
+          'order_id' => $order->id,
+          'order_code' => $order->order_code,
+          'customer_id' => $order->customer_id,
+          'provider_id' => $order->provider_id,
+          'estimated_price' => $order->estimated_price,
+          'dp_amount' => $dpAmount,
+          'status' => $order->status,
+        ]);
+
+        return response()->json([
+          'message' => 'order created',
+          'data' => [
+            'order_id' => $order->id,
+            'order_code' => $order->order_code,
+            'status' => $order->status,
+            'dp_amount' => $dpAmount,
+          ],
+        ], 201);
+      });
+    } catch (\Throwable $e) {
+      return $this->errorResponse('internal server error', 500);
+    }
+
+    return $result;
   }
 
   /**
@@ -98,6 +148,10 @@ class OrderController extends Controller
     }
 
     return $this->success($order, 'Order retrieved');
+      return $this->notFoundResponse('order not found');
+    }
+
+    return $this->successResponse(['order' => $order], 'ok', 200);
   }
 
   /**
@@ -122,6 +176,10 @@ class OrderController extends Controller
     }
 
     return $this->success($orders, 'Orders retrieved');
+      return $this->forbiddenResponse('unauthorized');
+    }
+
+    return $this->successResponse(['orders' => $orders], 'ok', 200);
   }
 
   /**
@@ -187,7 +245,69 @@ class OrderController extends Controller
       });
     } catch (\Throwable $e) {
       return $this->internalServerError('Failed to update order status');
+  public function respondToOrder(RespondOrderRequest $request, $orderId)
+  {
+    $user = Auth::user();
+
+    if ($user->role !== 'PROVIDER') {
+      return $this->forbiddenResponse('only provider can respond to order');
     }
+
+    $order = Order::find($orderId);
+
+    if (!$order) {
+      return $this->notFoundResponse('order not found');
+    }
+
+    if ($order->provider_id !== $user->id) {
+      return $this->forbiddenResponse('unauthorized');
+    }
+
+    $validated = $request->validated();
+
+    if ($validated['action'] === 'accept') {
+      $order->update(['status' => 'ACCEPTED']);
+
+      app(N8nNotificationService::class)->dispatch('order_accepted', [
+        'order_id' => $order->id,
+        'order_code' => $order->order_code,
+        'provider_id' => $order->provider_id,
+        'provider_name' => $user->name,
+        'provider_email' => $user->email,
+        'customer_name' => $order->customer?->name,
+        'customer_email' => $order->customer?->email,
+        'status' => $order->status,
+      ]);
+
+      return $this->successResponse(['status' => $order->status], 'order accepted', 200);
+    }
+
+    $order->update(['status' => 'CANCELLED']);
+
+    $refundPayments = $order->payments()
+      ->where('payment_type', 'DP')
+      ->where('status', 'PAID')
+      ->get();
+
+    foreach ($refundPayments as $refundPayment) {
+      $refundPayment->update(
+        $this->paymentFinanceService->applyRefundPolicy($refundPayment, $order, 'order_rejected')
+      );
+    }
+
+    app(N8nNotificationService::class)->dispatch('order_rejected', [
+      'order_id' => $order->id,
+      'order_code' => $order->order_code,
+      'provider_id' => $order->provider_id,
+      'provider_name' => $user->name,
+      'provider_email' => $user->email,
+      'customer_name' => $order->customer?->name,
+      'customer_email' => $order->customer?->email,
+      'status' => $order->status,
+      'refund_count' => $refundPayments->count(),
+    ]);
+
+    return $this->successResponse(['status' => $order->status], 'order rejected', 200);
   }
 
   /**
@@ -209,11 +329,24 @@ class OrderController extends Controller
 
     if ($order->status !== 'ACCEPTED') {
       return $this->conflict('Work can only be started after the order is accepted');
+    if ($user->role !== 'PROVIDER') {
+      return $this->forbiddenResponse('only provider can start work');
+    }
+
+    $order = Order::with('payments')->find($orderId);
+
+    if (!$order) {
+      return $this->notFoundResponse('order not found');
+    }
+
+    if ($order->provider_id !== $user->id) {
+      return $this->forbiddenResponse('unauthorized');
     }
 
     $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
     if (!$dpPayment || $dpPayment->status !== 'PAID') {
       return $this->validationError(['dp_payment' => ['DP payment must be paid before work can start']]);
+      return $this->errorResponse('dp payment must be paid before work can start', 422);
     }
 
     $order->update(['status' => 'IN_PROGRESS']);
@@ -226,6 +359,7 @@ class OrderController extends Controller
     ]);
 
     return $this->success(['status' => $order->status], 'Work started');
+    return $this->successResponse(['status' => $order->status], 'work started', 200);
   }
 
   /**
@@ -287,6 +421,77 @@ class OrderController extends Controller
       });
     } catch (\Throwable $e) {
       return $this->internalServerError('Failed to complete order');
+    if ($user->role !== 'PROVIDER') {
+      return $this->forbiddenResponse('only provider can complete order');
+    }
+
+    $order = Order::find($orderId);
+
+    if (!$order) {
+      return $this->notFoundResponse('order not found');
+    }
+
+    if ($order->provider_id !== $user->id) {
+      return $this->forbiddenResponse('unauthorized');
+    }
+
+    $validated = $request->validate([
+      'final_price' => 'required|integer|min:1',
+    ]);
+
+    // Validasi final_price >= estimated_price
+    if ($validated['final_price'] < $order->estimated_price) {
+      return response()->json([
+        'message' => 'final price must be at least equal to estimated price',
+      ], 422);
+    }
+
+    try {
+      $result = DB::transaction(function () use ($order, $validated) {
+        $order->update([
+          'status' => 'COMPLETED',
+          'final_price' => $validated['final_price'],
+        ]);
+
+        // Buat payment final
+        $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
+        $dpAmount = $dpPayment->amount ?? 0;
+        $finalAmount = max(0, $validated['final_price'] - $dpAmount);
+        
+        Payment::create([
+          'order_id' => $order->id,
+          'payment_type' => 'FINAL',
+          'amount' => $finalAmount,
+          'status' => 'UNPAID',
+        ]);
+
+        return [
+          'order' => $order,
+          'final_amount' => $finalAmount,
+        ];
+      });
+
+      $order = $result['order'];
+      $finalAmount = $result['final_amount'];
+
+    app(N8nNotificationService::class)->dispatch('order_completed', [
+      'order_id' => $order->id,
+      'order_code' => $order->order_code,
+      'provider_id' => $order->provider_id,
+      'final_price' => $validated['final_price'],
+      'final_amount' => $finalAmount,
+      'status' => $order->status,
+    ]);
+
+    return response()->json([
+      'message' => 'order completed',
+      'data' => [
+        'status' => $order->status,
+        'final_amount' => $finalAmount,
+      ],
+    ], 200);
+    } catch (\Throwable $e) {
+      return $this->errorResponse('internal server error', 500);
     }
   }
 }

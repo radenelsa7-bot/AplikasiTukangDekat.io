@@ -38,6 +38,7 @@ return [
     'n8n' => [
         'webhook_url' => env('N8N_WEBHOOK_URL'),
         'secret' => env('N8N_WEBHOOK_SECRET'),
+        'event_secret' => env('N8N_EVENT_SECRET'),
     ],
 
     'payments' => [

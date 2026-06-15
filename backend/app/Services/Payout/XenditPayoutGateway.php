@@ -69,7 +69,23 @@ class XenditPayoutGateway implements PayoutGatewayInterface
                         ]);
                     } catch (\Throwable $e) {
                         Log::warning('xendit.persist_response_failed', ['err' => $e->getMessage()]);
+                    $pathValue = null;
+                    if (is_object($res) && method_exists($res, 'effectiveUri')) {
+                        try {
+                            $pathValue = $res->effectiveUri() ? (string) $res->effectiveUri() : null;
+                        } catch (\Throwable $_) {
+                            $pathValue = null;
+                        }
                     }
+
+                    PayoutProviderResponse::create([
+                        'provider' => 'xendit',
+                        'transaction_reference' => $res->json()['id'] ?? ($res->json()['reference'] ?? null),
+                        'path' => $pathValue,
+                        'request_body' => $variants[0] ?? null,
+                        'response_body' => $res->json() ?? ['body' => $res->body()],
+                        'status_code' => $res->status(),
+                    ]);
                 } catch (\Throwable $e) {
                     Log::warning('xendit.persist_response_failed', ['err' => $e->getMessage()]);
                 }

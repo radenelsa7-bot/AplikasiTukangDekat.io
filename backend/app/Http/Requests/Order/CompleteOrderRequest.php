@@ -9,6 +9,7 @@ class CompleteOrderRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()?->role === 'PROVIDER';
+        return true;
     }
 
     public function rules(): array
@@ -25,6 +26,7 @@ class CompleteOrderRequest extends FormRequest
             'final_price.integer' => 'Final price must be a valid amount.',
             'final_price.min' => 'Final price must be at least 1.',
             'final_price.max' => 'Final price cannot exceed 100,000,000.',
+            'final_price' => 'required|integer|min:1',
         ];
     }
 }

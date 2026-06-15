@@ -169,7 +169,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', !in_array(env('APP_ENV', 'production'), ['local', 'testing'], true)),
 
     /*
     |--------------------------------------------------------------------------

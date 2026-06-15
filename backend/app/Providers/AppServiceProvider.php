@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use App\Services\Payout\PayoutGatewayInterface;
 use App\Services\Payout\XenditPayoutGateway;
@@ -50,6 +51,8 @@ class AppServiceProvider extends ServiceProvider
             $router->aliasMiddleware('role.provider', \App\Http\Middleware\EnsureProviderRole::class);
             $router->aliasMiddleware('role.admin', \App\Http\Middleware\EnsureAdminRole::class);
             $router->aliasMiddleware('role.treasurer', \App\Http\Middleware\EnsureTreasurerRole::class);
+        if (env('FORCE_HTTPS', false) || $this->app->environment(['production', 'staging'])) {
+            URL::forceScheme('https');
         }
     }
 }

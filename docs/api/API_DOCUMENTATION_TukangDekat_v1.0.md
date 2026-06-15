@@ -395,6 +395,32 @@ Event yang direkomendasikan:
 - `order_completed`
 - `final_paid`
 
+**Request**
+```json
+{
+  "event_name": "dp_paid",
+  "channel": "WA",
+  "payload": {
+    "order_id": 123,
+    "payment_id": 456,
+    "amount": 75000
+  }
+}
+```
+
+**Response 200**
+```json
+{
+  "message": "event_dispatched",
+  "data": {
+    "event_name": "dp_paid",
+    "channel": "WA",
+    "status": "SENT",
+    "id": 1
+  }
+}
+```
+
 ---
 
 ## 5.6 Reviews

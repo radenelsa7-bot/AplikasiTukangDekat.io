@@ -38,9 +38,16 @@ Dokumen ini menyediakan analisis lengkap, timeline, dan action items untuk menye
 
 ### 🔄 IN PROGRESS: Week 4 - Deploy-Smoke (feature/backend-123-deploy-smoke)
 
-**Status:** Currently Active  
+**Status:** Currently Active (Branch pushed, PR #38 open)  
 **Deadline:** 7 Juni 2026  
 **Priority:** 🔴 HIGH  
+
+#### Current progress
+- [x] Branch pushed to origin
+- [x] Pull request #38 opened
+- [x] Deployment documentation updated (`backend/DEPLOY_STATUS.md`, `backend/DEPLOY_REPORT_FOR_PM.md`)
+- [ ] Smoke test execution pending staging environment
+- [ ] Queue worker verification pending staging environment
 
 #### Tasks Checklist
 - [ ] **Jalankan Migrasi di Staging**
