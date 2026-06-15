@@ -8,9 +8,11 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Traits\ApiResponse;
 
 class TreasurerController extends Controller
 {
+    use ApiResponse;
     private function ensureTreasurer(): ?\Illuminate\Http\JsonResponse
     {
         // Check web session auth (web routes use web guard) or Sanctum token (API routes)
@@ -29,8 +31,10 @@ class TreasurerController extends Controller
 
     public function paymentReport(PaymentReportRequest $request)
     {
-        if ($response = $this->ensureTreasurer()) {
-            return $response;
+        // Route uses role.treasurer; defensive check only
+        $user = Auth::user() ?? Auth::guard('web')->user();
+        if (!$user || $user->role !== 'TREASURER') {
+            return $this->forbidden('Only treasurer can access this resource');
         }
 
         $validated = $request->validated();
@@ -89,9 +93,17 @@ class TreasurerController extends Controller
         $perPage = (int) ($validated['per_page'] ?? 20);
         $payments = $query->latest()->paginate($perPage);
 
+        $exportLimit = 5000;
+        $totalForExport = null;
+
         // Jika diminta ekspor CSV, kembalikan file stream CSV dari semua hasil query (tanpa paginasi)
         if ($request->query('export') === 'csv') {
-            $exportQuery = (clone $query)->latest()->get();
+            $totalForExport = (clone $query)->count();
+            if ($totalForExport > $exportLimit) {
+                return $this->error('Export limit exceeded. Please narrow the filter to fewer records.', 413, null, ['limit' => $exportLimit, 'count' => $totalForExport]);
+            }
+
+            $exportQuery = (clone $query)->latest()->cursor();
             $filename = 'treasurer_payments_' . now()->format('Ymd_His') . '.csv';
 
             $headers = [
@@ -99,6 +111,48 @@ class TreasurerController extends Controller
                 'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             ];
 
+            // Return full CSV content (test expects body content to include headers/rows)
+            // Note: response()->streamDownload() is not reliably captured as body content in tests.
+            $out = fopen('php://temp', 'r+');
+
+            fputcsv($out, [
+                'payment_id',
+                'order_id',
+                'payment_type',
+                'status',
+                'amount',
+                'platform_fee',
+                'provider_payout',
+                'refund_amount',
+                'refund_status',
+                'payment_reference',
+                'customer',
+                'provider',
+                'created_at',
+                'updated_at',
+            ]);
+
+            foreach ($exportQuery as $p) {
+                $customerName = optional($p->order->customer)->name ?? optional($p->order->customer)->email ?? '';
+                $providerName = optional($p->order->provider)->name ?? optional($p->order->provider)->email ?? '';
+
+                fputcsv($out, [
+                    $p->id,
+                    $p->order_id,
+                    $p->payment_type,
+                    $p->status,
+                    $p->amount,
+                    $p->platform_fee,
+                    $p->provider_payout,
+                    $p->refund_amount,
+                    $p->refund_status,
+                    $p->payment_reference ?? '',
+                    $customerName,
+                    $providerName,
+                    $p->created_at?->toDateTimeString() ?? '',
+                    $p->updated_at?->toDateTimeString() ?? '',
+                ]);
+            }
       // When running unit tests, return the full CSV as a string so tests can assert content
       if (app()->runningUnitTests()) {
         $out = fopen('php://temp', 'r+');
@@ -200,7 +254,12 @@ class TreasurerController extends Controller
 
         // Jika diminta ekspor XLS (SpreadsheetML/XML) tanpa membutuhkan ekstensi zip
         if ($request->query('export') === 'xls' || $request->query('export') === 'excel') {
-            $exportQuery = (clone $query)->latest()->get();
+            $totalForExport = $totalForExport ?? (clone $query)->count();
+            if ($totalForExport > $exportLimit) {
+                return $this->error('Export limit exceeded. Please narrow the filter to fewer records.', 413, null, ['limit' => $exportLimit, 'count' => $totalForExport]);
+            }
+
+            $exportQuery = (clone $query)->latest()->cursor();
             $filename = 'treasurer_payments_' . now()->format('Ymd_His') . '.xls';
 
             $escape = function ($v) {
@@ -259,7 +318,6 @@ class TreasurerController extends Controller
                 ];
 
                 foreach ($cols as $c) {
-                    // detect numeric
                     $type = is_numeric($c) ? 'Number' : 'String';
                     $xml .= "        <Cell><Data ss:Type=\"{$type}\">" . $escape($c) . "</Data></Cell>\n";
                 }
@@ -276,6 +334,7 @@ class TreasurerController extends Controller
             return response($xml, 200, $headers);
         }
 
+        return $this->success([
         return $this->successResponse([
             'payments' => $payments->items(),
             'summary' => $summary,
@@ -297,6 +356,7 @@ class TreasurerController extends Controller
                 'order_id' => $validated['order_id'] ?? null,
                 'provider_id' => $validated['provider_id'] ?? null,
             ],
+        ], 'Payment report');
         ], 'ok', 200);
     }
 }

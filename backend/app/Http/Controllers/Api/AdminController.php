@@ -8,9 +8,12 @@ use App\Models\ProviderProfile;
 use App\Services\N8nNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\ApiResponse;
+use App\Http\Requests\Admin\UpdateVerificationRequest;
 
 class AdminController extends Controller
 {
+  use ApiResponse;
   private function ensureAdmin(): ?\Illuminate\Http\JsonResponse
   {
     $user = Auth::user();
@@ -24,15 +27,12 @@ class AdminController extends Controller
 
   public function getPendingProviders(Request $request)
   {
-    if ($response = $this->ensureAdmin()) {
-      return $response;
-    }
-
     $providers = ProviderProfile::with('user')
       ->where('is_verified', false)
       ->latest()
       ->get();
 
+    return $this->success($providers, 'Pending providers');
     return $this->successResponse(['providers' => $providers], 'ok', 200);
   }
 
@@ -47,6 +47,7 @@ class AdminController extends Controller
     $provider = ProviderProfile::with('user')->find($providerId);
 
     if (!$provider) {
+      return $this->notFound('Provider not found');
       return $this->notFoundResponse('provider not found');
     }
 
@@ -65,6 +66,7 @@ class AdminController extends Controller
       ]
     );
 
+    return $this->success($provider, 'Verification updated');
     return $this->successResponse(['provider' => $provider], 'verification updated', 200);
   }
 }
