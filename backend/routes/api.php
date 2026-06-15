@@ -69,36 +69,36 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Admin (require ADMIN role)
-    Route::prefix('admin')->middleware(\App\Http\Middleware\EnsureRole::class . ':ADMIN')->group(function () {
-    // Admin
-    Route::prefix('admin')->middleware('role:admin')->group(function () {
+    Route::prefix('admin')->middleware([\App\Http\Middleware\EnsureRole::class . ':ADMIN', 'role:admin'])->group(function () {
         Route::get('/providers/pending', [AdminController::class, 'getPendingProviders']);
         Route::patch('/providers/{providerId}/verification', [AdminController::class, 'updateVerification']);
         Route::post('/providers/{providerId}/verify', [AdminController::class, 'updateVerification']);
     });
 
+
     // Treasurer (require TREASURER role)
     Route::prefix('treasurer')->middleware(\App\Http\Middleware\EnsureRole::class . ':TREASURER')->group(function () {
-    // Treasurer (API for web requests)
-    Route::prefix('treasurer')->middleware('role:readonly')->group(function () {
-        Route::get('/payments/report', [TreasurerController::class, 'paymentReport']);
-        Route::get('/transactions', [TreasurerController::class, 'paymentReport']);
+        // Treasurer (API for web requests)
+        Route::prefix('treasurer')->middleware('role:readonly')->group(function () {
+            Route::get('/payments/report', [TreasurerController::class, 'paymentReport']);
+            Route::get('/transactions', [TreasurerController::class, 'paymentReport']);
+        });
     });
+
+    // Webhook routes (tanpa authentication)
+    Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback'])->middleware('throttle:30,1');
+    Route::post('/integrations/n8n/events', [N8nIntegrationController::class, 'dispatchEvent'])->middleware('throttle:30,1');
+
+    // Monitoring metrics endpoint
+    Route::get(config('monitoring.metrics_path', '/metrics'), [MetricsController::class, 'show']);
+
+    // Fallback untuk testing
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    })->middleware('auth:sanctum');
+
+    // Session user endpoint (for SPA)
+    Route::get('/user-session', function (Request $request) {
+        return $request->user() ?: response()->json(['error' => 'Not authenticated'], 401);
+    })->middleware('auth:sanctum');
 });
-
-// Webhook routes (tanpa authentication)
-Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback'])->middleware('throttle:30,1');
-Route::post('/integrations/n8n/events', [N8nIntegrationController::class, 'dispatchEvent'])->middleware('throttle:30,1');
-
-// Monitoring metrics endpoint
-Route::get(config('monitoring.metrics_path', '/metrics'), [MetricsController::class, 'show']);
-
-// Fallback untuk testing
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
-// Session user endpoint (for SPA)
-Route::get('/user-session', function (Request $request) {
-    return $request->user() ?: response()->json(['error' => 'Not authenticated'], 401);
-})->middleware('auth:sanctum');
