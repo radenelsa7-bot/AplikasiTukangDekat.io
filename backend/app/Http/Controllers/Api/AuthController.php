@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\ProviderProfile;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\LoginRequest;
@@ -13,9 +14,12 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\LoginRequest;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
     /**
      * Register user baru
      */
@@ -23,6 +27,14 @@ class AuthController extends Controller
     {
         $validated = $request->validated();
 
+        try {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'password' => Hash::make($validated['password']),
+                'role' => $validated['role'],
+                'status' => 'ACTIVE',
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -38,8 +50,22 @@ class AuthController extends Controller
                 'user_id' => $user->id,
                 'is_verified' => false,
             ]);
-        }
 
+            // Jika provider, buat provider profile
+            if ($validated['role'] === 'PROVIDER') {
+                ProviderProfile::create([
+                    'user_id' => $user->id,
+                    'is_verified' => false,
+                ]);
+            }
+
+            return $this->success([
+                'user_id' => $user->id,
+                'role' => $user->role,
+            ], 'User registered successfully', 201);
+        } catch (\Throwable $e) {
+            return $this->internalServerError('Failed to register user');
+        }
         return $this->createdResponse([
             'user_id' => $user->id,
             'role' => $user->role,
@@ -56,6 +82,11 @@ class AuthController extends Controller
         $user = User::query()->where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
+            return $this->unauthorized('The provided credentials are incorrect.');
+        }
+
+        if ($user->status !== 'ACTIVE') {
+            return $this->forbidden('Your account is not active.');
             return $this->errorResponse('The provided credentials are incorrect.', 401);
         }
 
@@ -65,6 +96,7 @@ class AuthController extends Controller
 
         $token = $user->createToken('api-token')->plainTextToken;
 
+        return $this->success([
         return $this->successResponse([
             'token' => $token,
             'token_type' => 'Bearer',
@@ -74,6 +106,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'role' => $user->role,
             ],
+        ], 'Login successful', 200);
         ], 'ok', 200);
     }
 
@@ -85,6 +118,7 @@ class AuthController extends Controller
         $validated = $request->validated();
 
         if (!Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']], $request->boolean('remember'))) {
+            return $this->unauthorized('Invalid credentials');
             return $this->errorResponse('invalid_credentials', 401);
         }
 
@@ -92,6 +126,7 @@ class AuthController extends Controller
 
         $user = $request->user();
 
+        return $this->success([
         return $this->successResponse([
             'user' => [
                 'id' => $user->id,
@@ -99,6 +134,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'role' => $user->role,
             ],
+        ], 'Session login successful', 200);
         ], 'ok', 200);
     }
 
@@ -113,6 +149,7 @@ class AuthController extends Controller
             $token->delete();
         }
 
+        return $this->success(null, 'Logged out successfully', 200);
         return $this->successResponse(null, 'logged_out', 200);
     }
 
@@ -126,6 +163,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        return $this->success(null, 'Session logout successful', 200);
         return $this->successResponse(null, 'logged_out', 200);
     }
 }

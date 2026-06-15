@@ -8,9 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Jobs\SendProviderPayoutJob;
 use App\Models\ProviderPayoutAttempt;
+use App\Traits\ApiResponse;
 
 class ProviderPayoutController extends Controller
 {
+  use ApiResponse;
   public function index(Request $request)
   {
     $user = Auth::user();
@@ -38,12 +40,12 @@ class ProviderPayoutController extends Controller
   {
     $user = Auth::user();
     if (!$user || !in_array($user->role, ['TREASURER', 'ADMIN'])) {
-      return response()->json(['message' => 'forbidden'], 403);
+      return $this->forbidden('Only admin and treasurer can process payouts.');
     }
 
     $p = ProviderPayout::findOrFail($id);
     if ($p->status !== 'PENDING') {
-      return response()->json(['message' => 'payout not pending'], 400);
+      return $this->error('Payout is not in pending status.', 400, 'PAYOUT_NOT_PENDING');
     }
 
     // read force_fail option from request
@@ -51,7 +53,7 @@ class ProviderPayoutController extends Controller
 
     // Dispatch job with option
     SendProviderPayoutJob::dispatch($p->id, ['force_fail' => $forceFail]);
-    return response()->json(['message' => 'dispatched', 'id' => $p->id, 'force_fail' => $forceFail]);
+    return $this->success(['id' => $p->id, 'force_fail' => $forceFail], 'Payout dispatched');
   }
 
   // Batch send
@@ -59,12 +61,12 @@ class ProviderPayoutController extends Controller
   {
     $user = Auth::user();
     if (!$user || !in_array($user->role, ['TREASURER', 'ADMIN'])) {
-      return response()->json(['message' => 'forbidden'], 403);
+      return $this->forbidden('Only admin and treasurer can process payouts.');
     }
 
     $ids = $request->input('ids', []);
     if (empty($ids) || !is_array($ids)) {
-      return response()->json(['message' => 'no ids provided'], 400);
+      return $this->validationError(['ids' => ['No payout IDs provided.']]);
     }
 
     $results = [];
@@ -84,20 +86,20 @@ class ProviderPayoutController extends Controller
       $results[$id] = ['status' => 'dispatched', 'force_fail' => $forceFail];
     }
 
-    return response()->json(['results' => $results]);
+    return $this->success(['results' => $results], 'Batch dispatch completed');
   }
 
   public function retry(Request $request, $id)
   {
     $user = Auth::user();
     if (!$user || !in_array($user->role, ['TREASURER', 'ADMIN'])) {
-      return response()->json(['message' => 'forbidden'], 403);
+      return $this->forbidden('Only admin and treasurer can retry payouts.');
     }
 
     $p = ProviderPayout::findOrFail($id);
     // allow retry only if FAILED
     if ($p->status !== 'FAILED') {
-      return response()->json(['message' => 'only failed payouts can be retried'], 400);
+      return $this->error('Only failed payouts can be retried.', 400, 'INVALID_PAYOUT_STATUS');
     }
 
     // reset to PENDING so job can process it
@@ -108,6 +110,6 @@ class ProviderPayoutController extends Controller
 
     // dispatch with option to not force fail
     SendProviderPayoutJob::dispatch($p->id, ['force_fail' => false]);
-    return response()->json(['message' => 'retry dispatched']);
+    return $this->success(['id' => $p->id], 'Payout retry dispatched');
   }
 }
