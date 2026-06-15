@@ -52,18 +52,26 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{orderId}/start-work', [OrderController::class, 'startWork'])->middleware(['throttle:10,1', 'role.provider']);
         Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder'])->middleware(['throttle:10,1', 'role.provider']);
         Route::post('/', [OrderController::class, 'createOrder'])->middleware('throttle:10,1');
+        Route::post('/', [OrderController::class, 'createOrder'])->middleware('role:write');
         Route::get('/my-orders', [OrderController::class, 'getMyOrders']);
         Route::get('/{orderId}', [OrderController::class, 'getOrder']);
         Route::post('/{orderId}/respond', [OrderController::class, 'respondToOrder'])->middleware('throttle:10,1');
         Route::post('/{orderId}/start-work', [OrderController::class, 'startWork'])->middleware('throttle:10,1');
         Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder'])->middleware('throttle:10,1');
+        Route::post('/{orderId}/respond', [OrderController::class, 'respondToOrder'])->middleware('role:write');
+        Route::post('/{orderId}/start-work', [OrderController::class, 'startWork'])->middleware('role:write');
+        Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder'])->middleware('role:write');
         // Review: create review for an order
         Route::post('/{orderId}/review', [ReviewController::class, 'createReview'])->middleware('throttle:10,1');
+        Route::post('/{orderId}/review', [ReviewController::class, 'createReview'])->middleware('role:write');
     });
 
     // Payment
     Route::prefix('payments')->group(function () {
         Route::get('/order/{orderId}', [PaymentController::class, 'getPayments']);
+        Route::get('/{paymentId}', [PaymentController::class, 'getPaymentStatus']);
+        Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS'])->middleware(['throttle:3,1', 'role:write']);
+        Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware(['throttle:3,1', 'role:write']);
         Route::get('/{paymentId}', [PaymentController::class, 'getPaymentStatus'])->middleware('throttle:20,1');
         Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS'])->middleware('throttle:5,1');
         Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware('throttle:3,1');
@@ -85,32 +93,36 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('treasurer')->middleware('role.treasurer')->group(function () {
         Route::get('/payments/report', [TreasurerController::class, 'paymentReport'])->middleware('throttle:20,1');
     // Admin (require ADMIN role)
-    Route::prefix('admin')->middleware(\App\Http\Middleware\EnsureRole::class . ':ADMIN')->group(function () {
+    Route::prefix('admin')->middleware([\App\Http\Middleware\EnsureRole::class . ':ADMIN', 'role:admin'])->group(function () {
         Route::get('/providers/pending', [AdminController::class, 'getPendingProviders']);
         Route::patch('/providers/{providerId}/verification', [AdminController::class, 'updateVerification']);
         Route::post('/providers/{providerId}/verify', [AdminController::class, 'updateVerification']);
     });
 
+
     // Treasurer (require TREASURER role)
     Route::prefix('treasurer')->middleware(\App\Http\Middleware\EnsureRole::class . ':TREASURER')->group(function () {
-        Route::get('/payments/report', [TreasurerController::class, 'paymentReport']);
-        Route::get('/transactions', [TreasurerController::class, 'paymentReport']);
+        // Treasurer (API for web requests)
+        Route::prefix('treasurer')->middleware('role:readonly')->group(function () {
+            Route::get('/payments/report', [TreasurerController::class, 'paymentReport']);
+            Route::get('/transactions', [TreasurerController::class, 'paymentReport']);
+        });
     });
+
+    // Webhook routes (tanpa authentication)
+    Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback'])->middleware('throttle:30,1');
+    Route::post('/integrations/n8n/events', [N8nIntegrationController::class, 'dispatchEvent'])->middleware('throttle:30,1');
+
+    // Monitoring metrics endpoint
+    Route::get(config('monitoring.metrics_path', '/metrics'), [MetricsController::class, 'show']);
+
+    // Fallback untuk testing
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    })->middleware('auth:sanctum');
+
+    // Session user endpoint (for SPA)
+    Route::get('/user-session', function (Request $request) {
+        return $request->user() ?: response()->json(['error' => 'Not authenticated'], 401);
+    })->middleware('auth:sanctum');
 });
-
-// Webhook routes (tanpa authentication)
-Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback'])->middleware('throttle:30,1');
-Route::post('/integrations/n8n/events', [N8nIntegrationController::class, 'dispatchEvent'])->middleware('throttle:30,1');
-
-// Monitoring metrics endpoint
-Route::get(config('monitoring.metrics_path', '/metrics'), [MetricsController::class, 'show']);
-
-// Fallback untuk testing
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
-// Session user endpoint (for SPA)
-Route::get('/user-session', function (Request $request) {
-    return $request->user() ?: response()->json(['error' => 'Not authenticated'], 401);
-})->middleware('auth:sanctum');
