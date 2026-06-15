@@ -5,10 +5,20 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceCategory;
 use App\Models\ProviderProfile;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
 {
+  use ApiResponse;
+  /**
+   * Get semua service categories
+   */
+  public function getCategories()
+  {
+    $categories = ServiceCategory::where('is_active', true)
+      ->get();
+    return $this->success($categories, 'Categories');
     /**
      * Get semua service categories
      */
@@ -28,6 +38,21 @@ class CatalogController extends Controller
     {
         $category = ServiceCategory::find($categoryId);
 
+    if (!$category) {
+      return $this->notFound('Category not found');
+    }
+
+    $providers = ProviderProfile::whereHas('services', function ($query) use ($categoryId) {
+      $query->where('category_id', $categoryId)->where('is_active', true);
+    })
+      ->where('is_verified', true)
+      ->with(['services' => function ($query) use ($categoryId) {
+        $query->where('category_id', $categoryId)->where('is_active', true);
+      }])
+      ->get();
+
+    return $this->success($providers, 'Providers by category');
+  }
         if (!$category) {
             return $this->notFoundResponse('category not found');
         }
@@ -41,6 +66,12 @@ class CatalogController extends Controller
             }])
             ->get();
 
+    if (!$provider) {
+      return $this->notFound('Provider not found');
+    }
+
+    return $this->success($provider, 'Provider detail');
+  }
         return $this->successResponse(['providers' => $providers], 'ok', 200);
     }
 
@@ -58,6 +89,8 @@ class CatalogController extends Controller
             return $this->notFoundResponse('provider not found');
         }
 
+    if (empty($query)) {
+      return $this->validationError(['q' => ['Query parameter q is required.']]);
         return $this->successResponse(['provider' => $provider], 'ok', 200);
     }
 
@@ -68,6 +101,8 @@ class CatalogController extends Controller
     {
         $query = $request->query('q', '');
 
+    return $this->success($providers, 'Search results');
+  }
         if (empty($query)) {
             return $this->errorResponse('Query parameter q is required.', 400);
         }

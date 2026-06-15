@@ -8,6 +8,7 @@ class LoginRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        return true; // Public endpoint
         return true;
     }
 
@@ -16,6 +17,15 @@ class LoginRequest extends FormRequest
         return [
             'email' => 'required|string|email',
             'password' => 'required|string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'Email is required.',
+            'email.email' => 'Email must be a valid email address.',
+            'password.required' => 'Password is required.',
         ];
     }
 }
