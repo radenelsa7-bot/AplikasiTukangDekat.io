@@ -30,6 +30,7 @@ class TreasurerController extends Controller
     }
 
     public function paymentReport(PaymentReportRequest $request)
+    public function paymentReport(Request $request)
     {
         // Route uses role.treasurer; defensive check only
         $user = Auth::user() ?? Auth::guard('web')->user();

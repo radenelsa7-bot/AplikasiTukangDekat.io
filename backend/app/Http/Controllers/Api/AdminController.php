@@ -27,6 +27,7 @@ class AdminController extends Controller
 
   public function getPendingProviders(Request $request)
   {
+
     $providers = ProviderProfile::with('user')
       ->where('is_verified', false)
       ->latest()
