@@ -3,12 +3,24 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateVerificationRequest;
 use App\Models\ProviderProfile;
 use App\Services\N8nNotificationService;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
+  private function ensureAdmin(): ?\Illuminate\Http\JsonResponse
+  {
+    $user = Auth::user();
+
+    if (!$user || $user->role !== 'ADMIN') {
+      return $this->forbiddenResponse('only admin can access this resource');
+    }
+
+    return null;
+  }
+
   public function getPendingProviders(Request $request)
   {
 
@@ -17,23 +29,21 @@ class AdminController extends Controller
       ->latest()
       ->get();
 
-    return response()->json([
-      'data' => $providers,
-    ], 200);
+    return $this->successResponse(['providers' => $providers], 'ok', 200);
   }
 
-  public function updateVerification(Request $request, $providerId)
+  public function updateVerification(UpdateVerificationRequest $request, $providerId)
   {
-    $validated = $request->validate([
-      'is_verified' => 'required|boolean',
-    ]);
+    if ($response = $this->ensureAdmin()) {
+      return $response;
+    }
+
+    $validated = $request->validated();
 
     $provider = ProviderProfile::with('user')->find($providerId);
 
     if (!$provider) {
-      return response()->json([
-        'message' => 'provider not found',
-      ], 404);
+      return $this->notFoundResponse('provider not found');
     }
 
     $provider->update([
@@ -51,9 +61,6 @@ class AdminController extends Controller
       ]
     );
 
-    return response()->json([
-      'message' => 'verification updated',
-      'data' => $provider,
-    ], 200);
+    return $this->successResponse(['provider' => $provider], 'verification updated', 200);
   }
 }
