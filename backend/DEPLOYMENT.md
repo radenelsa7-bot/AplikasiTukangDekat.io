@@ -38,14 +38,14 @@ php artisan migrate --force
 php artisan db:seed --class=AdminSeeder --force   # jika Anda memiliki seeder untuk membuat admin/bendahara
 ```
 
-5. Optimasi cache dan config:
+5. Optimasi cache dan konfigurasi:
 
 ```bash
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 ./deploy/smoke-test.sh
-# or alternatively run the Laravel smoke test command:
+# atau sebagai alternatif jalankan perintah smoke test Laravel:
 # php artisan deploy:smoke --url="http://127.0.0.1"
 ```
 
@@ -119,8 +119,8 @@ Gunakan konfigurasi nginx/Apache produksi standar. Pastikan `public/` adalah aka
 
 ## Catatan & Keamanan
 
-- Rute helper pengembangan `/test-login/{role}` telah dihapus. Jangan aktifkan kembali rute helper dev di produksi.
-- Simpan kredensial gateway provider di luar repositori dan simpan di variabel lingkungan (`.env`) atau manajer rahasia.
-- Pantau tabel `provider_payout_attempts` untuk upaya yang gagal dan coba lagi melalui UI admin atau perintah `php artisan`.
+- Rute helper pengembangan `/test-login/{role}` telah dihapus. Jangan aktifkan kembali rute helper pengembangan di lingkungan produksi.
+- Simpan kredensial gateway provider di luar repositori dan gunakan variabel lingkungan (`.env`) atau manajer rahasia.
+- Pantau tabel `provider_payout_attempts` untuk upaya yang gagal dan coba ulang melalui UI admin atau perintah `php artisan`.
 
-Jika Anda mau, saya juga dapat menambahkan file unit `systemd` contoh di atas ke dalam repo di bawah `deploy/` untuk referensi mudah.
+Jika Anda mau, saya juga dapat menambahkan contoh file unit `systemd` di dalam repositori pada folder `deploy/` untuk referensi mudah.

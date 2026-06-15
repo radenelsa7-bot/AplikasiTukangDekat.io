@@ -9,6 +9,7 @@ class CreateReviewRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()?->role === 'CUSTOMER';
+        return true;
     }
 
     public function rules(): array
@@ -27,6 +28,8 @@ class CreateReviewRequest extends FormRequest
             'rating.min' => 'Rating must be at least 1 star.',
             'rating.max' => 'Rating cannot exceed 5 stars.',
             'comment.max' => 'Comment cannot exceed 1000 characters.',
+            'rating' => 'required|integer|between:1,5',
+            'comment' => 'nullable|string',
         ];
     }
 }

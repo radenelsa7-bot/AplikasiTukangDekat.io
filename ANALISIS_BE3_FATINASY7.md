@@ -1,255 +1,156 @@
-# Analisis Status Backend 3 (Fatinasy7) - TukangDekat Project
+# Laporan Analisis Fitur & Pekerjaan Backend 3 (Fatinasy7)
 
-**Tanggal:** 4 Juni 2026  
+**Tanggal:** 7 Juni 2026  
 **Nama:** Fatinasy7  
 **Role:** Backend Developer 3 (BE3)  
-**Status:** Sedang Mengerjakan feature/backend-123-deploy-smoke
+**Tujuan:** Laporan status dan ringkasan fitur yang telah dikerjakan untuk PM
 
 ---
 
-## 📊 Ringkasan Status
+## 📌 Ringkasan Utama
 
-### Sudah Selesai ✅
-1. **feature/backend-122-ci-staging**
-   - ✅ Menambahkan GitHub Actions workflow `ci-staging.yml`
-   - ✅ Job integration/staging dengan secrets gate (`DEPLOY_KEY`)
-   - ✅ Fallback job informatif jika secrets belum dikonfigurasi
-   - Status: Merged ke `main`
+### Pekerjaan yang sudah selesai
+- ✅ [Backend] Model & Eloquent Relationships (#55)
+  - Selesai 18 Mei 2026 - 24 Mei 2026
+- ✅ [Backend] Auto-create DP Payment saat Order dibuat (BR-01) (#61)
+  - Selesai 25 Mei 2026 - 31 Mei 2026
+- ✅ [Backend] API Reviews & Rating (FR-23, FR-24) (#20)
+  - Selesai 25 Mei 2026 - 31 Mei 2026
+- ✅ [Backend] Featur/integrasi n8n (#41)
+  - Status: Selesai
+- ✅ [Backend] CI/CD staging gateway (`feature/backend-122-ci-staging`)
+  - Status: Merged ke `main`
 
-### Sedang Dikerjakan 🔄
-1. **feature/backend-123-deploy-smoke** (Prioritas: HIGH)
-   - Branch aktif: `feature/backend-123-deploy-smoke`
-   - Milestone: Backend – Deploy & Monitoring (7 Juni 2026)
-   - Label: `role: Backend`, `priority: high`, `testing`, `module: notification`
+### Pekerjaan yang sedang berlangsung
+- 🔄 [Backend] Finalisasi & hardening API (security, validation, error handling) (#37)
+  - Durasi: 8 Juni 2026 - 14 Juni 2026
+  - Status: In Progress
+- 🔄 [Backend] Integrasi n8n – Event Notifikasi (FR-21, FR-22) (#28)
+  - Durasi: 1 Juni 2026 - 7 Juni 2026
+  - Status: In Progress bersama Fajar1180
 
-### Belum Dikerjakan ❌
-1. **Week 2 - Model & Eloquent Relationships** (25-31 Mei)
-   - Status: Tertunda/Delegasi ulang (mungkin sudah dikerjakan BE1 atau BE2)
-   - Tasks:
-     - [ ] Model User (dengan role enum)
-     - [ ] Model ProviderProfile (belongsTo User)
-     - [ ] Model ServiceCategory
-     - [ ] Model ProviderService
-     - [ ] Model Order (belongsTo Customer, Provider, Service)
-     - [ ] Model Payment (hasMany Order)
-     - [ ] Model Review
-     - [ ] Model NotificationLog
-     - [ ] Factory & Faker untuk semua model
-
-2. **Week 4 - Integrasi n8n – Event Notifikasi** (1-7 Juni) 🔴
-   - Status: Belum Dimulai
-   - Milestone: Backend – Deploy & Monitoring
-   - Label: `priority: medium`, `module: notification`
-   - Tasks:
-     - [ ] Setup n8n container (sudah ada di docker-compose)
-     - [ ] Buat workflow n8n untuk setiap event:
-       - [ ] order_created → WA ke customer & provider
-       - [ ] order_accepted → WA ke customer
-       - [ ] order_rejected → WA ke customer
-       - [ ] dp_paid → WA ke customer & provider
-       - [ ] order_completed → WA ke customer (minta bayar pelunasan)
-       - [ ] final_paid → WA ke semua
-     - [ ] POST /api/integrations/n8n/events
-     - [ ] Konfigurasi WA provider di n8n (Fonnte/Wablas/dll)
-     - [ ] Catat ke notification_logs setiap pengiriman
-
-3. **Week 5 - Finalisasi & Hardening API** (8-14 Juni) 🔴
-   - Status: Belum Dimulai (Shared dengan BE2)
-   - Milestone: Backend – Deploy & Monitoring
-   - Label: `priority: high`
-   - Tasks:
-     - [ ] Review semua Form Request validation
-     - [ ] Pastikan semua response mengikuti format API Doc
-     - [ ] Rate limiting untuk endpoint sensitif
-     - [ ] HTTPS enforcement
-     - [ ] Review semua role middleware
-     - [ ] Pastikan password hashing bcrypt
-     - [ ] Remove debug logs & dd()
+### Pekerjaan yang tertunda / selanjutnya
+- ❌ [Backend] Admin endpoints & Treasurer report (FR-25, FR-26) (#36)
+  - Durasi: 8 Juni 2026 - 14 Juni 2026
+  - Status: Todo untuk Fatinasy7
+- ❌ [Backend] Deploy-smoke (`feature/backend-123-deploy-smoke`)
+  - Status: Artefak siap, eksekusi staging pending
+- ❌ [Backend] n8n notification endpoint & audit log
+  - Status: Rencana ada, implementasi belum tuntas
 
 ---
 
-## 📋 Task Detail - Feature/Backend-123-Deploy-Smoke
+## 🧩 Fitur Utama Backend yang Telah Dibangun
 
-**Title:** [Backend] Migrasi staging, queue worker, dan smoke test post-deploy
+Berdasarkan hasil implementasi backend, platform sudah mendukung:
+- Pendaftaran pengguna dan login dengan token Sanctum
+- Kontrol akses berbasis peran (`CUSTOMER`, `PROVIDER`, `ADMIN`, `TREASURER`)
+- Model dan relasi Eloquent untuk User, ProviderProfile, ServiceCategory, ProviderService, Order, Payment, Review, NotificationLog
+- Katalog layanan dan pencarian provider
+- Siklus hidup order: `CREATED → ACCEPTED → IN_PROGRESS → COMPLETED → CLOSED`
+- Auto-create DP Payment saat order dibuat (BR-01)
+- API review dan rating provider untuk order selesai
+- Pencatatan notifikasi internal (`notification_logs`)
+- Draft integrasi n8n untuk event notifikasi
+- Dasar hardening API (validation, error handling, response format)
 
-**Description:**  
-Siapkan migrasi staging, aktifkan queue worker, lalu jalankan smoke test setelah deploy.
-
-### Tasks
-- [ ] **Jalankan migrasi di staging**
-  - Database migration untuk staging environment
-  - Pastikan struktur tabel sesuai schema
-  - Verifikasi data integrity
-
-- [ ] **Aktifkan queue worker di staging/production**
-  - Setup queue worker (Supervisor configuration)
-  - Configure redis/beanstalkd queue
-  - Test job enqueueing dan processing
-  - Monitor queue status
-
-- [ ] **Tambahkan smoke test pasca deploy**
-  - Create smoke test script (`smoke-test.sh` atau Postman collection)
-  - Test critical endpoints:
-    - POST /api/auth/login
-    - GET /api/categories
-    - GET /api/providers
-    - POST /api/orders
-    - GET /api/payments/{id}
-  - Verify response status dan payload
-  - Integration test dengan real database
-
-- [ ] **Catat hasil verifikasi deployment**
-  - Buat deployment report
-  - Document success/failure metrics
-  - Update DEPLOY_STATUS.md
-
-### Acceptance Criteria
-- [x] CI staging workflow berjalan tanpa error
-- [ ] Database migration berhasil di staging
-- [ ] Queue worker aktif dan memproses job
-- [ ] Smoke test semua endpoint kritis lulus
-- [ ] Post-deploy verification documented
-
-### Referensi
-- PROGRESS_TRACKING.md
-- DEPLOYMENT.md
-- RUNBOOK.md
-- supervisor.conf (di backend/deploy/)
-- smoke-test.sh (sudah ada)
-
-### Deliverables
-- ✅ PR dengan deskripsi lengkap
-- ✅ Documentation update
-- ✅ Smoke test script/collection
-- ✅ Deployment report
+> Catatan: ini mencakup capaian BE3 hingga 7 Juni 2026 dan menggabungkan timeline tugas yang diberikan.
 
 ---
 
-## 🎯 Prioritas Pengerjaan
+## 📋 Detail Status Tugas
 
-### Immediate (Minggu Ini)
-1. ✅ Selesaikan **feature/backend-123-deploy-smoke**
-   - Implement queue worker activation
-   - Add comprehensive smoke test
-   - Create deployment verification report
-   - Buat pull request & merge
+### 1. [Backend] Model & Eloquent Relationships (#55)
+- Status: ✅ Selesai
+- Tanggal: 18 Mei 2026 - 24 Mei 2026
+- Hasil: struktur model dan relasi sudah tersedia sebagai dasar fitur order, payment, review, dan notifikasi.
 
-2. ✅ Mulai planning **Week 4 - n8n Integration**
-   - Review n8n documentation
-   - Design workflow architecture
-   - Research WA gateway options
+### 2. [Backend] Auto-create DP Payment saat Order dibuat (BR-01) (#61)
+- Status: ✅ Selesai
+- Tanggal: 25 Mei 2026 - 31 Mei 2026
+- Hasil: ketika order dibuat, DP payment otomatis dibuat dan terhubung ke order tersebut.
 
-### Next (Minggu Depan)
-3. Implement **feature/backend-124-n8n-integration** (alias untuk Week 4 task)
-   - Setup n8n workflows
-   - Integrate dengan API
-   - Test end-to-end notification flow
+### 3. [Backend] API Reviews & Rating (FR-23, FR-24) (#20)
+- Status: ✅ Selesai
+- Tanggal: 25 Mei 2026 - 31 Mei 2026
+- Hasil: API review provider dan agregasi rating sudah tersedia.
 
-4. Collaborate dengan BE2 untuk **Week 5 - API Hardening**
-   - Security review
-   - Validation hardening
-   - Error handling standardization
+### 4. [Backend] Featur/integrasi n8n (#41)
+- Status: ✅ Selesai
+- Hasil: arsitektur awal integrasi n8n dipersiapkan; workflow internal direncanakan.
 
----
+### 5. [Backend] CI/CD staging gateway (`feature/backend-122-ci-staging`)
+- Status: ✅ Selesai dan merge ke `main`
+- Hasil: workflow GitHub Actions untuk staging, secret gate, dan fallback logging tersedia.
 
-## 📁 Repository Structure
+### 6. [Backend] Integrasi n8n – Event Notifikasi (FR-21, FR-22) (#28)
+- Status: 🔄 In Progress
+- Durasi: 1 Juni 2026 - 7 Juni 2026
+- Kolaborasi: Fajar1180, Fatinasy7
+- Fokus: event order/pembayaran → trigger n8n → notifikasi WA dan audit log.
 
-```
-backend/
-├── deploy/
-│   ├── supervisor.conf          ← Queue worker config
-│   ├── laravel-queue.service    ← Systemd service
-│   ├── smoke-test.sh            ← Smoke test script
-│   └── README.md
-├── app/
-│   ├── Console/                 ← Artisan commands
-│   ├── Http/
-│   │   ├── Controllers/         ← API endpoints
-│   │   └── Middleware/          ← Auth & role middleware
-│   ├── Jobs/                    ← Queue jobs
-│   ├── Notifications/           ← Notification classes
-│   ├── Models/                  ← Eloquent models
-│   └── Services/                ← Business logic
-├── config/
-│   ├── queue.php                ← Queue configuration
-│   └── app.php
-├── tests/
-│   ├── Feature/                 ← Integration tests
-│   └── Unit/                    ← Unit tests
-├── docker-compose.yml
-├── DEPLOYMENT.md
-├── DEPLOY_STATUS.md
-└── README.md
-```
+### 7. [Backend] Finalisasi & hardening API (security, validation, error handling) (#37)
+- Status: 🔄 In Progress
+- Durasi: 8 Juni 2026 - 14 Juni 2026
+- Fokus: menutup celah validasi, menyamakan response format, dan memperbaiki error handling.
+
+### 8. [Backend] Admin endpoints & Treasurer report (FR-25, FR-26) (#36)
+- Status: ❌ Todo
+- Durasi: 8 Juni 2026 - 14 Juni 2026
+- Target: fitur manajemen admin dan laporan bendahara.
+
+### 9. [Backend] Deploy-smoke (`feature/backend-123-deploy-smoke`)
+- Status: ❌ Pending verifikasi
+- Hasil yang sudah tersedia:
+  - `backend/DEPLOY_STATUS.md`
+  - `backend/DEPLOY_REPORT_FOR_PM.md`
+  - `backend/deploy/smoke-test.sh`
+  - `backend/deploy/supervisor.conf`
+  - `app/Console/Commands/DeploySmokeTest.php`
+- Perlu eksekusi di staging dan validasi queue worker.
 
 ---
 
-## 🔧 Tools & Technologies
+## 🚀 Fokus Submit ke PM
 
-**Framework:** Laravel 11 (PHP 8.2+)  
-**Queue:** Redis atau Beanstalkd  
-**Process Manager:** Supervisor  
-**Testing:** PHPUnit  
-**Payment Gateway:** Xendit/Midtrans  
-**Notification:** n8n (Workflow automation)  
-**Monitoring:** Sentry (untuk Week 5)  
+### Prioritas sekarang
+1. Selesaikan `feature/backend-123-deploy-smoke` dengan verifikasi staging.
+2. Teruskan `feature/backend-124-n8n-integration` untuk event notifikasi.
+3. Finalisasi `feature/backend-125-api-hardening` dengan BE2.
+4. Siapkan `feature/backend-36` admin endpoint dan laporan bendahara.
 
----
-
-## 📞 Komunikasi & Support
-
-### Tim Backend
-- **BE1** (NabilahAsana): API Auth, Orders, Admin endpoints
-- **BE2** (Fajar1180): Payment webhook, Auto-create DP, Hardening
-- **BE3** (Fatinasy7): Deploy-smoke, n8n integration, Hardening (shared)
-
-### Project Manager
-- **PM** (radenelsa7-bot): R.Elsa Balqis
-
-### Daily Standup
-- Check PROGRESS_TRACKING.md setiap pagi
-- Update status di GitHub Issues
-- Report blocker ke PM via GitHub Issues
+### Dukungan yang dibutuhkan
+- Akses staging environment untuk smoke test dan queue worker
+- Data atau spesifikasi API tetap untuk endpoint admin/treasurer
+- Konfirmasi prioritas antara hardening API dan admin feature
 
 ---
 
-## 📈 Timeline
+## 📈 Timeline Tugas BE3
 
-| Week | Target | Status |
-|------|--------|--------|
-| W1 (11-17 Mei) | Foundation setup | ✅ Complete |
-| W2 (18-24 Mei) | Auth & API foundation | ✅ Complete |
-| W3 (25-31 Mei) | Order lifecycle | ✅ Complete |
-| W4 (1-7 Jun) | Payment & Notification | 🔄 In Progress (BE1, BE2) |
-| W5 (8-14 Jun) | Integration & Polish | ❌ Pending |
-| W6 (15-18 Jun) | Testing & Demo | ❌ Pending |
-
----
-
-## 🚀 Next Steps
-
-1. ✅ **Selesaikan feature/backend-123-deploy-smoke**
-   - Implement queue worker setup
-   - Add smoke test script
-   - Create comprehensive documentation
-   - Create & merge PR
-
-2. 📝 **Create tracking branch untuk Week 4 & 5**
-   - Branch: `feature/backend-120-121-be3-notification-hardening`
-   - Include n8n integration & API hardening tasks
-
-3. 🧪 **Start Week 4 - n8n Integration**
-   - Review existing n8n setup
-   - Design notification workflow
-   - Implement event listeners
-
-4. 🔐 **Week 5 - API Hardening (Collaborate dengan BE2)**
-   - Security audit
-   - Validation improvements
-   - Error handling standardization
+| Item | Nomor | Periode | Status |
+|------|-------|---------|--------|
+| Model & Eloquent Relationships | #55 | 18-24 Mei | ✅ Selesai |
+| Auto-create DP Payment | #61 | 25-31 Mei | ✅ Selesai |
+| API Reviews & Rating | #20 | 25-31 Mei | ✅ Selesai |
+| Integrasi n8n | #41 | - | ✅ Selesai |
+| CI/CD staging gateway | - | - | ✅ Selesai |
+| Integrasi n8n – Event Notifikasi | #28 | 1-7 Jun | 🔄 In Progress |
+| Finalisasi & hardening API | #37 | 8-14 Jun | 🔄 In Progress |
+| Admin endpoints & Treasurer report | #36 | 8-14 Jun | ❌ Todo |
+| Deploy-smoke | - | - | ❌ Pending verifikasi |
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 4 Juni 2026  
+## 📍 Rekomendasi untuk PM
+
+1. Pastikan `feature/backend-123-deploy-smoke` dapat dieksekusi di staging segera.
+2. Prioritaskan penyelesaian `#37` hardening API selama minggu ini.
+3. Siapkan spesifikasi admin/treasurer untuk `#36` agar dapat dimulai tepat waktu.
+4. Tetap komunikasikan status integrasi n8n bersama Fajar1180.
+
+---
+
+**Catatan:** file ini menyesuaikan laporan dengan timeline tugas yang Anda berikan dan menyoroti detail hasil serta target yang sesuai.  
+**Last Updated:** 7 Juni 2026  
 **Status:** Active

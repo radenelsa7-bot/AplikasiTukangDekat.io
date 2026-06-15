@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\ProviderProfile;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Validation\ValidationException;
@@ -33,6 +35,20 @@ class AuthController extends Controller
                 'password' => Hash::make($validated['password']),
                 'role' => $validated['role'],
                 'status' => 'ACTIVE',
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+            'status' => 'ACTIVE',
+        ]);
+
+        // Jika provider, buat provider profile
+        if ($validated['role'] === 'PROVIDER') {
+            ProviderProfile::create([
+                'user_id' => $user->id,
+                'is_verified' => false,
             ]);
 
             // Jika provider, buat provider profile
@@ -50,6 +66,10 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             return $this->internalServerError('Failed to register user');
         }
+        return $this->createdResponse([
+            'user_id' => $user->id,
+            'role' => $user->role,
+        ], 'registered');
     }
 
     /**
@@ -67,11 +87,17 @@ class AuthController extends Controller
 
         if ($user->status !== 'ACTIVE') {
             return $this->forbidden('Your account is not active.');
+            return $this->errorResponse('The provided credentials are incorrect.', 401);
+        }
+
+        if ($user->status !== 'ACTIVE') {
+            return $this->errorResponse('Your account is not active.', 403);
         }
 
         $token = $user->createToken('api-token')->plainTextToken;
 
         return $this->success([
+        return $this->successResponse([
             'token' => $token,
             'token_type' => 'Bearer',
             'user' => [
@@ -81,6 +107,7 @@ class AuthController extends Controller
                 'role' => $user->role,
             ],
         ], 'Login successful', 200);
+        ], 'ok', 200);
     }
 
     /**
@@ -92,6 +119,7 @@ class AuthController extends Controller
 
         if (!Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']], $request->boolean('remember'))) {
             return $this->unauthorized('Invalid credentials');
+            return $this->errorResponse('invalid_credentials', 401);
         }
 
         $request->session()->regenerate();
@@ -99,6 +127,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         return $this->success([
+        return $this->successResponse([
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -106,6 +135,7 @@ class AuthController extends Controller
                 'role' => $user->role,
             ],
         ], 'Session login successful', 200);
+        ], 'ok', 200);
     }
 
     /**
@@ -120,6 +150,7 @@ class AuthController extends Controller
         }
 
         return $this->success(null, 'Logged out successfully', 200);
+        return $this->successResponse(null, 'logged_out', 200);
     }
 
     /**
@@ -133,5 +164,6 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return $this->success(null, 'Session logout successful', 200);
+        return $this->successResponse(null, 'logged_out', 200);
     }
 }

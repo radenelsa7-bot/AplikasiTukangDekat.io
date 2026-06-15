@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Review\CreateReviewRequest;
 use App\Models\Order;
 use App\Models\Review;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,11 +36,28 @@ class ReviewController extends Controller
     // Spec requires reviews only when order is CLOSED
     if ($order->status !== 'CLOSED') {
       return $this->error('Order must be CLOSED to add a review', 400);
+    if ($user->role !== 'CUSTOMER') {
+      return $this->forbiddenResponse('only customer can create review');
+    }
+
+    $order = Order::find($orderId);
+
+    if (!$order) {
+      return $this->notFoundResponse('order not found');
+    }
+
+    if ($order->customer_id !== $user->id) {
+      return $this->forbiddenResponse('unauthorized');
+    }
+
+    if ($order->status !== 'COMPLETED' && $order->status !== 'CLOSED') {
+      return $this->errorResponse('order not completed yet', 400);
     }
 
     // Ensure single review per order (also enforced by DB unique index)
     if ($order->review) {
       return $this->error('Review already exists for this order', 400);
+      return $this->errorResponse('review already exists for this order', 400);
     }
 
     $validated = $request->validated();
@@ -62,6 +81,7 @@ class ReviewController extends Controller
     });
 
     return $this->success($review, 'Review created', 201);
+    return $this->createdResponse(['review' => $review], 'review created');
   }
 
   /**
@@ -77,6 +97,38 @@ class ReviewController extends Controller
       ->paginate($perPage);
 
     return $this->paginated($reviews, 'Provider reviews');
+    return $this->successResponse(['reviews' => $reviews], 'ok', 200);
+  }
+
+  /**
+   * Get summary rating untuk provider
+   */
+  public function getProviderReviewSummary($providerId)
+  {
+    $provider = User::find($providerId);
+
+    if (!$provider) {
+      return $this->notFoundResponse('provider not found');
+    }
+
+    $reviewsQuery = Review::where('provider_id', $providerId);
+    $totalReviews = $reviewsQuery->count();
+    $averageRating = $reviewsQuery->avg('rating') ?: 0;
+    $distribution = $reviewsQuery
+      ->selectRaw('rating, COUNT(*) as count')
+      ->groupBy('rating')
+      ->orderByDesc('rating')
+      ->pluck('count', 'rating')
+      ->toArray();
+
+    $distribution = array_replace(array_fill(1, 5, 0), $distribution);
+
+    return $this->successResponse([
+      'provider_id' => $providerId,
+      'average_rating' => round((float) $averageRating, 2),
+      'total_reviews' => $totalReviews,
+      'distribution' => $distribution,
+    ], 'ok', 200);
   }
 
   /**
@@ -93,5 +145,9 @@ class ReviewController extends Controller
     }
 
     return $this->success($review, 'Order review');
+      return $this->notFoundResponse('review not found');
+    }
+
+    return $this->successResponse(['review' => $review], 'ok', 200);
   }
 }

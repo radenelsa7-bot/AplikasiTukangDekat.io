@@ -9,6 +9,7 @@ class UpdateVerificationRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()?->role === 'ADMIN';
+        return true;
     }
 
     public function rules(): array

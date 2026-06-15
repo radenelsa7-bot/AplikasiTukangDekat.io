@@ -1,0 +1,195 @@
+{
+  "name": "TukangDekat - Unified Email Notification Workflow",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "n8n-events",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": { "responseCode": 200 }
+      },
+      "name": "Webhook n8n-events",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"event_name\"]}}",
+              "operation": "regex",
+              "value2": "order_created|order_accepted|order_rejected|dp_paid|order_completed|final_paid"
+            }
+          ]
+        }
+      },
+      "name": "Validate event_name",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "multiOptions": [
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "order_created"
+            },
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "order_accepted"
+            },
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "order_rejected"
+            },
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "dp_paid"
+            },
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "order_completed"
+            },
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "final_paid"
+            }
+          ]
+        }
+      },
+      "name": "Route by event_name",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [750, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst customerName = payload.customer_name || 'Customer';\nconst providerName = payload.provider_name || 'Provider';\nconst orderCode = payload.order_code || 'N/A';\nconst estimatedPrice = payload.estimated_price ?? 0;\nconst dpAmount = payload.dp_amount ?? 0;\nconst customerEmail = payload.customer_email || '';\nconst providerEmail = payload.provider_email || '';\n\nreturn [\n  {\n    json: {\n      email: customerEmail,\n      recipient_type: 'customer',\n      subject: `Pesanan ${orderCode} - TukangDekat`,\n      html: `<h2>Halo ${customerName},</h2><p>Pesanan Anda dengan kode <strong>${orderCode}</strong> telah berhasil dibuat di TukangDekat.</p><p><strong>Detail Pesanan:</strong></p><ul><li>Kode Order: ${orderCode}</li><li>Estimasi Harga: Rp ${estimatedPrice}</li><li>Total DP: Rp ${dpAmount}</li></ul><p>Silakan tunggu konfirmasi dari provider. Anda akan menerima notifikasi lanjutan segera.</p><p>Terima kasih,<br>Tim TukangDekat</p>`\n    }\n  },\n  {\n    json: {\n      email: providerEmail,\n      recipient_type: 'provider',\n      subject: `Order Baru ${orderCode} - TukangDekat`,\n      html: `<h2>Halo ${providerName},</h2><p>Ada order baru untuk Anda dengan kode <strong>${orderCode}</strong>.</p><p><strong>Detail Pesanan:</strong></p><ul><li>Kode Order: ${orderCode}</li><li>Estimasi Harga: Rp ${estimatedPrice}</li><li>Total DP: Rp ${dpAmount}</li></ul><p>Silakan login ke dashboard TukangDekat untuk melihat detail lengkap dan segera lakukan respons.</p><p>Terima kasih,<br>Tim TukangDekat</p>`\n    }\n  }\n];"
+      },
+      "name": "Build email (order_created)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 50]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst customerName = payload.customer_name || 'Customer';\nconst customerEmail = payload.customer_email || '';\nconst orderCode = payload.order_code || 'N/A';\nconst providerName = payload.provider_name || 'Provider';\n\nreturn [{\n  json: {\n    email: customerEmail,\n    recipient_type: 'customer',\n    subject: `Pesanan ${orderCode} Diterima - TukangDekat`,\n    html: `<h2>Halo ${customerName},</h2><p>Pesanan Anda dengan kode <strong>${orderCode}</strong> telah diterima oleh <strong>${providerName}</strong>.</p><p>Silakan tunggu konfirmasi jadwal lebih lanjut. Anda dapat menghubungi provider untuk detail lebih lengkap.</p><p>Terima kasih,<br>Tim TukangDekat</p>`\n  }\n}];"
+      },
+      "name": "Build email (order_accepted)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 120]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst customerName = payload.customer_name || 'Customer';\nconst customerEmail = payload.customer_email || '';\nconst orderCode = payload.order_code || 'N/A';\nconst reason = payload.reason || payload.rejection_reason || 'Tidak ada alasan yang diberikan';\n\nreturn [{\n  json: {\n    email: customerEmail,\n    recipient_type: 'customer',\n    subject: `Pesanan ${orderCode} Ditolak - TukangDekat`,\n    html: `<h2>Halo ${customerName},</h2><p>Maaf, pesanan Anda dengan kode <strong>${orderCode}</strong> ditolak oleh provider.</p><p><strong>Alasan Penolakan:</strong></p><p>${reason}</p><p>Silakan membuat order baru atau hubungi tim support kami untuk bantuan lebih lanjut.</p><p>Terima kasih,<br>Tim TukangDekat</p>`\n  }\n}];"
+      },
+      "name": "Build email (order_rejected)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 190]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst orderCode = payload.order_code || 'N/A';\nconst amount = payload.amount || payload.dp_amount || 0;\nconst customerName = payload.customer_name || 'Customer';\nconst providerName = payload.provider_name || 'Provider';\nconst customerEmail = payload.customer_email || '';\nconst providerEmail = payload.provider_email || '';\n\nreturn [\n  {\n    json: {\n      email: customerEmail,\n      recipient_type: 'customer',\n      subject: `DP Pesanan ${orderCode} Diterima - TukangDekat`,\n      html: `<h2>Halo ${customerName},</h2><p>Pembayaran DP sebesar <strong>Rp ${amount}</strong> untuk pesanan <strong>${orderCode}</strong> telah kami terima dan dicatat.</p><p>Provider akan segera memulai persiapan pekerjaan. Anda akan menerima notifikasi lebih lanjut.</p><p>Terima kasih,<br>Tim TukangDekat</p>`\n    }\n  },\n  {\n    json: {\n      email: providerEmail,\n      recipient_type: 'provider',\n      subject: `DP Diterima untuk Pesanan ${orderCode} - TukangDekat`,\n      html: `<h2>Halo ${providerName},</h2><p>DP sebesar <strong>Rp ${amount}</strong> untuk pesanan <strong>${orderCode}</strong> telah diterima oleh customer.</p><p>Silakan persiapkan pekerjaan dan lakukan konfirmasi jadwal kepada customer. Update status pekerjaan di dashboard.</p><p>Terima kasih,<br>Tim TukangDekat</p>`\n    }\n  }\n];"
+      },
+      "name": "Build email (dp_paid)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 260]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst customerName = payload.customer_name || 'Customer';\nconst customerEmail = payload.customer_email || '';\nconst orderCode = payload.order_code || 'N/A';\nconst remaining = payload.remaining_amount || payload.amount || 0;\n\nreturn [{\n  json: {\n    email: customerEmail,\n    recipient_type: 'customer',\n    subject: `Pekerjaan Pesanan ${orderCode} Selesai - TukangDekat`,\n    html: `<h2>Halo ${customerName},</h2><p>Pekerjaan untuk pesanan <strong>${orderCode}</strong> telah selesai dilakukan oleh provider.</p><p>Mohon lakukan pengecekan dan selesaikan pembayaran pelunasan sebesar <strong>Rp ${remaining}</strong> untuk menutup pesanan ini.</p><p>Silakan lakukan pembayaran melalui aplikasi TukangDekat atau hubungi support jika ada pertanyaan.</p><p>Terima kasih,<br>Tim TukangDekat</p>`\n  }\n}];"
+      },
+      "name": "Build email (order_completed)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 330]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst orderCode = payload.order_code || 'N/A';\nconst amount = payload.amount || payload.amount_paid || 0;\nconst customerName = payload.customer_name || 'Customer';\nconst providerName = payload.provider_name || 'Provider';\nconst customerEmail = payload.customer_email || '';\nconst providerEmail = payload.provider_email || '';\n\nreturn [\n  {\n    json: {\n      email: customerEmail,\n      recipient_type: 'customer',\n      subject: `Pesanan ${orderCode} Selesai - TukangDekat`,\n      html: `<h2>Halo ${customerName},</h2><p>Pembayaran final sebesar <strong>Rp ${amount}</strong> untuk pesanan <strong>${orderCode}</strong> telah berhasil kami terima.</p><p>Pesanan Anda sekarang ditutup. Terima kasih telah menggunakan layanan TukangDekat. Kami menunggu rating dan review Anda untuk provider.</p><p>Terima kasih,<br>Tim TukangDekat</p>`\n    }\n  },\n  {\n    json: {\n      email: providerEmail,\n      recipient_type: 'provider',\n      subject: `Pembayaran Final Pesanan ${orderCode} Selesai - TukangDekat`,\n      html: `<h2>Halo ${providerName},</h2><p>Pembayaran final sebesar <strong>Rp ${amount}</strong> untuk pesanan <strong>${orderCode}</strong> telah berhasil diterima dari customer.</p><p>Pesanan ini sekarang ditutup. Terima kasih atas kerja keras Anda. Pantau rating customer di dashboard profil Anda.</p><p>Terima kasih,<br>Tim TukangDekat</p>`\n    }\n  }\n];"
+      },
+      "name": "Build email (final_paid)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 400]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@tukangdekat.com",
+        "toEmail": "={{$json[\"email\"]}}",
+        "subject": "={{$json[\"subject\"]}}",
+        "htmlBody": "={{$json[\"html\"]}}",
+        "options": {}
+      },
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSendGmail",
+      "typeVersion": 1,
+      "position": [1200, 250]
+    }
+  ],
+  "connections": {
+    "Webhook n8n-events": {
+      "main": [[ { "node": "Validate event_name", "type": "main", "index": 0 } ]]
+    },
+    "Validate event_name": {
+      "main": [[ { "node": "Route by event_name", "type": "main", "index": 0 } ]]
+    },
+    "Route by event_name": {
+      "main": [
+        [ { "node": "Build email (order_created)", "type": "main", "index": 0 } ],
+        [ { "node": "Build email (order_accepted)", "type": "main", "index": 0 } ],
+        [ { "node": "Build email (order_rejected)", "type": "main", "index": 0 } ],
+        [ { "node": "Build email (dp_paid)", "type": "main", "index": 0 } ],
+        [ { "node": "Build email (order_completed)", "type": "main", "index": 0 } ],
+        [ { "node": "Build email (final_paid)", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Build email (order_created)": {
+      "main": [[ { "node": "Send Email", "type": "main", "index": 0 } ]]
+    },
+    "Build email (order_accepted)": {
+      "main": [[ { "node": "Send Email", "type": "main", "index": 0 } ]]
+    },
+    "Build email (order_rejected)": {
+      "main": [[ { "node": "Send Email", "type": "main", "index": 0 } ]]
+    },
+    "Build email (dp_paid)": {
+      "main": [[ { "node": "Send Email", "type": "main", "index": 0 } ]]
+    },
+    "Build email (order_completed)": {
+      "main": [[ { "node": "Send Email", "type": "main", "index": 0 } ]]
+    },
+    "Build email (final_paid)": {
+      "main": [[ { "node": "Send Email", "type": "main", "index": 0 } ]]
+    }
+  },
+  "settings": {},
+  "staticData": {}
+}
