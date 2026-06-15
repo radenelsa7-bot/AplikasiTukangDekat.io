@@ -44,7 +44,9 @@ class OrderController extends Controller
     }
 
     $validated = $request->validate([
-      'provider_id' => 'required|exists:users,id',
+      'provider_id' => ['required', 'integer', Rule::exists('users', 'id')->where(function ($query) {
+        $query->where('role', 'PROVIDER')->where('status', 'ACTIVE');
+      })],
       'provider_service_id' => 'nullable|exists:provider_services,id',
       'category_id' => 'required|exists:service_categories,id',
       'schedule_at' => 'required|date_format:Y-m-d H:i:s',
@@ -140,6 +142,7 @@ class OrderController extends Controller
    */
   public function getOrder($orderId)
   {
+    $user = Auth::user();
     $order = Order::with(['customer', 'provider', 'payments'])
       ->find($orderId);
 
@@ -425,7 +428,7 @@ class OrderController extends Controller
       return $this->forbiddenResponse('only provider can complete order');
     }
 
-    $order = Order::find($orderId);
+    $order = Order::with('payments')->find($orderId);
 
     if (!$order) {
       return $this->notFoundResponse('order not found');

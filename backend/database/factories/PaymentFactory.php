@@ -23,11 +23,27 @@ class PaymentFactory extends Factory
 
     return [
       'order_id' => $order->id,
-      'payment_type' => 'DP',
-      'amount' => $this->faker->numberBetween(10000, 200000),
-      'status' => 'PAID',
+      'payment_type' => $this->faker->randomElement(['DP', 'FINAL']),
+      'amount' => $amount,
+      'commission_percent' => $commissionPercent,
+      'platform_fee' => $platformFee,
+      'provider_payout' => $providerPayout,
+      'settlement_status' => 'PENDING',
+      'settled_at' => null,
+      'status' => 'UNPAID',
       'provider' => null,
       'external_payment_id' => null,
+      'paid_at' => null,
+    ];
+  }
+
+  /**
+   * Create a paid payment.
+   */
+  public function paid(): static
+  {
+    return $this->state(fn(array $attributes) => [
+      'status' => 'PAID',
       'paid_at' => now(),
     ];
   }
@@ -37,7 +53,7 @@ class PaymentFactory extends Factory
    */
   public function settled(): static
   {
-    return $this->paid()->state(fn (array $attributes) => [
+    return $this->paid()->state(fn(array $attributes) => [
       'settlement_status' => 'SETTLED',
       'settled_at' => now()->addDays(3),
     ]);
@@ -48,7 +64,7 @@ class PaymentFactory extends Factory
    */
   public function cancelled(): static
   {
-    return $this->state(fn (array $attributes) => [
+    return $this->state(fn(array $attributes) => [
       'status' => 'CANCELLED',
     ]);
   }
@@ -58,7 +74,7 @@ class PaymentFactory extends Factory
    */
   public function refunded(): static
   {
-    return $this->paid()->state(fn (array $attributes) => [
+    return $this->paid()->state(fn(array $attributes) => [
       'refund_amount' => $attributes['amount'] ?? $this->faker->numberBetween(50000, 200000),
       'refund_status' => 'COMPLETED',
       'refund_reason' => 'Customer request',

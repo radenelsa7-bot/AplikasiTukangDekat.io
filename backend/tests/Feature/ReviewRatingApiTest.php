@@ -35,7 +35,7 @@ class ReviewRatingApiTest extends TestCase
         ]);
 
         $response = $this->actingAs($customer, 'sanctum')
-            ->postJson("/api/reviews/order/{$order->id}", [
+            ->postJson("/api/orders/{$order->id}/review", [
                 'rating' => 5,
                 'comment' => 'Great work',
             ]);

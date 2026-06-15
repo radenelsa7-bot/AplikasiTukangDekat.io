@@ -19,7 +19,7 @@ class ProviderPayoutFactory extends Factory
       'provider_id' => User::factory()->provider()->create()->id,
       'amount' => $this->faker->randomFloat(2, 100000, 1000000),
       'payment_ids' => [],
-      'status' => 'pending',
+      'status' => 'PENDING',
       'sent_at' => null,
     ];
   }
@@ -29,8 +29,8 @@ class ProviderPayoutFactory extends Factory
    */
   public function paid(): static
   {
-    return $this->state(fn (array $attributes) => [
-      'status' => 'paid',
+    return $this->state(fn(array $attributes) => [
+      'status' => 'SENT',
       'sent_at' => now(),
     ]);
   }
@@ -40,8 +40,8 @@ class ProviderPayoutFactory extends Factory
    */
   public function failed(): static
   {
-    return $this->state(fn (array $attributes) => [
-      'status' => 'failed',
+    return $this->state(fn(array $attributes) => [
+      'status' => 'FAILED',
     ]);
   }
 
@@ -50,8 +50,8 @@ class ProviderPayoutFactory extends Factory
    */
   public function pending(): static
   {
-    return $this->state(fn (array $attributes) => [
-      'status' => 'pending',
+    return $this->state(fn(array $attributes) => [
+      'status' => 'PENDING',
       'sent_at' => null,
     ]);
   }
