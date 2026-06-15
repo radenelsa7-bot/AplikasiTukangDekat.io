@@ -10,28 +10,24 @@ class Payment extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'order_id',
-        'payment_type',
-        'amount',
-        'commission_percent',
-        'platform_fee',
-        'provider_payout',
-        'settlement_status',
-        'settled_at',
-        'refund_amount',
-        'refund_status',
-        'refund_reason',
-        'refund_requested_at',
-        'status',
-        'provider',
-        'external_payment_id',
-        'qris_code',
-        'qris_image',
-        'qris_captured_at',
-        'checkout_url',
-        'paid_at',
-    ];
+  protected $fillable = [
+    'order_id',
+    'payment_type',
+    'amount',
+    'commission_percent',
+    'platform_fee',
+    'provider_payout',
+    'settlement_status',
+    'settled_at',
+    'refund_amount',
+    'refund_status',
+    'refund_reason',
+    'refund_requested_at',
+    'status',
+    'provider',
+    'external_payment_id',
+    'paid_at',
+  ];
 
     protected $casts = [
         'amount' => 'integer',
