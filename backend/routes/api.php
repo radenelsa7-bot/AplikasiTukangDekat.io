@@ -35,6 +35,7 @@ Route::prefix('catalog')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('throttle:10,1');
     Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->middleware('throttle:10,1');
+    Route::delete('/profile/photo', [ProfileController::class, 'deleteProfilePhoto'])->middleware('throttle:10,1');
 
     Route::prefix('orders')->group(function () {
         Route::post('/', [OrderController::class, 'createOrder'])->middleware(['throttle:10,1', 'role:customer']);
