@@ -38,6 +38,7 @@ class ApiService {
           'email': email,
           'phone': phone,
           'password': password,
+          'password_confirmation': password,
           'role': role,
         },
       );
