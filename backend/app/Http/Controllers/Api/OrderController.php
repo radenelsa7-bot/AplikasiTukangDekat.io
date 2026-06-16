@@ -22,6 +22,7 @@ use App\Traits\ApiResponse;
 use App\Http\Requests\Order\CreateOrderRequest;
 use App\Http\Requests\Order\RespondToOrderRequest;
 use App\Http\Requests\Order\CompleteOrderRequest;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -37,31 +38,18 @@ class OrderController extends Controller
   {
     $user = Auth::user();
 
-    $validated = $request->validated();
-
     if ($user->role !== 'CUSTOMER') {
-      return $this->forbiddenResponse('only customer can create order');
+      return $this->forbidden('Only customers can create orders');
     }
 
-    $validated = $request->validate([
-      'provider_id' => ['required', 'integer', Rule::exists('users', 'id')->where(function ($query) {
-        $query->where('role', 'PROVIDER')->where('status', 'ACTIVE');
-      })],
-      'provider_service_id' => 'nullable|exists:provider_services,id',
-      'category_id' => 'required|exists:service_categories,id',
-      'schedule_at' => 'required|date_format:Y-m-d H:i:s',
-      'address' => 'required|string',
-      'notes' => 'nullable|string',
-      'estimated_price' => 'required|integer|min:1',
-    ]);
-
-    // Validasi provider adalah user dengan role PROVIDER
-    $provider = User::where('id', $validated['provider_id'])
-      ->where('role', 'PROVIDER')
-      ->firstOrFail();
-
-    // Gunakan transaction untuk atomicity
     try {
+      $validated = $request->validated();
+
+      // Validasi provider adalah user dengan role PROVIDER
+      $provider = User::where('id', $validated['provider_id'])
+        ->where('role', 'PROVIDER')
+        ->firstOrFail();
+
       $result = DB::transaction(function () use ($validated, $user) {
         $order = Order::create([
           'order_code' => Order::generateCode(),
@@ -107,34 +95,14 @@ class OrderController extends Controller
         'status' => $order->status,
         'dp_amount' => $dpAmount,
       ], 'Order created', 201);
+    } catch (ModelNotFoundException $e) {
+      return $this->validationError(['provider_id' => ['Selected provider not found or not active']]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+      return $this->validationError($e->errors());
     } catch (\Throwable $e) {
+      Log::error('Create order error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
       return $this->internalServerError('Failed to create order');
     }
-        app(N8nNotificationService::class)->dispatch('order_created', [
-          'order_id' => $order->id,
-          'order_code' => $order->order_code,
-          'customer_id' => $order->customer_id,
-          'provider_id' => $order->provider_id,
-          'estimated_price' => $order->estimated_price,
-          'dp_amount' => $dpAmount,
-          'status' => $order->status,
-        ]);
-
-        return response()->json([
-          'message' => 'order created',
-          'data' => [
-            'order_id' => $order->id,
-            'order_code' => $order->order_code,
-            'status' => $order->status,
-            'dp_amount' => $dpAmount,
-          ],
-        ], 201);
-      });
-    } catch (\Throwable $e) {
-      return $this->errorResponse('internal server error', 500);
-    }
-
-    return $result;
   }
 
   /**
@@ -460,7 +428,7 @@ class OrderController extends Controller
         $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
         $dpAmount = $dpPayment->amount ?? 0;
         $finalAmount = max(0, $validated['final_price'] - $dpAmount);
-        
+
         Payment::create([
           'order_id' => $order->id,
           'payment_type' => 'FINAL',

@@ -14,8 +14,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
-use App\Http\Requests\Auth\RegisterRequest;
-use App\Http\Requests\Auth\LoginRequest;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -25,9 +24,9 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request)
     {
-        $validated = $request->validated();
-
         try {
+            $validated = $request->validated();
+
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -35,24 +34,10 @@ class AuthController extends Controller
                 'password' => Hash::make($validated['password']),
                 'role' => $validated['role'],
                 'status' => 'ACTIVE',
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-            'status' => 'ACTIVE',
-        ]);
-
-        // Jika provider, buat provider profile
-        if ($validated['role'] === 'PROVIDER') {
-            ProviderProfile::create([
-                'user_id' => $user->id,
-                'is_verified' => false,
             ]);
 
             // Jika provider, buat provider profile
-            if ($validated['role'] === 'PROVIDER') {
+            if (($validated['role'] ?? null) === 'PROVIDER') {
                 ProviderProfile::create([
                     'user_id' => $user->id,
                     'is_verified' => false,
@@ -63,13 +48,12 @@ class AuthController extends Controller
                 'user_id' => $user->id,
                 'role' => $user->role,
             ], 'User registered successfully', 201);
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
         } catch (\Throwable $e) {
+            Log::error('Register error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return $this->internalServerError('Failed to register user');
         }
-        return $this->createdResponse([
-            'user_id' => $user->id,
-            'role' => $user->role,
-        ], 'registered');
     }
 
     /**
@@ -79,7 +63,7 @@ class AuthController extends Controller
     {
         $validated = $request->validated();
 
-        $user = User::query()->where('email', $validated['email'])->first();
+        $user = User::where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             return $this->unauthorized('The provided credentials are incorrect.');
@@ -87,17 +71,11 @@ class AuthController extends Controller
 
         if ($user->status !== 'ACTIVE') {
             return $this->forbidden('Your account is not active.');
-            return $this->errorResponse('The provided credentials are incorrect.', 401);
-        }
-
-        if ($user->status !== 'ACTIVE') {
-            return $this->errorResponse('Your account is not active.', 403);
         }
 
         $token = $user->createToken('api-token')->plainTextToken;
 
         return $this->success([
-        return $this->successResponse([
             'token' => $token,
             'token_type' => 'Bearer',
             'user' => [
@@ -107,7 +85,6 @@ class AuthController extends Controller
                 'role' => $user->role,
             ],
         ], 'Login successful', 200);
-        ], 'ok', 200);
     }
 
     /**
