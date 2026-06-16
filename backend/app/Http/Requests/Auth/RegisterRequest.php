@@ -10,7 +10,6 @@ class RegisterRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // Public endpoint
         return true;
     }
 
@@ -24,9 +23,9 @@ class RegisterRequest extends FormRequest
                 'required',
                 'string',
                 'min:8',
-                'regex:/[A-Z]/',      // uppercase
-                'regex:/[0-9]/',      // number
-                'regex:/[@$!%*?&]/',  // special char
+                'regex:/[A-Z]/',
+                'regex:/[0-9]/',
+                'regex:/[@$!%*?&]/',
                 'confirmed',
             ],
             'role' => 'required|in:CUSTOMER,PROVIDER',
