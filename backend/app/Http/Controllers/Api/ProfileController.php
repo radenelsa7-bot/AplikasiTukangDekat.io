@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
 class ProfileController extends Controller
 {
   use ApiResponse;
-{
+
   public function updateProfile(UpdateProfileRequest $request): JsonResponse
   {
     $user = $request->user();
