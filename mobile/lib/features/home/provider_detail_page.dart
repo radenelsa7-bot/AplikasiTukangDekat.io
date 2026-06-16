@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/widgets/site_footer.dart';
 import '../../shared/widgets/site_header.dart';
+import '../auth/auth_controller.dart';
 import 'catalog_providers.dart';
 import 'create_order_page.dart';
 
@@ -239,23 +240,35 @@ class ProviderDetailPage extends ConsumerWidget {
                 ),
 
                 // CTA Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => CreateOrderPage(
-                            providerId: providerId,
-                            categoryId: categoryId,
-                            services: provider.services,
+                if (ref.watch(authControllerProvider).userRole != 'ADMIN')
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => CreateOrderPage(
+                              providerId: providerId,
+                              categoryId: categoryId,
+                              services: provider.services,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    child: const Text('Pesan Sekarang'),
+                        );
+                      },
+                      child: const Text('Pesan Sekarang'),
+                    ),
                   ),
-                ),
+                if (ref.watch(authControllerProvider).userRole == 'ADMIN')
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'Akses hanya untuk admin: silakan gunakan menu Admin untuk manajemen dan verifikasi.',
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
               ],
             ),
           );

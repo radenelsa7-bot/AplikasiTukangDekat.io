@@ -40,7 +40,7 @@ class HomePage extends ConsumerWidget {
             labelColor: Theme.of(context).colorScheme.onPrimary,
             unselectedLabelColor: Theme.of(
               context,
-            ).colorScheme.onPrimary.withOpacity(0.7),
+            ).colorScheme.onPrimary.withAlpha((0.7 * 255).round()),
           ),
           actions: [
             IconButton(

@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../shared/widgets/site_footer.dart';
-import '../../shared/widgets/site_header.dart';
 import '../../core/models/order_model.dart';
 import '../../core/models/provider_model.dart';
 import '../auth/auth_controller.dart';
@@ -99,27 +98,22 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       return;
     }
 
-    final scheduleAt = DateTime(
-      _selectedDate!.year,
-      _selectedDate!.month,
-      _selectedDate!.day,
-      _selectedTime!.hour,
-      _selectedTime!.minute,
-    );
-
-    // Format ke Y-m-d H:i:s untuk backend
-    final scheduleAtFormatted = DateFormat(
-      'yyyy-MM-dd HH:mm:ss',
-    ).format(scheduleAt);
-
     final request = CreateOrderRequest(
       providerId: widget.providerId,
       categoryId: widget.categoryId,
-      providerServiceId: _selectedService!.id,
+      providerServiceId: _selectedService?.id,
+      scheduleAt: DateFormat('yyyy-MM-dd HH:mm:ss').format(
+        DateTime(
+          _selectedDate!.year,
+          _selectedDate!.month,
+          _selectedDate!.day,
+          _selectedTime!.hour,
+          _selectedTime!.minute,
+        ),
+      ),
       address: _addressCtrl.text.trim(),
-      notes: _notesCtrl.text.trim(),
-      scheduleAt: scheduleAtFormatted,
-      estimatedPrice: _selectedService!.basePrice,
+      notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      estimatedPrice: _selectedService?.basePrice,
     );
 
     final success = await ref
@@ -220,6 +214,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                 label: 'Alamat Lokasi',
                 maxLines: 3,
                 prefixIcon: const Icon(Icons.location_on),
+                errorText: state.fieldErrors['address'],
                 validator: (v) {
                   if ((v ?? '').trim().isEmpty) return 'Alamat wajib diisi';
                   return null;
@@ -233,6 +228,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                 label: 'Catatan Tambahan (opsional)',
                 maxLines: 3,
                 prefixIcon: const Icon(Icons.note),
+                errorText: state.fieldErrors['notes'],
               ),
               const SizedBox(height: 16),
 

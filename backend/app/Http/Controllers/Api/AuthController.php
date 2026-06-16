@@ -12,12 +12,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\JsonResponse;
-use App\Http\Requests\Auth\RegisterRequest;
-use App\Http\Requests\Auth\LoginRequest;
 
 class AuthController extends Controller
 {
@@ -38,23 +35,8 @@ class AuthController extends Controller
                 'password' => Hash::make($validated['password']),
                 'role' => $validated['role'],
                 'status' => 'ACTIVE',
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-            'status' => 'ACTIVE',
-        ]);
-
-        // Jika provider, buat provider profile
-        if ($validated['role'] === 'PROVIDER') {
-            ProviderProfile::create([
-                'user_id' => $user->id,
-                'is_verified' => false,
             ]);
 
-            // Jika provider, buat provider profile
             if ($validated['role'] === 'PROVIDER') {
                 ProviderProfile::create([
                     'user_id' => $user->id,
@@ -63,8 +45,12 @@ class AuthController extends Controller
             }
 
             return $this->success([
-                'user_id' => $user->id,
-                'role' => $user->role,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ],
             ], 'User registered successfully', 201);
         } catch (ValidationException $e) {
             return $this->validationError($e->errors());

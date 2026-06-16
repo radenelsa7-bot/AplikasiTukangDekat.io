@@ -253,6 +253,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 label: 'Nama Lengkap',
                 hint: 'Masukkan nama Anda',
                 icon: Icons.person_outline,
+                errorText: state.fieldErrors['name'],
                 validator: (v) {
                   if ((v ?? '').trim().isEmpty) return 'Nama wajib diisi';
                   return null;
@@ -265,6 +266,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 hint: 'Masukkan email Anda',
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
+                errorText: state.fieldErrors['email'],
                 validator: (v) {
                   final value = (v ?? '').trim();
                   if (value.isEmpty) return 'Email wajib diisi';
@@ -279,13 +281,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 hint: 'Masukkan nomor HP Anda',
                 icon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
+                errorText: state.fieldErrors['phone'],
                 validator: (v) {
                   if ((v ?? '').trim().isEmpty) return 'Nomor HP wajib diisi';
                   return null;
                 },
               ),
               const SizedBox(height: 14),
-              _buildRoleDropdown(),
+              _buildRoleDropdown(errorText: state.fieldErrors['role']),
               const SizedBox(height: 14),
               _buildTextField(
                 controller: _passCtrl,
@@ -293,6 +296,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 hint: 'Minimal 6 karakter',
                 icon: Icons.lock_outline,
                 obscureText: true,
+                errorText: state.fieldErrors['password'],
                 validator: (v) {
                   final value = v ?? '';
                   if (value.isEmpty) return 'Password wajib diisi';
@@ -307,6 +311,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 hint: 'Ulangi password Anda',
                 icon: Icons.lock_outline,
                 obscureText: true,
+                errorText: state.fieldErrors['password_confirmation'],
                 validator: (v) {
                   if ((v ?? '').isEmpty) {
                     return 'Konfirmasi password wajib diisi';
@@ -422,6 +427,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
+    String? errorText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,6 +452,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             prefixIcon: Icon(icon, color: const Color(0xFFFF8C42), size: 20),
             filled: true,
             fillColor: Colors.white,
+            errorText: errorText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: Color(0xFFE8DCC8), width: 1),
@@ -472,7 +479,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     );
   }
 
-  Widget _buildRoleDropdown() {
+  Widget _buildRoleDropdown({String? errorText}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -500,6 +507,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 size: 20,
               ),
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              errorText: errorText,
             ),
             isExpanded: true,
             items: const [

@@ -10,10 +10,17 @@ class AuthResponse {
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    final flattenedData = data is Map<String, dynamic> ? data : <String, dynamic>{};
+
     return AuthResponse(
-      message: json['message'] ?? '',
-      token: json['token'],
-      user: json['user'] != null ? UserData.fromJson(json['user']) : null,
+      message: json['message'] ?? flattenedData['message'] ?? '',
+      token: json['token'] ?? flattenedData['token'],
+      user: (json['user'] is Map<String, dynamic>)
+          ? UserData.fromJson(json['user'] as Map<String, dynamic>)
+          : (flattenedData['user'] is Map<String, dynamic>)
+              ? UserData.fromJson(flattenedData['user'] as Map<String, dynamic>)
+              : null,
     );
   }
 }

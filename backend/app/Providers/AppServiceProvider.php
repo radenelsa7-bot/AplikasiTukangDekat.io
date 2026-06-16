@@ -37,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
         // Force HTTPS in production environment
         if ($this->app->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
-            
+
             // Trust proxies for HTTPS headers from load balancers
             \Illuminate\Support\Facades\Request::setTrustedProxies(
                 ['*'],
@@ -51,6 +51,8 @@ class AppServiceProvider extends ServiceProvider
             $router->aliasMiddleware('role.provider', \App\Http\Middleware\EnsureProviderRole::class);
             $router->aliasMiddleware('role.admin', \App\Http\Middleware\EnsureAdminRole::class);
             $router->aliasMiddleware('role.treasurer', \App\Http\Middleware\EnsureTreasurerRole::class);
+        }
+
         if (env('FORCE_HTTPS', false) || $this->app->environment(['production', 'staging'])) {
             URL::forceScheme('https');
         }

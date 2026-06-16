@@ -16,17 +16,21 @@ class AuthApiTest extends TestCase
             'name' => 'Test Customer',
             'email' => 'customer@example.com',
             'phone' => '081234567890',
-            'password' => 'secret123',
-            'password_confirmation' => 'secret123',
+            'password' => 'Secret123!',
+            'password_confirmation' => 'Secret123!',
             'role' => 'CUSTOMER',
         ]);
 
         $response->assertStatus(201)
             ->assertJsonStructure([
                 'message',
-                'data' => ['user_id', 'role'],
+                'data' => [
+                    'user' => ['id', 'name', 'email', 'role'],
+                ],
             ])
-            ->assertJson([ 'message' => 'registered', 'data' => ['role' => 'CUSTOMER']]);
+            ->assertJsonPath('message', 'User registered successfully')
+            ->assertJsonPath('data.user.email', 'customer@example.com')
+            ->assertJsonPath('data.user.role', 'CUSTOMER');
 
         $this->assertDatabaseHas('users', [
             'email' => 'customer@example.com',
@@ -41,20 +45,20 @@ class AuthApiTest extends TestCase
             'name' => 'Test Provider',
             'email' => 'provider@example.com',
             'phone' => '081234567891',
-            'password' => 'secret123',
-            'password_confirmation' => 'secret123',
+            'password' => 'Secret123!',
+            'password_confirmation' => 'Secret123!',
             'role' => 'PROVIDER',
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('data.role', 'PROVIDER');
+            ->assertJsonPath('data.user.role', 'PROVIDER');
 
         $this->assertDatabaseHas('users', [
             'email' => 'provider@example.com',
             'role' => 'PROVIDER',
         ]);
 
-        $userId = $response->json('data.user_id');
+        $userId = $response->json('data.user.id');
         $this->assertDatabaseHas('provider_profiles', ['user_id' => $userId]);
     }
 
@@ -73,8 +77,15 @@ class AuthApiTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['message', 'token', 'token_type', 'user' => ['id', 'name', 'email', 'role']])
-            ->assertJsonPath('user.email', 'login@example.com');
+            ->assertJsonStructure([
+                'message',
+                'data' => [
+                    'token',
+                    'token_type',
+                    'user' => ['id', 'name', 'email', 'role'],
+                ],
+            ])
+            ->assertJsonPath('data.user.email', 'login@example.com');
     }
 
     public function test_login_rejects_invalid_credentials(): void
@@ -104,9 +115,10 @@ class AuthApiTest extends TestCase
 
         $token = $user->createToken('test-token')->plainTextToken;
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->postJson('/api/auth/logout');
 
-        $response->assertStatus(200)->assertJson(['message' => 'logged_out']);
+        $response->assertStatus(200)
+            ->assertJsonPath('message', 'Logged out successfully');
     }
 }
