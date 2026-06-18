@@ -30,12 +30,18 @@ class UserData {
   final String name;
   final String email;
   final String role;
+  final String? fullName;
+  final String? phoneNumber;
+  final String? profilePhotoPath;
 
   UserData({
     required this.id,
     required this.name,
     required this.email,
     required this.role,
+    this.fullName,
+    this.phoneNumber,
+    this.profilePhotoPath,
   });
 
   factory UserData.fromJson(Map<String, dynamic> json) {
@@ -44,6 +50,9 @@ class UserData {
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       role: json['role'] ?? 'CUSTOMER',
+      fullName: json['full_name'],
+      phoneNumber: json['phone_number'],
+      profilePhotoPath: json['profile_photo_path'],
     );
   }
 }

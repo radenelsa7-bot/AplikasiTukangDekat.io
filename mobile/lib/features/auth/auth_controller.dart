@@ -23,6 +23,9 @@ class AuthController extends StateNotifier<AuthState> {
       final userId = await _ref.read(authStorageProvider).getUserId();
       final userRole = await _ref.read(authStorageProvider).getUserRole();
       final userEmail = await _ref.read(authStorageProvider).getUserEmail();
+      final fullName = await _ref.read(authStorageProvider).getUserFullName();
+      final phoneNumber = await _ref.read(authStorageProvider).getUserPhoneNumber();
+      final profilePhotoPath = await _ref.read(authStorageProvider).getUserProfilePhotoPath();
 
       if (token != null) {
         _ref.read(apiServiceProvider).setToken(token);
@@ -32,6 +35,9 @@ class AuthController extends StateNotifier<AuthState> {
           userId: userId,
           userRole: userRole,
           userEmail: userEmail,
+          userFullName: fullName,
+          userPhoneNumber: phoneNumber,
+          userProfilePhotoPath: profilePhotoPath,
         );
       } else {
         state = const AuthState(isLoading: false);
@@ -116,6 +122,9 @@ class AuthController extends StateNotifier<AuthState> {
               userId: response.user!.id,
               userRole: response.user!.role,
               userEmail: response.user!.email,
+              fullName: response.user!.fullName,
+              phoneNumber: response.user!.phoneNumber,
+              profilePhotoPath: response.user!.profilePhotoPath,
             );
 
         // Set token di Dio
@@ -127,6 +136,9 @@ class AuthController extends StateNotifier<AuthState> {
           userId: response.user!.id,
           userRole: response.user!.role,
           userEmail: response.user!.email,
+          userFullName: response.user!.fullName,
+          userPhoneNumber: response.user!.phoneNumber,
+          userProfilePhotoPath: response.user!.profilePhotoPath,
         );
         return true;
       } else {
@@ -166,6 +178,46 @@ class AuthController extends StateNotifier<AuthState> {
       apiService.clearToken();
       await _ref.read(authStorageProvider).clearAll();
       state = const AuthState(isLoading: false);
+    }
+  }
+
+  Future<bool> deleteProfilePhoto() async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final apiService = _ref.read(apiServiceProvider);
+      final result = await apiService.deleteProfilePhoto();
+
+      if (result['user'] is Map<String, dynamic>) {
+        final user = result['user'] as Map<String, dynamic>;
+        final fullName = user['full_name'] as String?;
+        final phoneNumber = user['phone_number'] as String?;
+        final profilePhotoPath = user['profile_photo_path'] as String?;
+
+        await _ref.read(authStorageProvider).saveUserData(
+          userId: user['id'] ?? state.userId ?? 0,
+          userRole: user['role'] ?? state.userRole ?? 'CUSTOMER',
+          userEmail: user['email'] ?? state.userEmail ?? '',
+          fullName: fullName,
+          phoneNumber: phoneNumber,
+          profilePhotoPath: profilePhotoPath,
+        );
+
+        state = state.copyWith(
+          isLoading: false,
+          userFullName: fullName,
+          userPhoneNumber: phoneNumber,
+          userProfilePhotoPath: profilePhotoPath,
+        );
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to delete profile photo: $e',
+      );
+      return false;
     }
   }
 }

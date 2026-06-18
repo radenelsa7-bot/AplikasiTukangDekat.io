@@ -7,6 +7,7 @@ import '../auth/login_page.dart';
 import '../admin/admin_verification_page.dart';
 import 'catalog_page.dart';
 import 'my_orders_page.dart';
+import 'edit_profile_dialog.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -64,6 +65,10 @@ class HomePage extends ConsumerWidget {
   }
 
   Widget _buildAccountTab(BuildContext context, dynamic state) {
+    final displayName = state.userFullName?.isNotEmpty == true
+        ? state.userFullName
+        : state.userEmail ?? 'N/A';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -78,11 +83,85 @@ class HomePage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Email: ${state.userEmail ?? 'N/A'}'),
-                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.surfaceVariant,
+                        backgroundImage: state.userProfilePhotoPath != null
+                            ? NetworkImage(
+                                '${Uri.base.origin}/storage/${state.userProfilePhotoPath}',
+                              )
+                            : null,
+                        child: state.userProfilePhotoPath == null
+                            ? const Icon(Icons.person, size: 40)
+                            : null,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayName,
+                              style: Theme.of(context).textTheme.titleMedium,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              state.userEmail ?? 'N/A',
+                              style: Theme.of(context).textTheme.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (state.userPhoneNumber?.isNotEmpty == true)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  'No HP: ${state.userPhoneNumber}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Edit Profil',
+                        onPressed: () async {
+                          final res = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => const EditProfileDialog(),
+                          );
+                          if (res == true) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Profil diperbarui')),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.edit),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  const SizedBox(height: 12),
                   Text('Role: ${state.userRole ?? 'N/A'}'),
                   const SizedBox(height: 8),
                   Text('ID: ${state.userId ?? 'N/A'}'),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      label: const Text('Bantuan (Chatbot)'),
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/chatbot');
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),

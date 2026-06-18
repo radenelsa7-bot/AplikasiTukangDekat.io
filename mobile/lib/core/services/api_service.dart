@@ -186,6 +186,50 @@ class ApiService {
     }
   }
 
+  /// Update user profile including optional profile photo
+  Future<Map<String, dynamic>> updateProfile({
+    String? fullName,
+    String? phoneNumber,
+    String? photoPath,
+    MultipartFile? photoFile,
+  }) async {
+    try {
+      final form = FormData();
+      if (fullName != null) form.fields.add(MapEntry('full_name', fullName));
+      if (phoneNumber != null) form.fields.add(MapEntry('phone_number', phoneNumber));
+      if (photoFile != null) form.files.add(MapEntry('profile_photo', photoFile));
+
+      final response = await dio.post('/api/profile/update', data: form);
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Delete current profile photo
+  Future<Map<String, dynamic>> deleteProfilePhoto() async {
+    try {
+      final response = await dio.delete('/api/profile/photo');
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Send message to chatbot endpoint
+  Future<String> sendChatbotMessage(String message) async {
+    try {
+      final response = await dio.post('/api/chatbot/send', data: {'message': message});
+      final data = response.data;
+      if (data is Map && data['data'] != null && data['data']['reply'] != null) {
+        return data['data']['reply'].toString();
+      }
+      return data.toString();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> respondToOrder({
     required int orderId,
     required String action,
