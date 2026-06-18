@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\N8nIntegrationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\TreasurerController;
 
@@ -55,6 +56,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/reviews/{orderId}', [ReviewController::class, 'getOrderReview'])->middleware('throttle:30,1');
+
+    Route::post('/chatbot/send', [ChatbotController::class, 'sendMessage'])->middleware('throttle:10,1');
 
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('/providers/pending', [AdminController::class, 'getPendingProviders'])->middleware('throttle:30,1');

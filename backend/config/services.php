@@ -60,5 +60,10 @@ return [
         'alert_webhook' => env('PAYOUT_ALERT_WEBHOOK'),
         'alert_email' => env('PAYOUT_ALERT_EMAIL'),
     ],
+    'gemini' => [
+        'endpoint' => env('GEMINI_API_ENDPOINT', 'https://generativeai.googleapis.com/v1'),
+        'model' => env('GEMINI_MODEL', 'gemini-1.0'),
+        'key' => env('GEMINI_API_KEY'),
+    ],
 
 ];
