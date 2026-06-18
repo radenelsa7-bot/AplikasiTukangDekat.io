@@ -4,6 +4,9 @@ class AuthState {
   final int? userId;
   final String? userRole;
   final String? userEmail;
+  final String? userFullName;
+  final String? userPhoneNumber;
+  final String? userProfilePhotoPath;
   final String? errorMessage;
   final Map<String, String?> fieldErrors;
 
@@ -13,6 +16,9 @@ class AuthState {
     this.userId,
     this.userRole,
     this.userEmail,
+    this.userFullName,
+    this.userPhoneNumber,
+    this.userProfilePhotoPath,
     this.errorMessage,
     this.fieldErrors = const {},
   });
@@ -25,6 +31,9 @@ class AuthState {
     int? userId,
     String? userRole,
     String? userEmail,
+    String? userFullName,
+    String? userPhoneNumber,
+    String? userProfilePhotoPath,
     String? errorMessage,
     Map<String, String?>? fieldErrors,
   }) {
@@ -34,6 +43,9 @@ class AuthState {
       userId: userId ?? this.userId,
       userRole: userRole ?? this.userRole,
       userEmail: userEmail ?? this.userEmail,
+      userFullName: userFullName ?? this.userFullName,
+      userPhoneNumber: userPhoneNumber ?? this.userPhoneNumber,
+      userProfilePhotoPath: userProfilePhotoPath ?? this.userProfilePhotoPath,
       errorMessage: errorMessage,
       fieldErrors: fieldErrors ?? this.fieldErrors,
     );
