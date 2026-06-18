@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\MetricsController;
 use App\Http\Controllers\Api\N8nIntegrationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\TreasurerController;
@@ -36,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('throttle:10,1');
     Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->middleware('throttle:10,1');
     Route::delete('/profile/photo', [ProfileController::class, 'deleteProfilePhoto'])->middleware('throttle:10,1');
+    Route::post('/chatbot/send', [ChatbotController::class, 'sendMessage'])->middleware('throttle:10,1');
 
     Route::prefix('orders')->group(function () {
         Route::post('/', [OrderController::class, 'createOrder'])->middleware(['throttle:10,1', 'role:customer']);

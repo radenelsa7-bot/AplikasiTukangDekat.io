@@ -485,6 +485,110 @@ Lihat transaksi DP dan FINAL.
 
 ---
 
+## 5.8 Chatbot (AI Customer Service)
+
+### POST /api/chatbot/send
+**Role: AUTHENTICATED (Customer/Provider/Admin)**  
+Kirim pesan ke AI chatbot untuk mendapatkan bantuan customer service. Chatbot akan memberikan respons berdasarkan konteks pesanan terakhir user.
+
+**Request**
+```json
+{
+  "message": "Bagaimana cara membayar pesanan saya?"
+}
+```
+
+**Request Headers**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Response 200 (Success)**
+```json
+{
+  "success": true,
+  "message": "Chatbot response received",
+  "data": {
+    "user_message": "Bagaimana cara membayar pesanan saya?",
+    "assistant_message": "Untuk membayar pesanan Anda, ikuti langkah berikut: 1) Buka detail pesanan. 2) Klik tombol 'Bayar Sekarang'. 3) Pilih metode pembayaran QRIS. 4) Scan QR code dengan aplikasi banking Anda.",
+    "order_context": "Pesanan terakhir Anda: kode ORD-20260618-0001, status ACCEPTED, alamat Jl. Contoh No. 5, harga estimasi Rp 300.000.",
+    "raw_response": {
+      "model": "gemini-1.0",
+      "choices": [
+        {
+          "message": {
+            "content": "Untuk membayar pesanan Anda, ikuti langkah berikut..."
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+**Response 400 (Validation Error)**
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "error_code": "VALIDATION_ERROR",
+  "status_code": 422,
+  "errors": {
+    "message": [
+      "Message is required."
+    ]
+  }
+}
+```
+
+**Response 401 (Unauthorized)**
+```json
+{
+  "success": false,
+  "message": "Unauthorized",
+  "error_code": "UNAUTHORIZED",
+  "status_code": 401
+}
+```
+
+**Response 500 (Gemini API Error)**
+```json
+{
+  "success": false,
+  "message": "Failed to contact Gemini API",
+  "error_code": "GEMINI_API_ERROR",
+  "status_code": 502,
+  "details": {
+    "status": 401,
+    "response": {
+      "error": "Invalid API key"
+    }
+  }
+}
+```
+
+**Validasi Input**
+- `message`: required, string, max 1000 karakter
+- Throttle limit: 10 requests per 1 menit (rate limit)
+
+**Fitur Chatbot**
+- Sistem prompt: "Kamu adalah asisten Customer Service berpengalaman untuk platform TukangDekat, aplikasi pemesanan jasa lokal di Kecamatan Bojongloa Kaler. Bantu user dengan ramah jika menemui kendala transaksi."
+- Context insertion: Data pesanan terakhir user (order_code, status, address, estimated_price) otomatis disertakan dalam request ke Gemini API.
+- Fallback context: Jika user belum memiliki riwayat pesanan, sistem akan mengirim pesan default: "Tidak ada riwayat pesanan terakhir untuk pengguna ini."
+- Max response tokens: 512
+
+**Error Handling**
+| Error Code | Status | Deskripsi |
+|------------|--------|-----------|
+| `VALIDATION_ERROR` | 422 | Input message tidak valid |
+| `UNAUTHORIZED` | 401 | Token tidak ada atau invalid |
+| `GEMINI_NOT_CONFIGURED` | 500 | Konfigurasi Gemini API belum diatur |
+| `GEMINI_API_ERROR` | 502 | Gemini API request gagal |
+| `GEMINI_RESPONSE_INVALID` | 502 | Respons Gemini dalam format tidak terduga |
+
+---
+
 # 6) Aturan Bisnis Penting (Enforced Rules)
 1) Provider tidak boleh `start` order jika DP belum `PAID`.
 2) Pelunasan hanya dibuat setelah order `COMPLETED` dan `final_price` diinput provider.

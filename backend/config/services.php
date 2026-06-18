@@ -61,4 +61,9 @@ return [
         'alert_email' => env('PAYOUT_ALERT_EMAIL'),
     ],
 
+    'gemini' => [
+        'endpoint' => env('GEMINI_API_ENDPOINT'),
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_API_MODEL', 'gemini-1.0'),
+    ],
 ];
