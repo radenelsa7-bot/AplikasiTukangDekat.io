@@ -13,6 +13,7 @@ use App\Traits\ApiResponse;
 class TreasurerController extends Controller
 {
     use ApiResponse;
+
     private function ensureTreasurer(): ?\Illuminate\Http\JsonResponse
     {
         // Check web session auth (web routes use web guard) or Sanctum token (API routes)
@@ -30,7 +31,6 @@ class TreasurerController extends Controller
     }
 
     public function paymentReport(PaymentReportRequest $request)
-    public function paymentReport(Request $request)
     {
         // Route uses role.treasurer; defensive check only
         $user = Auth::user() ?? Auth::guard('web')->user();
@@ -112,8 +112,6 @@ class TreasurerController extends Controller
                 'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             ];
 
-            // Return full CSV content (test expects body content to include headers/rows)
-            // Note: response()->streamDownload() is not reliably captured as body content in tests.
             $out = fopen('php://temp', 'r+');
 
             fputcsv($out, [
@@ -154,104 +152,104 @@ class TreasurerController extends Controller
                     $p->updated_at?->toDateTimeString() ?? '',
                 ]);
             }
-      // When running unit tests, return the full CSV as a string so tests can assert content
-      if (app()->runningUnitTests()) {
-        $out = fopen('php://temp', 'r+');
-        fputcsv($out, [
-          'payment_id',
-          'order_id',
-          'payment_type',
-          'status',
-          'amount',
-          'platform_fee',
-          'provider_payout',
-          'refund_amount',
-          'refund_status',
-          'payment_reference',
-          'customer',
-          'provider',
-          'created_at',
-          'updated_at'
-        ]);
 
-        foreach ($exportQuery as $p) {
-          $customerName = optional($p->order->customer)->name ?? optional($p->order->customer)->email ?? '';
-          $providerName = optional($p->order->provider)->name ?? optional($p->order->provider)->email ?? '';
+            // When running unit tests, return the full CSV as a string so tests can assert content
+            if (app()->runningUnitTests()) {
+                $out = fopen('php://temp', 'r+');
+                fputcsv($out, [
+                    'payment_id',
+                    'order_id',
+                    'payment_type',
+                    'status',
+                    'amount',
+                    'platform_fee',
+                    'provider_payout',
+                    'refund_amount',
+                    'refund_status',
+                    'payment_reference',
+                    'customer',
+                    'provider',
+                    'created_at',
+                    'updated_at'
+                ]);
 
-          fputcsv($out, [
-            $p->id,
-            $p->order_id,
-            $p->payment_type,
-            $p->status,
-            $p->amount,
-            $p->platform_fee,
-            $p->provider_payout,
-            $p->refund_amount,
-            $p->refund_status,
-            $p->payment_reference ?? '',
-            $customerName,
-            $providerName,
-            $p->created_at->toDateTimeString(),
-            $p->updated_at->toDateTimeString(),
-          ]);
+                foreach ($exportQuery as $p) {
+                    $customerName = optional($p->order->customer)->name ?? optional($p->order->customer)->email ?? '';
+                    $providerName = optional($p->order->provider)->name ?? optional($p->order->provider)->email ?? '';
+
+                    fputcsv($out, [
+                        $p->id,
+                        $p->order_id,
+                        $p->payment_type,
+                        $p->status,
+                        $p->amount,
+                        $p->platform_fee,
+                        $p->provider_payout,
+                        $p->refund_amount,
+                        $p->refund_status,
+                        $p->payment_reference ?? '',
+                        $customerName,
+                        $providerName,
+                        $p->created_at->toDateTimeString(),
+                        $p->updated_at->toDateTimeString(),
+                    ]);
+                }
+
+                rewind($out);
+                $content = stream_get_contents($out);
+                fclose($out);
+
+                $headers['Content-Type'] = 'text/csv; charset=utf-8';
+
+                return response($content, 200, $headers);
+            }
+
+            $callback = function () use ($exportQuery) {
+                $out = fopen('php://output', 'w');
+                fputcsv($out, [
+                    'payment_id',
+                    'order_id',
+                    'payment_type',
+                    'status',
+                    'amount',
+                    'platform_fee',
+                    'provider_payout',
+                    'refund_amount',
+                    'refund_status',
+                    'payment_reference',
+                    'customer',
+                    'provider',
+                    'created_at',
+                    'updated_at'
+                ]);
+
+                foreach ($exportQuery as $p) {
+                    $customerName = optional($p->order->customer)->name ?? optional($p->order->customer)->email ?? '';
+                    $providerName = optional($p->order->provider)->name ?? optional($p->order->provider)->email ?? '';
+
+                    fputcsv($out, [
+                        $p->id,
+                        $p->order_id,
+                        $p->payment_type,
+                        $p->status,
+                        $p->amount,
+                        $p->platform_fee,
+                        $p->provider_payout,
+                        $p->refund_amount,
+                        $p->refund_status,
+                        $p->payment_reference ?? '',
+                        $customerName,
+                        $providerName,
+                        $p->created_at->toDateTimeString(),
+                        $p->updated_at->toDateTimeString(),
+                    ]);
+                }
+
+                fclose($out);
+            };
+
+            return response()->streamDownload($callback, $filename, $headers);
         }
-
-        rewind($out);
-        $content = stream_get_contents($out);
-        fclose($out);
-
-        // include charset for consistency with other responses
-        $headers['Content-Type'] = 'text/csv; charset=utf-8';
-
-        return response($content, 200, $headers);
-      }
-
-      $callback = function () use ($exportQuery) {
-        $out = fopen('php://output', 'w');
-        fputcsv($out, [
-          'payment_id',
-          'order_id',
-          'payment_type',
-          'status',
-          'amount',
-          'platform_fee',
-          'provider_payout',
-          'refund_amount',
-          'refund_status',
-          'payment_reference',
-          'customer',
-          'provider',
-          'created_at',
-          'updated_at'
-        ]);
-
-        foreach ($exportQuery as $p) {
-          $customerName = optional($p->order->customer)->name ?? optional($p->order->customer)->email ?? '';
-          $providerName = optional($p->order->provider)->name ?? optional($p->order->provider)->email ?? '';
-
-          fputcsv($out, [
-            $p->id,
-            $p->order_id,
-            $p->payment_type,
-            $p->status,
-            $p->amount,
-            $p->platform_fee,
-            $p->provider_payout,
-            $p->refund_amount,
-            $p->refund_status,
-            $p->payment_reference ?? '',
-            $customerName,
-            $providerName,
-            $p->created_at->toDateTimeString(),
-            $p->updated_at->toDateTimeString(),
-          ]);
-        }
-
-        fclose($out);
-      };
-
-      return response()->streamDownload($callback, $filename, $headers);
-    }
 
         // Jika diminta ekspor XLS (SpreadsheetML/XML) tanpa membutuhkan ekstensi zip
         if ($request->query('export') === 'xls' || $request->query('export') === 'excel') {
@@ -335,7 +333,6 @@ class TreasurerController extends Controller
             return response($xml, 200, $headers);
         }
 
-        return $this->success([
         return $this->successResponse([
             'payments' => $payments->items(),
             'summary' => $summary,
@@ -357,7 +354,6 @@ class TreasurerController extends Controller
                 'order_id' => $validated['order_id'] ?? null,
                 'provider_id' => $validated['provider_id'] ?? null,
             ],
-        ], 'Payment report');
         ], 'ok', 200);
     }
 }

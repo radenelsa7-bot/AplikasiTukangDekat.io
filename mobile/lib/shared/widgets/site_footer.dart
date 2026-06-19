@@ -55,7 +55,7 @@ class TukangDekatFooter extends StatelessWidget {
           Text(
             '© 2026 TukangDekat. Fast, friendly, and locally trusted.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.white.withOpacity(0.7),
+              color: AppTheme.white.withValues(alpha: 0.7),
             ),
           ),
         ],

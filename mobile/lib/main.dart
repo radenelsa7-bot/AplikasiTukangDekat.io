@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'app/theme/app_theme.dart';
-import 'features/auth/splash_page.dart';
 import 'landing/landing_screen.dart';
 import 'features/chat/chatbot_screen.dart';
 import 'features/auth/session_login_page.dart';

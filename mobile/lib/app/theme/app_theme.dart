@@ -19,8 +19,6 @@ class AppTheme {
         onSecondary: white,
         surface: cream,
         onSurface: navy,
-        background: cream,
-        onBackground: navy,
         error: Colors.red,
         onError: white,
         tertiary: orange,
