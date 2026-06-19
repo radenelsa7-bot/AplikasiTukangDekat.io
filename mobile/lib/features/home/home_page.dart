@@ -89,7 +89,7 @@ class HomePage extends ConsumerWidget {
                       CircleAvatar(
                         radius: 40,
                         backgroundColor:
-                            Theme.of(context).colorScheme.surfaceVariant,
+                            Theme.of(context).colorScheme.surfaceContainerHighest,
                         backgroundImage: state.userProfilePhotoPath != null
                             ? NetworkImage(
                                 '${Uri.base.origin}/storage/${state.userProfilePhotoPath}',

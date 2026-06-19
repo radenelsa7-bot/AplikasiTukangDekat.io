@@ -52,7 +52,7 @@ class OrderDetailPage extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: _getStatusColor(
                               order.status,
-                            ).withOpacity(0.2),
+                            ).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
