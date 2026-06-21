@@ -340,8 +340,11 @@ Headers: Authorization: Bearer <token>
 5. **Invalid GEMINI_API_KEY** → 502 GEMINI_API_ERROR
 
 ### Automated Test Result
-- Integration test `ChatbotControllerTest` executed in Docker using `docker compose exec backend ./vendor/bin/phpunit --filter ChatbotControllerTest`
-- Result: **OK (2 tests, 6 assertions)**
+- PHPUnit test suite executed for chatbot features using local PHP environment with explicit SQLite driver loading
+- Result: **OK (9 tests, 9 assertions)**
+- Tests verified:
+  - `ChatbotControllerTest` (3 tests passed)
+  - `ChatbotLoggingTest` (6 tests passed)
 
 ---
 

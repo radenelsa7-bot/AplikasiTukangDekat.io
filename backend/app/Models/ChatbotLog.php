@@ -26,6 +26,8 @@ class ChatbotLog extends Model
         'tokens_used',
         'api_cost_usd',
         'metadata',
+        'created_at',
+        'updated_at',
     ];
 
     /**

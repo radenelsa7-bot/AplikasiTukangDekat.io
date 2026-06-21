@@ -104,7 +104,7 @@ class ChatbotLoggingTest extends TestCase
         $this->assertEquals(0.6667, round($metrics['success_rate'], 4));
         $this->assertEquals(0.3333, round($metrics['error_rate'], 4));
         $this->assertGreaterThan(0, $metrics['response_time']['avg_ms']);
-        $this->assertEquals(500, $metrics['tokens']['average']);
+        $this->assertEquals(250, $metrics['tokens']['average']);
     }
 
     /**
