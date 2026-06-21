@@ -1,0 +1,116 @@
+PHPUnit Started (PHPUnit 11.5.55 using PHP 8.3.31 (cli) on WINNT)
+Test Runner Configured
+Bootstrap Finished (C:\UAS\PM_UAS_rekayasa_Sistem_Informasi\backend\vendor/autoload.php)
+Event Facade Sealed
+Test Suite Loaded (81 tests)
+Test Runner Started
+Test Suite Sorted
+Test Suite Filtered (9 tests)
+Test Runner Execution Started (9 tests)
+Test Suite Started (C:\UAS\PM_UAS_rekayasa_Sistem_Informasi\backend\phpunit.xml, 9 tests)
+Test Suite Started (Feature, 9 tests)
+Test Suite Started (Tests\Feature\ChatbotControllerTest, 3 tests)
+Test Preparation Started (Tests\Feature\ChatbotControllerTest::test_chatbot_send_requires_authentication)
+Before Test Method Called (Tests\Feature\ChatbotControllerTest::setUp)
+Before Test Method Finished:
+- Tests\Feature\ChatbotControllerTest::setUp
+Test Prepared (Tests\Feature\ChatbotControllerTest::test_chatbot_send_requires_authentication)
+After Test Method Called (Tests\Feature\ChatbotControllerTest::tearDown)
+After Test Method Finished:
+- Tests\Feature\ChatbotControllerTest::tearDown
+Test Passed (Tests\Feature\ChatbotControllerTest::test_chatbot_send_requires_authentication)
+Test Finished (Tests\Feature\ChatbotControllerTest::test_chatbot_send_requires_authentication)
+Test Preparation Started (Tests\Feature\ChatbotControllerTest::test_authenticated_user_can_send_message_and_chat_history_is_persisted)
+Before Test Method Called (Tests\Feature\ChatbotControllerTest::setUp)
+Before Test Method Finished:
+- Tests\Feature\ChatbotControllerTest::setUp
+Test Prepared (Tests\Feature\ChatbotControllerTest::test_authenticated_user_can_send_message_and_chat_history_is_persisted)
+After Test Method Called (Tests\Feature\ChatbotControllerTest::tearDown)
+After Test Method Finished:
+- Tests\Feature\ChatbotControllerTest::tearDown
+Test Passed (Tests\Feature\ChatbotControllerTest::test_authenticated_user_can_send_message_and_chat_history_is_persisted)
+Test Finished (Tests\Feature\ChatbotControllerTest::test_authenticated_user_can_send_message_and_chat_history_is_persisted)
+Test Preparation Started (Tests\Feature\ChatbotControllerTest::test_throttled_chatbot_send_returns_rate_limit_headers)
+Before Test Method Called (Tests\Feature\ChatbotControllerTest::setUp)
+Before Test Method Finished:
+- Tests\Feature\ChatbotControllerTest::setUp
+Test Prepared (Tests\Feature\ChatbotControllerTest::test_throttled_chatbot_send_returns_rate_limit_headers)
+After Test Method Called (Tests\Feature\ChatbotControllerTest::tearDown)
+After Test Method Finished:
+- Tests\Feature\ChatbotControllerTest::tearDown
+Test Passed (Tests\Feature\ChatbotControllerTest::test_throttled_chatbot_send_returns_rate_limit_headers)
+Test Finished (Tests\Feature\ChatbotControllerTest::test_throttled_chatbot_send_returns_rate_limit_headers)
+After Last Test Method Called (Tests\Feature\ChatbotControllerTest::tearDownAfterClass)
+After Last Test Method Finished:
+- Tests\Feature\ChatbotControllerTest::tearDownAfterClass
+Test Suite Finished (Tests\Feature\ChatbotControllerTest, 3 tests)
+Test Suite Started (Tests\Feature\ChatbotLoggingTest, 6 tests)
+Test Preparation Started (Tests\Feature\ChatbotLoggingTest::test_log_successful_chatbot_request)
+Before Test Method Called (Tests\Feature\ChatbotLoggingTest::setUp)
+Before Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::setUp
+Test Prepared (Tests\Feature\ChatbotLoggingTest::test_log_successful_chatbot_request)
+After Test Method Called (Tests\Feature\ChatbotLoggingTest::tearDown)
+After Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::tearDown
+Test Passed (Tests\Feature\ChatbotLoggingTest::test_log_successful_chatbot_request)
+Test Finished (Tests\Feature\ChatbotLoggingTest::test_log_successful_chatbot_request)
+Test Preparation Started (Tests\Feature\ChatbotLoggingTest::test_log_error_chatbot_request)
+Before Test Method Called (Tests\Feature\ChatbotLoggingTest::setUp)
+Before Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::setUp
+Test Prepared (Tests\Feature\ChatbotLoggingTest::test_log_error_chatbot_request)
+After Test Method Called (Tests\Feature\ChatbotLoggingTest::tearDown)
+After Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::tearDown
+Test Passed (Tests\Feature\ChatbotLoggingTest::test_log_error_chatbot_request)
+Test Finished (Tests\Feature\ChatbotLoggingTest::test_log_error_chatbot_request)
+Test Preparation Started (Tests\Feature\ChatbotLoggingTest::test_get_metrics)
+Before Test Method Called (Tests\Feature\ChatbotLoggingTest::setUp)
+Before Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::setUp
+Test Prepared (Tests\Feature\ChatbotLoggingTest::test_get_metrics)
+After Test Method Called (Tests\Feature\ChatbotLoggingTest::tearDown)
+After Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::tearDown
+Test Passed (Tests\Feature\ChatbotLoggingTest::test_get_metrics)
+Test Finished (Tests\Feature\ChatbotLoggingTest::test_get_metrics)
+Test Preparation Started (Tests\Feature\ChatbotLoggingTest::test_check_alerts)
+Before Test Method Called (Tests\Feature\ChatbotLoggingTest::setUp)
+Before Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::setUp
+Test Prepared (Tests\Feature\ChatbotLoggingTest::test_check_alerts)
+After Test Method Called (Tests\Feature\ChatbotLoggingTest::tearDown)
+After Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::tearDown
+Test Passed (Tests\Feature\ChatbotLoggingTest::test_check_alerts)
+Test Finished (Tests\Feature\ChatbotLoggingTest::test_check_alerts)
+Test Preparation Started (Tests\Feature\ChatbotLoggingTest::test_logging_respects_sampling_rate)
+Before Test Method Called (Tests\Feature\ChatbotLoggingTest::setUp)
+Before Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::setUp
+Test Prepared (Tests\Feature\ChatbotLoggingTest::test_logging_respects_sampling_rate)
+After Test Method Called (Tests\Feature\ChatbotLoggingTest::tearDown)
+After Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::tearDown
+Test Passed (Tests\Feature\ChatbotLoggingTest::test_logging_respects_sampling_rate)
+Test Finished (Tests\Feature\ChatbotLoggingTest::test_logging_respects_sampling_rate)
+Test Preparation Started (Tests\Feature\ChatbotLoggingTest::test_cleanup_old_logs)
+Before Test Method Called (Tests\Feature\ChatbotLoggingTest::setUp)
+Before Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::setUp
+Test Prepared (Tests\Feature\ChatbotLoggingTest::test_cleanup_old_logs)
+After Test Method Called (Tests\Feature\ChatbotLoggingTest::tearDown)
+After Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::tearDown
+Test Passed (Tests\Feature\ChatbotLoggingTest::test_cleanup_old_logs)
+Test Finished (Tests\Feature\ChatbotLoggingTest::test_cleanup_old_logs)
+After Last Test Method Called (Tests\Feature\ChatbotLoggingTest::tearDownAfterClass)
+After Last Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::tearDownAfterClass
+Test Suite Finished (Tests\Feature\ChatbotLoggingTest, 6 tests)
+Test Suite Finished (Feature, 9 tests)
+Test Suite Finished (C:\UAS\PM_UAS_rekayasa_Sistem_Informasi\backend\phpunit.xml, 9 tests)
+Test Runner Execution Finished
+Test Runner Finished
+PHPUnit Finished (Shell Exit Code: 0)

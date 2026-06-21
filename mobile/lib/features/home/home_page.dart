@@ -83,6 +83,17 @@ class HomePage extends ConsumerWidget {
                   Text('Role: ${state.userRole ?? 'N/A'}'),
                   const SizedBox(height: 8),
                   Text('ID: ${state.userId ?? 'N/A'}'),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/chatbot');
+                      },
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      label: const Text('Buka Chatbot'),
+                    ),
+                  ),
                 ],
               ),
             ),

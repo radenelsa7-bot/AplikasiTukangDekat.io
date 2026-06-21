@@ -10,7 +10,7 @@ Fase 3 telah selesai dikerjakan dengan fokus pada implementasi backend untuk fit
 
 ---
 
-## Deliverables (Hasil Pekerjaan)
+## Hasil Pekerjaan (Deliverables)
 
 ### 1. Backend Implementation ✅
 
@@ -26,18 +26,18 @@ Fase 3 telah selesai dikerjakan dengan fokus pada implementasi backend untuk fit
 - Handling respons sukses dan error scenarios
 - Error logging untuk debugging dan monitoring
 
-**Code Statistics:**
-- Lines of code: ~105
-- Error handling: 5 different error cases
-- Timeout: 30 detik untuk API call
+**Statistik Kode:**
+- Baris kode: ~105
+- Penanganan error: 5 kasus error berbeda
+- Timeout: 30 detik untuk panggilan API
 
 #### B. ChatbotRequest Validator
 **File:** `backend/app/Http/Requests/ChatbotRequest.php`
 
 **Validasi:**
-- `message` → required, string, max 1000 karakter
-- Response error: JSON format dengan error_code `VALIDATION_ERROR`
-- HTTP Status: 422 Unprocessable Entity
+- `message` → wajib diisi, string, maksimal 1000 karakter
+- Respons error: Format JSON dengan error_code `VALIDATION_ERROR`
+- Status HTTP: 422 Unprocessable Entity
 
 #### C. Route Registration
 **File:** `backend/routes/api.php`
@@ -47,13 +47,13 @@ Fase 3 telah selesai dikerjakan dengan fokus pada implementasi backend untuk fit
 POST /api/chatbot/send
 ```
 
-**Konfigurasi Route:**
-- Protected by middleware: `auth:sanctum`
-- Rate limit: `throttle:10,1` (10 requests per 1 menit)
-- HTTP method: POST
-- Accessible roles: AUTHENTICATED users (Customer, Provider, Admin)
+**Konfigurasi Rute:**
+- Dilindungi middleware: `auth:sanctum`
+- Batas laju: `throttle:10,1` (10 permintaan per 1 menit)
+- Metode HTTP: POST
+- Peran yang dapat diakses: pengguna yang SUDAH OTENTIKASI (Customer, Provider, Admin)
 
-#### D. Service Configuration
+#### D. Konfigurasi Layanan
 **File:** `backend/config/services.php`
 
 **Konfigurasi Gemini:**
@@ -65,7 +65,7 @@ POST /api/chatbot/send
 ]
 ```
 
-#### E. Environment Configuration
+#### E. Konfigurasi Lingkungan
 **File:** `backend/.env.example`
 
 **Variabel baru:**
@@ -75,7 +75,7 @@ GEMINI_API_KEY=
 GEMINI_API_MODEL=gemini-1.0
 ```
 
-### 2. API Documentation ✅
+### 2. Dokumentasi API ✅
 
 **File:** `docs/api/API_DOCUMENTATION_TukangDekat_v1.0.md`
 
@@ -92,7 +92,7 @@ GEMINI_API_MODEL=gemini-1.0
 
 ---
 
-## Technical Specifications
+## Spesifikasi Teknis
 
 ### System Prompt (Hardcoded)
 ```
@@ -101,7 +101,7 @@ aplikasi pemesanan jasa lokal di Kecamatan Bojongloa Kaler. Bantu user dengan ra
 jika menemui kendala transaksi."
 ```
 
-### Payload Structure untuk Gemini
+### Struktur Payload untuk Gemini
 ```json
 {
   "model": "gemini-1.0",
@@ -167,10 +167,10 @@ jika menemui kendala transaksi."
 
 ---
 
-## Konfigurasi yang Diperlukan (Setup Instructions)
+## Konfigurasi yang Diperlukan
 
-### 1. Environment Variables
-Tambahkan ke `.env` file:
+### 1. Variabel Lingkungan
+Tambahkan ke file `.env`:
 ```bash
 # Gemini API Configuration
 GEMINI_API_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent
@@ -189,10 +189,10 @@ GEMINI_API_MODEL=gemini-1.0
 - [ ] Monitor API logs untuk error atau timeout issues
 - [ ] Set up monitoring untuk Gemini API call rate
 
-### Production configuration & secrets (completed)
+### Konfigurasi Produksi & Rahasia (Selesai)
 
-- Production Gemini endpoint and secret handling have been finalized. See [docs/GEMINI_PRODUCTION_SETUP.md](../docs/GEMINI_PRODUCTION_SETUP.md) for detailed steps to store `GEMINI_API_KEY` in your CI/CD or cloud secret manager (recommended: GitHub Actions Secrets, Google Secret Manager, or AWS Secrets Manager).
-- In our deployment we used a repository secret named `GEMINI_API_KEY` injected into the runtime environment during release. Do NOT commit keys to source control.
+- Konfigurasi endpoint Gemini produksi dan penanganan rahasia telah diselesaikan. Lihat [docs/GEMINI_PRODUCTION_SETUP.md](../docs/GEMINI_PRODUCTION_SETUP.md) untuk langkah-langkah terperinci menyimpan `GEMINI_API_KEY` dalam CI/CD atau pengelola rahasia cloud (disarankan: GitHub Actions Secrets, Google Secret Manager, atau AWS Secrets Manager).
+- Dalam deployment kami, kami menggunakan rahasia repositori bernama `GEMINI_API_KEY` yang disuntikkan ke lingkungan runtime saat rilis. JANGAN commit kunci ke kontrol sumber.
 
 ### Perbaikan Logging, Monitoring, dan Alerting (completed - 21 Juni 2026)
 
@@ -256,54 +256,54 @@ GEMINI_API_MODEL=gemini-1.0
 - CHATBOT_LOG_SAMPLING_ENABLED (default: false)
 - Dan konfigurasi lainnya...
 
-**Tests:**
+**Tes:**
 - ChatbotLoggingTest dengan coverage untuk:
-  - Log creation untuk successful dan error requests
-  - Metrics calculation accuracy
-  - Alert checking logic
-  - Sampling rate configuration
-  - Old log cleanup functionality
+  - Pembuatan log untuk permintaan sukses dan error
+  - Akurasi perhitungan metrik
+  - Logika pemeriksaan peringatan
+  - Konfigurasi tingkat sampling
+  - Fungsionalitas pembersihan log lama
 
-**Status:** Semua logging, monitoring, dan alerting features fully implemented dan tested.
+**Status:** Semua logging, monitoring, dan alerting features sepenuhnya diimplementasikan dan diuji.
 
 ---
 
-- **GitHub Actions workflow created:** `.github/workflows/deploy-chatbot.yml`
-  - Automated testing on pull request (PHP 8.3, migrations, unit tests)
-  - Automated build & deploy on main branch push
-  - Secrets injected via `${{ secrets.GEMINI_API_KEY }}` and other repository secrets
-  - **3 Deployment Methods Supported:**
-    - `docker-run`: Simple single-container deployment
-    - `registry-push`: Push to GitHub Container Registry
-    - `docker-compose`: Multi-container orchestration
-  - Health check validation (HTTP 200 on `/health`, HTTP 401 on `/api/chatbot/send` without token)
+- **Workflow GitHub Actions dibuat:** `.github/workflows/deploy-chatbot.yml`
+  - Pengujian otomatis pada permintaan tarik (PHP 8.3, migrasi, uji unit)
+  - Build & deploy otomatis pada push branch main
+  - Rahasia disuntikkan melalui `${{ secrets.GEMINI_API_KEY }}` dan rahasia repositori lainnya
+  - **3 Metode Deployment yang Didukung:**
+    - `docker-run`: Deployment single-container sederhana
+    - `registry-push`: Push ke GitHub Container Registry
+    - `docker-compose`: Orkestrasi multi-container
+  - Validasi kesehatan (HTTP 200 pada `/health`, HTTP 401 pada `/api/chatbot/send` tanpa token)
 
-- **Deployment script provided:** `backend/deploy/deploy-with-secrets.sh`
-  - Accepts environment name and API key as arguments
-  - Creates `.env` with secrets injected
-  - Runs migrations and clears caches
-  - Performs health check verification
+- **Skrip deployment disediakan:** `backend/deploy/deploy-with-secrets.sh`
+  - Menerima nama environment dan kunci API sebagai argumen
+  - Membuat `.env` dengan rahasia yang disuntikkan
+  - Menjalankan migrasi dan menghapus cache
+  - Melakukan verifikasi pemeriksaan kesehatan
 
-- **Health Check Endpoints Added:** `backend/routes/api.php`
-  - `GET /health` - Basic health check (status, timestamp, app info)
-  - `GET /health/detailed` - Detailed health check (database connectivity, Gemini configuration)
+- **Endpoint Pemeriksaan Kesehatan Ditambahkan:** `backend/routes/api.php`
+  - `GET /health` - Pemeriksaan kesehatan dasar (status, timestamp, informasi aplikasi)
+  - `GET /health/detailed` - Pemeriksaan kesehatan terperinci (konektivitas database, konfigurasi Gemini)
 
-- **Comprehensive deployment guide:** `backend/deploy/DEPLOYMENT_AND_SECRETS_GUIDE.md`
-  - GitHub Actions setup with required secrets (GEMINI_API_KEY, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DEPLOYMENT_METHOD)
-  - Manual deployment script usage
-  - Docker Compose deployment examples
-  - Cloud secret manager integration (GCP, AWS)
-  - Security best practices and verification steps
-  - Troubleshooting guide with 10+ common issues and solutions
-  - Step-by-step deployment checklist with GitHub Actions monitoring
+- **Panduan deployment komprehensif:** `backend/deploy/DEPLOYMENT_AND_SECRETS_GUIDE.md`
+  - Pengaturan GitHub Actions dengan rahasia yang diperlukan (GEMINI_API_KEY, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DEPLOYMENT_METHOD)
+  - Penggunaan skrip deployment manual
+  - Contoh deployment Docker Compose
+  - Integrasi pengelola rahasia cloud (GCP, AWS)
+  - Praktik terbaik keamanan dan langkah verifikasi
+  - Panduan pemecahan masalah dengan 10+ masalah umum dan solusi
+  - Daftar periksa deployment langkah demi langkah dengan pemantauan GitHub Actions
 
-**Status:** All 3 deployment methods implemented. Secrets fully documented. Health check verified. GitHub Actions workflow ready for production deployment.
+**Status:** Semua 3 metode deployment diimplementasikan. Rahasia terdokumentasi sepenuhnya. Pemeriksaan kesehatan diverifikasi. Workflow GitHub Actions siap untuk deployment produksi.
 
 ---
 
 ## Testing & Validation
 
-### Manual Testing
+### Pengujian Manual
 ```bash
 # 1. Login terlebih dahulu untuk mendapatkan token
 POST /api/auth/login
@@ -312,14 +312,14 @@ POST /api/auth/login
   "password": "password"
 }
 
-# 2. Copy token dari response, lalu test chatbot endpoint
+# 2. Salin token dari respons, kemudian uji endpoint chatbot
 POST /api/chatbot/send
 Headers: Authorization: Bearer <token>
 {
   "message": "Bagaimana cara membayar pesanan saya?"
 }
 
-# Expected Response (200 OK):
+# Respons yang diharapkan (200 OK):
 {
   "success": true,
   "message": "Chatbot response received",
@@ -332,240 +332,256 @@ Headers: Authorization: Bearer <token>
 }
 ```
 
-### Error Test Cases
-1. **No authentication** → 401 Unauthorized
-2. **Empty message** → 422 Validation Error
-3. **Message > 1000 char** → 422 Validation Error
-4. **Missing GEMINI_API_KEY** → 500 GEMINI_NOT_CONFIGURED
-5. **Invalid GEMINI_API_KEY** → 502 GEMINI_API_ERROR
+### Kasus Uji Error
+1. **Tidak ada autentikasi** → 401 Tidak Sah
+2. **Pesan kosong** → 422 Kesalahan Validasi
+3. **Pesan > 1000 karakter** → 422 Kesalahan Validasi
+4. **GEMINI_API_KEY hilang** → 500 GEMINI_NOT_CONFIGURED
+5. **GEMINI_API_KEY tidak valid** → 502 GEMINI_API_ERROR
 
-### Automated Test Result
-- PHPUnit test suite executed for chatbot features using local PHP environment with explicit SQLite driver loading
-- Result: **OK (9 tests, 9 assertions)**
-- Tests verified:
-  - `ChatbotControllerTest` (3 tests passed)
-  - `ChatbotLoggingTest` (6 tests passed)
+### Integrasi Frontend
+- Halaman UI chatbot mobile ditambahkan: `mobile/lib/features/chatbot/chatbot_page.dart`
+- Rute navigasi ditambahkan dalam `mobile/lib/main.dart` dan akses tombol dari `mobile/lib/features/home/home_page.dart`
+- Metode klien API `ApiService.sendChatbotMessage()` diimplementasikan dalam `mobile/lib/core/services/api_service.dart`
+- Halaman chatbot mendukung:
+  - validasi input pesan (wajib diisi, maks 1000 karakter)
+  - gelembung pesan pengguna/asisten
+  - status loading selama permintaan
+  - umpan balik error dengan snack bar
+- Analisis mobile dikonfirmasi dengan `flutter analyze`; tidak ada error baru yang diperkenalkan dalam alur chatbot.
 
----
-
-## Files Modified/Created (Final Update - 21 Juni 2026)
-
-| File | Action | Description |
-|------|--------|-------------|
-| `backend/app/Http/Controllers/Api/ChatbotController.php` | MODIFY | Updated dengan ChatbotLoggingService integration untuk log semua requests |
-| `backend/app/Http/Requests/ChatbotRequest.php` | CREATE | Request validator untuk input message |
-| `backend/app/Services/GeminiService.php` | MODIFY | Enhanced dengan response_time_ms, retry_count, tokens_used tracking |
-| `backend/app/Services/ChatbotLoggingService.php` | CREATE | Centralized logging service dengan metrics, alerts, dan cleanup |
-| `backend/app/Models/ChatMessage.php` | CREATE | Model for persisting chat messages |
-| `backend/app/Models/ChatbotLog.php` | CREATE | Model untuk chatbot_logs table dengan query scopes |
-| `backend/app/Http/Controllers/Api/ChatbotMetricsController.php` | CREATE | Controller untuk metrics endpoints (metrics, alerts, health) |
-| `backend/database/migrations/2026_06_19_000000_create_chat_messages_table.php` | CREATE | Migration for `chat_messages` table |
-| `backend/database/migrations/2026_06_21_000000_create_chatbot_logs_table.php` | CREATE | Migration for `chatbot_logs` table dengan structured logging schema |
-| `backend/config/chatbot.php` | CREATE | Chatbot-specific configuration (retry, rate limit, context) |
-| `backend/config/monitoring.php` | MODIFY | Added chatbot monitoring config section (alerts, sampling, retention, etc) |
-| `backend/.env.example` | MODIFY | Added 15+ chatbot logging and monitoring environment variables |
-| `backend/config/services.php` | MODIFY | Gemini service config using env vars |
-| `backend/tests/Unit/GeminiServiceTest.php` | CREATE | Unit test for GeminiService (Http fake) |
-| `backend/tests/Feature/ChatbotControllerTest.php` | MODIFY | Added throttle rate-limit test with 429 response validation |
-| `backend/tests/Feature/ChatbotLoggingTest.php` | CREATE | Feature tests untuk logging, metrics, alerts, cleanup |
-| `backend/bootstrap/app.php` | MODIFY | Added ThrottleRequestsException JSON renderer for API rate-limit responses |
-| `backend/routes/api.php` | MODIFY | Added 3 metrics endpoints + health check endpoints |
-| `docs/api/API_DOCUMENTATION_TukangDekat_v1.0.md` | MODIFY | Added chatbot metrics endpoint documentation (3 endpoints) |
-| `docs/GEMINI_PRODUCTION_SETUP.md` | CREATE | Production configuration and secrets storage guide |
-| `.github/workflows/deploy-chatbot.yml` | CREATE | GitHub Actions workflow with test, build, and deploy stages; 3 deployment methods; secret injection |
-| `backend/deploy/deploy-with-secrets.sh` | CREATE | Deployment script untuk manual secret injection dan service deployment |
-| `backend/deploy/DEPLOYMENT_AND_SECRETS_GUIDE.md` | CREATE | Comprehensive guide untuk CI/CD dan secret management (9 sections, 350+ lines) |
+### Hasil Pengujian Otomatis
+- Rangkaian uji PHPUnit dieksekusi untuk fitur chatbot menggunakan lingkungan PHP lokal dengan pemuatan driver SQLite eksplisit
+- Hasil: **OK (9 tes, 9 pernyataan)**
+- Tes memverifikasi:
+  - `ChatbotControllerTest` (3 tes lulus)
+  - `ChatbotLoggingTest` (6 tes lulus)
 
 ---
 
-## Post-implementation updates (19 Juni 2026)
-- Implemented a `GeminiService` wrapper to centralize API calls, handle retries with exponential backoff, and validate multiple possible response shapes.
-- Added `chat_messages` persistent storage with `ChatMessage` model and migration so chat history is recorded (user + assistant messages + raw response).
-- Chatbot API now supports configurable multi-order context aggregation (`CHATBOT_ORDER_CONTEXT_COUNT`).
-- Improved error handling: explicit error codes for `GEMINI_NOT_CONFIGURED`, `GEMINI_API_ERROR`, and `GEMINI_RESPONSE_INVALID` are returned to clients.
-- Added basic unit test for `GeminiService` to validate the integration logic using `Http::fake()`.
-- Added configuration file `backend/config/chatbot.php` and `.env.example` variables for operability and tuning in different environments.
+## File yang Dimodifikasi/Dibuat (Update Akhir - 21 Juni 2026)
 
-### Files created/changed during this update
-- `backend/app/Services/GeminiService.php` (new)
-- `backend/app/Models/ChatMessage.php` (new)
-- `backend/database/migrations/2026_06_19_000000_create_chat_messages_table.php` (new)
-- `backend/config/chatbot.php` (new)
-- `backend/tests/Unit/GeminiServiceTest.php` (new)
-- `backend/app/Http/Controllers/Api/ChatbotController.php` (modified)
-- `backend/.env.example` (modified)
+| File | Tindakan | Deskripsi |
+|------|----------|----------|
+| `backend/app/Http/Controllers/Api/ChatbotController.php` | MODIFIKASI | Diperbarui dengan integrasi ChatbotLoggingService untuk mencatat semua permintaan |
+| `backend/app/Http/Requests/ChatbotRequest.php` | BUAT | Validator permintaan untuk input pesan |
+| `backend/app/Services/GeminiService.php` | MODIFIKASI | Ditingkatkan dengan pelacakan response_time_ms, retry_count, tokens_used |
+| `backend/app/Services/ChatbotLoggingService.php` | BUAT | Layanan pencatatan terpusat dengan metrik, peringatan, dan pembersihan |
+| `backend/app/Models/ChatMessage.php` | BUAT | Model untuk menyimpan pesan chat |
+| `backend/app/Models/ChatbotLog.php` | BUAT | Model untuk tabel chatbot_logs dengan query scopes |
+| `backend/app/Http/Controllers/Api/ChatbotMetricsController.php` | BUAT | Pengontrol untuk endpoint metrik (metrik, peringatan, kesehatan) |
+| `backend/database/migrations/2026_06_19_000000_create_chat_messages_table.php` | BUAT | Migrasi untuk tabel `chat_messages` |
+| `backend/database/migrations/2026_06_21_000000_create_chatbot_logs_table.php` | BUAT | Migrasi untuk tabel `chatbot_logs` dengan skema structured logging |
+| `backend/config/chatbot.php` | BUAT | Konfigurasi khusus chatbot (retry, rate limit, konteks) |
+| `backend/config/monitoring.php` | MODIFIKASI | Menambahkan bagian konfigurasi monitoring chatbot (peringatan, sampling, retensi, dll) |
+| `backend/.env.example` | MODIFIKASI | Menambahkan 15+ variabel lingkungan chatbot logging dan monitoring |
+| `backend/config/services.php` | MODIFIKASI | Konfigurasi layanan Gemini menggunakan variabel env |
+| `backend/tests/Unit/GeminiServiceTest.php` | BUAT | Uji unit untuk GeminiService (Http fake) |
+| `backend/tests/Feature/ChatbotControllerTest.php` | MODIFIKASI | Menambahkan uji batas laju throttle dengan validasi respons 429 |
+| `backend/tests/Feature/ChatbotLoggingTest.php` | BUAT | Uji fitur untuk logging, metrik, peringatan, pembersihan |
+| `backend/bootstrap/app.php` | MODIFIKASI | Menambahkan JSON renderer ThrottleRequestsException untuk respons API rate-limit |
+| `backend/routes/api.php` | MODIFIKASI | Menambahkan 3 endpoint metrik + endpoint pemeriksaan kesehatan |
+| `docs/api/API_DOCUMENTATION_TukangDekat_v1.0.md` | MODIFIKASI | Menambahkan dokumentasi endpoint metrik chatbot (3 endpoint) |
+| `docs/GEMINI_PRODUCTION_SETUP.md` | BUAT | Panduan konfigurasi produksi dan penyimpanan rahasia |
+| `.github/workflows/deploy-chatbot.yml` | BUAT | Workflow GitHub Actions dengan tahap test, build, dan deploy; 3 metode deployment; injeksi rahasia |
+| `backend/deploy/deploy-with-secrets.sh` | BUAT | Skrip deployment untuk injeksi rahasia manual dan deployment layanan |
+| `backend/deploy/DEPLOYMENT_AND_SECRETS_GUIDE.md` | BUAT | Panduan komprehensif untuk CI/CD dan manajemen rahasia (9 bagian, 350+ baris) |
 
 ---
 
-## Performance & Limitations (updated)
+## Update Pasca-Implementasi (19 Juni 2026)
+- Mengimplementasikan wrapper `GeminiService` untuk memusatkan panggilan API, menangani retry dengan exponential backoff, dan memvalidasi berbagai bentuk respons yang mungkin.
+- Menambahkan penyimpanan `chat_messages` persisten dengan model `ChatMessage` dan migrasi sehingga riwayat chat tercatat (pesan pengguna + asisten + respons baku).
+- API Chatbot sekarang mendukung agregasi konteks pesanan multi-order yang dapat dikonfigurasi (`CHATBOT_ORDER_CONTEXT_COUNT`).
+- Meningkatkan penanganan error: kode error eksplisit untuk `GEMINI_NOT_CONFIGURED`, `GEMINI_API_ERROR`, dan `GEMINI_RESPONSE_INVALID` dikembalikan ke klien.
+- Menambahkan uji unit dasar untuk `GeminiService` untuk memvalidasi logika integrasi menggunakan `Http::fake()`.
+- Menambahkan file konfigurasi `backend/config/chatbot.php` dan variabel `.env.example` untuk operabilitas dan tuning di lingkungan berbeda.
 
-### Performance Characteristics
-- **API Call Latency:** ~1-3 detik (tergantung response Gemini)
-- **Max Tokens:** 512 (output dari Gemini)
+### File yang dibuat/diubah selama update ini
+- `backend/app/Services/GeminiService.php` (baru)
+- `backend/app/Models/ChatMessage.php` (baru)
+- `backend/database/migrations/2026_06_19_000000_create_chat_messages_table.php` (baru)
+- `backend/config/chatbot.php` (baru)
+- `backend/tests/Unit/GeminiServiceTest.php` (baru)
+- `backend/app/Http/Controllers/Api/ChatbotController.php` (dimodifikasi)
+- `backend/.env.example` (dimodifikasi)
+
+---
+
+## Karakteristik Performa & Keterbatasan (diperbarui)
+
+### Karakteristik Performa
+- **Latensi Panggilan API:** ~1-3 detik (tergantung respons Gemini)
+- **Token Maksimal:** 512 (output dari Gemini)
 - **Timeout:** 30 detik
-- **Retries:** Configurable (default 3 attempts with exponential backoff)
-- **Request Size:** Max 1000 karakter per message
+- **Retry:** Dapat dikonfigurasi (default 3 percobaan dengan exponential backoff)
+- **Ukuran Permintaan:** Maksimal 1000 karakter per pesan
 
-### Known Limitations (updated)
-1. Chat history is now persisted but chat sessions are stateless (no threaded conversations per session yet).
-2. Multi-order context is supported for the most recent N orders controlled by `CHATBOT_ORDER_CONTEXT_COUNT`.
-3. Gemini API still requires network connectivity and valid API key/permissions.
-4. Rate limit is enforced at application level (recommended: 10 requests/min per user); more advanced rate-limit headers and middleware tuning recommended.
+### Keterbatasan yang Diketahui (diperbarui)
+1. Riwayat chat sekarang persisten tetapi sesi chat tidak memiliki status (belum ada percakapan thread per sesi).
+2. Konteks multi-order didukung untuk N pesanan terbaru yang dikontrol oleh `CHATBOT_ORDER_CONTEXT_COUNT`.
+3. Gemini API masih memerlukan konektivitas jaringan dan kunci API/izin yang valid.
+4. Batas laju diberlakukan di tingkat aplikasi (disarankan: 10 permintaan/menit per pengguna); tuning middleware dan header rate-limit yang lebih canggih disarankan.
 
-### Future Enhancements (Beyond Phase 3)
-1. Add conversation threading and persistent session management for multi-turn dialogs.
-2. Integrate a local FAQ/KB fallback to reduce API calls and costs.
-3. Add advanced analytics dashboard untuk visualisasi metrics dan trends.
-4. Setup automatic alerts ke email/Slack untuk critical errors.
-5. Implement token-usage tracking dan cost reporting per user/time period.
-6. Add A/B testing framework untuk optimize system prompts dan responses.
-7. Implement caching layer untuk reduce API calls untuk similar messages.
-8. Add sentiment analysis untuk monitor conversation quality.
-9. Integrate dengan support ticketing system untuk escalation management.
-10. Add multi-language support untuk international users.
-
----
-
-## Frontend Integration (Next Steps)
-
-(unchanged) - frontend tasks remain:
-- Create `ChatbotScreen` widget (UI, messages, input)
-- Implement Dio client with Sanctum bearer token
-- Add route and navigation
-- Handle client-side validation and rate-limit UX
+### Peningkatan Masa Depan (Beyond Phase 3)
+1. Tambahkan threading percakapan dan manajemen sesi persisten untuk dialog multi-turn.
+2. Integrasikan fallback FAQ/KB lokal untuk mengurangi panggilan API dan biaya.
+3. Tambahkan dashboard analytics lanjutan untuk visualisasi metrik dan tren.
+4. Atur alert otomatis ke email/Slack untuk error kritis.
+5. Implementasikan pelacakan penggunaan token dan laporan biaya per pengguna/periode waktu.
+6. Tambahkan framework A/B testing untuk mengoptimalkan system prompt dan respons.
+7. Implementasikan lapisan caching untuk mengurangi panggilan API untuk pesan serupa.
+8. Tambahkan analisis sentimen untuk memantau kualitas percakapan.
+9. Integrasikan dengan sistem ticketing dukungan untuk manajemen eskalasi.
+10. Tambahkan dukungan multi-bahasa untuk pengguna internasional.
 
 ---
 
-## Monitoring & Maintenance (updated notes)
+## Integrasi Frontend (Selesai)
 
-### Recommended Monitoring
-- Export metrics for: request latency, success/error counts, GEMINI_API_ERROR rate, token usage per request.
-- Alert when GEMINI_API_ERROR > 5% over 1h window.
-- Monitor rate-limit rejections and adjust throttle if necessary.
+Frontend chatbot mobile sudah diimplementasikan dan terintegrasi dengan backend:
+- `mobile/lib/features/chatbot/chatbot_page.dart` telah dibuat sebagai layar chatbot.
+- `mobile/lib/core/services/api_service.dart` sudah memiliki `sendChatbotMessage()` untuk memanggil endpoint `/api/chatbot/send`.
+- `mobile/lib/main.dart` telah menambahkan route `/chatbot`.
+- `mobile/lib/features/home/home_page.dart` sudah menambahkan tombol akses chatbot.
+- Client-side validation sudah ditangani pada form pesan.
+- UX rate-limit sudah ditambahkan untuk menampilkan pesan ketika backend merespon `429 Too Many Requests`.
+- Playback chat auto-scroll, status loading, dan error feedback sudah tersedia.
 
-### Maintenance Tasks
-- Weekly: Review error logs and chat failure rates.
-- Monthly: Analyze Gemini API cost and tune prompts or caching.
-- Before deploy to production: ensure `GEMINI_API_KEY` is set in secrets manager and not committed to repo.
+---
+
+## Pemantauan & Pemeliharaan (catatan pembaruan)
+
+### Pemantauan yang Disarankan
+- Ekspor metrik untuk: latensi permintaan, hitungan kesuksesan/error, tingkat kesalahan GEMINI_API_ERROR, penggunaan token per permintaan.
+- Peringatan saat kesalahan GEMINI_API_ERROR > 5% selama jendela 1 jam.
+- Pantau penolakan rate-limit dan sesuaikan throttle jika perlu.
+
+### Tugas Pemeliharaan
+- Mingguan: Tinjau log error dan tingkat kegagalan chat.
+- Bulanan: Analisis biaya Gemini API dan optimalkan prompt atau caching.
+- Sebelum deploy ke produksi: pastikan `GEMINI_API_KEY` diatur dalam pengelola rahasia dan tidak dikomit ke repo.
 
 ---
 
 ## Kesimpulan (FINAL LENGKAP - 21 Juni 2026)
 
-Phase 3 backend implementation **SEPENUHNYA SELESAI** dengan production readiness, CI/CD automation, DAN monitoring/logging yang komprehensif:
-- ✅ Gemini API integration hardened (retries, validation, error handling)
-- ✅ Chat history persisted to database with multi-order context
-- ✅ Rate-limit middleware hardened (429 JSON responses with headers)
-- ✅ Unit dan feature tests added untuk service layer dan logging
-- ✅ Configuration dan environment variables updated untuk production
-- ✅ Production secrets configuration finalized
-- ✅ Health check endpoints implemented (`/health`, `/health/detailed`)
-- ✅ GitHub Actions CI/CD workflow fully implemented dengan 3 deployment methods
-- ✅ Deployment script dengan secret injection provided
-- ✅ **Comprehensive logging, monitoring, dan alerting system implemented** ⭐ NEW
-  - Database logging dengan structured schema
-  - Real-time metrics calculation (success rate, error rate, response time, tokens, cost)
-  - Alert system dengan configurable thresholds
-  - Public API endpoints untuk monitoring (3 endpoints)
-  - ChatbotLoggingService dengan metrics, alerts, cleanup
-- ✅ API documentation updated dengan monitoring endpoints
-- ✅ All documentation updated dengan deployment dan security notes
+Phase 3 implementasi backend **SEPENUHNYA SELESAI** dengan production readiness, otomasi CI/CD, DAN sistem monitoring/logging yang komprehensif:
+- ✅ Integrasi Gemini API yang ditingkatkan (retry, validasi, penanganan error)
+- ✅ Riwayat chat dipertahankan di database dengan konteks pesanan multi-order
+- ✅ Middleware rate-limit yang ditingkatkan (respons JSON 429 dengan header)
+- ✅ Uji unit dan fitur ditambahkan untuk lapisan layanan dan logging
+- ✅ Konfigurasi dan variabel lingkungan diperbarui untuk produksi
+- ✅ Konfigurasi rahasia produksi diselesaikan
+- ✅ Endpoint pemeriksaan kesehatan diimplementasikan (`/health`, `/health/detailed`)
+- ✅ Workflow CI/CD GitHub Actions sepenuhnya diimplementasikan dengan 3 metode deployment
+- ✅ Skrip deployment dengan injeksi rahasia disediakan
+- ✅ **Sistem logging, pemantauan, dan peringatan yang komprehensif diimplementasikan** ⭐ BARU
+  - Pencatatan database dengan skema terstruktur
+  - Perhitungan metrik real-time (tingkat keberhasilan, tingkat error, waktu respons, token, biaya)
+  - Sistem peringatan dengan ambang batas yang dapat dikonfigurasi
+  - Endpoint API publik untuk pemantauan (3 endpoint)
+  - ChatbotLoggingService dengan metrik, peringatan, pembersihan
+- ✅ Dokumentasi API diperbarui dengan endpoint pemantauan
+- ✅ Semua dokumentasi diperbarui dengan catatan deployment dan keamanan
 
 **Semua Backend Task Phase 3: SELESAI 100% ✅**
 
-### Task Status Summary:
-1. ✅ Core chatbot endpoint implementation
-2. ✅ Chat history persistence (DB schema + migrations)
-3. ✅ Gemini API integration dengan retries
-4. ✅ Rate-limit middleware hardening
-5. ✅ Unit & feature tests
-6. ✅ Production secrets & configuration
-7. ✅ CI/CD GitHub Actions workflow
-8. ✅ **Logging, monitoring, and alerting system** ← BARU SELESAI
+### Ringkasan Status Tugas:
+1. ✅ Implementasi endpoint chatbot inti
+2. ✅ Persistensi riwayat chat (skema DB + migrasi)
+3. ✅ Integrasi Gemini API dengan retry
+4. ✅ Pengerasan middleware rate-limit
+5. ✅ Uji unit & fitur
+6. ✅ Rahasia produksi & konfigurasi
+7. ✅ Workflow CI/CD GitHub Actions
+8. ✅ **Sistem logging, pemantauan, dan peringatan** ← BARU SELESAI
 
-**Backend Status:** ✅ **PRODUCTION READY - FULLY AUTOMATED - FULLY MONITORED**
-**Date Completed:** 21 Juni 2026 (FINAL)
-**Next Phase:** Frontend integration (ChatbotScreen, Dio client, routing) dan E2E testing
+**Status Backend:** ✅ **SIAP PRODUKSI - SEPENUHNYA OTOMATIS - SEPENUHNYA DIPANTAU**
+**Tanggal Selesai:** 21 Juni 2026 (FINAL)
+**Fase Berikutnya:** Pengujian E2E dan validasi akhir chatbot mobile
+- ✅ `mobile/integration_test/chatbot_integration_test.dart` ditambahkan sebagai dasar uji alur Chatbot.
+- ✅ `mobile/pubspec.yaml` diperbarui dengan dependency `integration_test`.
 
-### Deployment Ready - Complete Implementation
+### Siap Deployment - Implementasi Lengkap
 
-**GitHub Actions Setup:**
-- Workflow file ready: `.github/workflows/deploy-chatbot.yml`
-- Secrets stored in repository (GEMINI_API_KEY, DB_*, DEPLOYMENT_METHOD)
-- 3 deployment methods selectable (docker-run, registry-push, docker-compose)
-- Health check validation included in workflow
-- Automatic trigger on push to `main` branch
+**Pengaturan GitHub Actions:**
+- File workflow siap: `.github/workflows/deploy-chatbot.yml`
+- Rahasia disimpan dalam repositori (GEMINI_API_KEY, DB_*, DEPLOYMENT_METHOD)
+- 3 metode deployment dapat dipilih (docker-run, registry-push, docker-compose)
+- Validasi pemeriksaan kesehatan disertakan dalam workflow
+- Pemicu otomatis pada push ke branch `main`
 
-**Manual Deployment Option:**
-- Deployment script ready: `backend/deploy/deploy-with-secrets.sh`
-- Works for staging and production environments
-- Secret injection at runtime
+**Opsi Deployment Manual:**
+- Skrip deployment siap: `backend/deploy/deploy-with-secrets.sh`
+- Bekerja untuk lingkungan staging dan produksi
+- Injeksi rahasia saat runtime
 
-**Health Checks:**
-- Public endpoint `/health` for monitoring
-- Detailed endpoint `/health/detailed` for troubleshooting
-- Metrics endpoints untuk real-time monitoring
-- Alert system untuk proactive monitoring
-- Workflow automatically verifies health on deployment
+**Pemeriksaan Kesehatan:**
+- Endpoint publik `/health` untuk pemantauan
+- Endpoint terperinci `/health/detailed` untuk pemecahan masalah
+- Endpoint metrik untuk pemantauan real-time
+- Sistem peringatan untuk pemantauan proaktif
+- Workflow secara otomatis memverifikasi kesehatan saat deployment
 
-**Monitoring & Logging:**
-- Database logging untuk semua requests (chatbot_logs table)
-- Real-time metrics via `/api/metrics/chatbot`
-- Alert checking via `/api/metrics/chatbot/alerts`
-- Health status via `/api/metrics/chatbot/health`
-- Configurable thresholds untuk automatic alerting
-- Log retention policy dengan automatic cleanup
-- API cost tracking per request
+**Pemantauan & Pencatatan:**
+- Pencatatan database untuk semua permintaan (tabel chatbot_logs)
+- Metrik real-time melalui `/api/metrics/chatbot`
+- Pemeriksaan peringatan melalui `/api/metrics/chatbot/alerts`
+- Status kesehatan melalui `/api/metrics/chatbot/health`
+- Ambang batas yang dapat dikonfigurasi untuk peringatan otomatis
+- Kebijakan retensi log dengan pembersihan otomatis
+- Pelacakan biaya API per permintaan
 
-**Documentation Complete:**
-- 350+ line comprehensive deployment guide
-- Monitoring & logging documentation
-- Step-by-step GitHub Actions secrets setup
-- 3 deployment method options dengan examples
-- Health endpoint implementation guide
-- 10+ troubleshooting scenarios dengan solutions
-- API endpoint documentation lengkap (metrics + alerts)
-- Deployment checklist dengan monitoring instructions
+**Dokumentasi Lengkap:**
+- Panduan deployment komprehensif 350+ baris
+- Dokumentasi pemantauan & pencatatan
+- Pengaturan rahasia GitHub Actions langkah demi langkah
+- 3 opsi metode deployment dengan contoh
+- Panduan implementasi endpoint kesehatan
+- 10+ skenario pemecahan masalah dengan solusi
+- Dokumentasi endpoint API lengkap (metrik + peringatan)
+- Daftar periksa deployment dengan instruksi pemantauan
 
 ---
 
-## Sign-Off
+## Penandatanganan Resmi
 - **Dikembangkan oleh:** Backend Development Team
 - **Tanggal Selesai:** 21 Juni 2026 (FINAL COMPLETE)
 - **Fase yang Selesai:**
-  - Phase 1 (19 Juni): Core implementation, persistence, error handling
-  - Phase 2 (19 Juni): Rate-limit middleware hardening, test suite
-  - Phase 3A (21 Juni): Production config, CI/CD secrets, deployment automation
-  - Phase 3B (21 Juni): **Logging, monitoring, alerting, metrics** ← TAMBAHAN PHASE 3
-- **Backend Tasks Completed:** 7/7 ✅
-  1. ✅ Core chatbot endpoint + chat history
-  2. ✅ Gemini API integration + retries
-  3. ✅ Rate-limit middleware
-  4. ✅ Unit & feature tests
-  5. ✅ Production secrets & CI/CD
-  6. ✅ Secure storage + GitHub Actions
-  7. ✅ **Logging, monitoring, alerting** ⭐
-- **Code Review Status:** Ready for Review
-- **Documentation Status:** Complete (API docs, deployment guide, security notes, monitoring guide)
-- **Production Status:** ✅ **FULLY PRODUCTION-READY AND MONITORED**
-- **Monitoring Status:** ✅ **FULLY OPERATIONAL**
+  - Fase 1 (19 Juni): Implementasi inti, persistensi, penanganan error
+  - Fase 2 (19 Juni): Pengerasan middleware rate-limit, rangkaian tes
+  - Fase 3A (21 Juni): Konfigurasi produksi, rahasia CI/CD, otomasi deployment
+  - Fase 3B (21 Juni): **Logging, pemantauan, peringatan, metrik** ← TAMBAHAN FASE 3
+- **Backend Tasks Diselesaikan:** 7/7 ✅
+  1. ✅ Endpoint chatbot inti + riwayat chat
+  2. ✅ Integrasi Gemini API + retry
+  3. ✅ Middleware rate-limit
+  4. ✅ Uji unit & fitur
+  5. ✅ Rahasia produksi & CI/CD
+  6. ✅ Penyimpanan aman + GitHub Actions
+  7. ✅ **Logging, pemantauan, peringatan** ⭐
+- **Status Tinjauan Kode:** Siap untuk Ditinjau
+- **Status Dokumentasi:** Selesai (dokumen API, panduan deployment, catatan keamanan, panduan pemantauan)
+- **Status Produksi:** ✅ **SEPENUHNYA SIAP PRODUKSI DAN DIPANTAU**
+- **Status Pemantauan:** ✅ **SEPENUHNYA OPERASIONAL**
 
 ---
 
-## Lampiran: Quick Reference
+## Lampiran: Referensi Cepat
 
-### cURL Test Example
+### Contoh Uji cURL
 ```bash
 curl -X POST http://localhost:8000/api/chatbot/send \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Authorization: Bearer TOKEN_ANDA_DI_SINI" \
   -H "Content-Type: application/json" \
   -d '{
     "message": "Apakah ada layanan emergency untuk malam hari?"
   }'
 ```
 
-### Postman Setup
-1. Create new POST request
+### Pengaturan Postman
+1. Buat permintaan POST baru
 2. URL: `{{BASE_URL}}/api/chatbot/send`
 3. Header: `Authorization: Bearer {{TOKEN}}`
 4. Body (raw JSON):
@@ -575,11 +591,11 @@ curl -X POST http://localhost:8000/api/chatbot/send \
 }
 ```
 
-### Troubleshooting
-| Issue | Solution |
-|-------|----------|
-| 401 Unauthorized | Pastikan token valid dan belum expired |
-| 422 Validation Error | Check message field: required, max 1000 char |
+### Pemecahan Masalah
+| Masalah | Solusi |
+|---------|--------|
+| 401 Tidak Sah | Pastikan token valid dan belum kedaluwarsa |
+| 422 Kesalahan Validasi | Periksa field pesan: wajib diisi, maks 1000 karakter |
 | 500 GEMINI_NOT_CONFIGURED | Pastikan GEMINI_API_ENDPOINT dan GEMINI_API_KEY di .env |
-| 502 GEMINI_API_ERROR | Check API key validity, endpoint URL, dan network connectivity |
-| Timeout (> 30s) | Gemini API sedang overload, retry dengan exponential backoff |
+| 502 GEMINI_API_ERROR | Periksa validitas kunci API, URL endpoint, dan konektivitas jaringan |
+| Timeout (> 30 detik) | Gemini API sedang overload, retry dengan exponential backoff |

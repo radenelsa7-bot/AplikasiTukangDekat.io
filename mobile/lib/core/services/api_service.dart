@@ -342,6 +342,21 @@ class ApiService {
     }
   }
 
+  /// Send message to chatbot endpoint and return parsed response.
+  Future<Map<String, dynamic>> sendChatbotMessage({
+    required String message,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/api/chatbot/send',
+        data: {'message': message},
+      );
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Fetch backend metrics (Prometheus/text or JSON as provided by backend).
   Future<dynamic> getMetrics() async {
     try {

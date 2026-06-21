@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'app/theme/app_theme.dart';
 import 'features/auth/splash_page.dart';
 import 'features/auth/session_login_page.dart';
+import 'features/chatbot/chatbot_page.dart';
 import 'features/treasurer/treasurer_report_page.dart';
 import 'core/http/dio_provider.dart' as dio_provider;
 
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/session-login': (_) => const SessionLoginPage(),
         '/treasurer-report': (_) => const TreasurerReportPage(),
+        '/chatbot': (_) => const ChatbotPage(),
       },
     );
   }

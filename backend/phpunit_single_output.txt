@@ -1,0 +1,31 @@
+PHPUnit Started (PHPUnit 11.5.55 using PHP 8.3.31 (cli) on WINNT)
+Test Runner Configured
+Bootstrap Finished (C:\UAS\PM_UAS_rekayasa_Sistem_Informasi\backend\vendor/autoload.php)
+Event Facade Sealed
+Test Suite Loaded (81 tests)
+Test Runner Started
+Test Suite Sorted
+Test Suite Filtered (1 test)
+Test Runner Execution Started (1 test)
+Test Suite Started (C:\UAS\PM_UAS_rekayasa_Sistem_Informasi\backend\phpunit.xml, 1 test)
+Test Suite Started (Feature, 1 test)
+Test Suite Started (Tests\Feature\ChatbotLoggingTest, 1 test)
+Test Preparation Started (Tests\Feature\ChatbotLoggingTest::test_get_metrics)
+Before Test Method Called (Tests\Feature\ChatbotLoggingTest::setUp)
+Before Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::setUp
+Test Prepared (Tests\Feature\ChatbotLoggingTest::test_get_metrics)
+After Test Method Called (Tests\Feature\ChatbotLoggingTest::tearDown)
+After Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::tearDown
+Test Passed (Tests\Feature\ChatbotLoggingTest::test_get_metrics)
+Test Finished (Tests\Feature\ChatbotLoggingTest::test_get_metrics)
+After Last Test Method Called (Tests\Feature\ChatbotLoggingTest::tearDownAfterClass)
+After Last Test Method Finished:
+- Tests\Feature\ChatbotLoggingTest::tearDownAfterClass
+Test Suite Finished (Tests\Feature\ChatbotLoggingTest, 1 test)
+Test Suite Finished (Feature, 1 test)
+Test Suite Finished (C:\UAS\PM_UAS_rekayasa_Sistem_Informasi\backend\phpunit.xml, 1 test)
+Test Runner Execution Finished
+Test Runner Finished
+PHPUnit Finished (Shell Exit Code: 0)
