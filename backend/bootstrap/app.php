@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,5 +24,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('payouts:alert --since=60')->everyTenMinutes()->withoutOverlapping();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->shouldRenderJsonWhen(function ($request, $exception) {
+            return $request->is('api/*');
+        });
+
+        $exceptions->renderable(function (ThrottleRequestsException $exception, $request) {
+            return response()->json(
+                [
+                    'message' => 'Too Many Requests',
+                    'errors' => [
+                        'code' => 'TOO_MANY_REQUESTS',
+                        'details' => 'You have exceeded the allowed request rate.',
+                    ],
+                ],
+                429,
+                $exception->getHeaders()
+            );
+        });
     })->create();

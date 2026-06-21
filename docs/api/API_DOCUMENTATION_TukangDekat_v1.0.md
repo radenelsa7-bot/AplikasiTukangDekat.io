@@ -589,6 +589,165 @@ Content-Type: application/json
 
 ---
 
+## 5.9 Chatbot Monitoring & Metrics
+
+### GET /api/metrics/chatbot
+**Role: PUBLIC (no authentication required)**  
+Dapatkan metrics dan alert untuk chatbot dalam jendela waktu tertentu.
+
+**Query Parameters**
+- `window`: Jendela waktu dalam menit (default: 60, min: 1, max: 1440)
+- `include_alerts`: Include data alert (default: true)
+
+**Request**
+```
+GET /api/metrics/chatbot?window=60&include_alerts=true
+```
+
+**Response 200**
+```json
+{
+  "success": true,
+  "data": {
+    "metrics": {
+      "window_minutes": 60,
+      "timestamp": "2026-06-21T10:30:00Z",
+      "total_requests": 150,
+      "success_count": 142,
+      "error_count": 5,
+      "rate_limited_count": 3,
+      "retry_count": 8,
+      "success_rate": 0.9467,
+      "error_rate": 0.0333,
+      "rate_limit_rate": 0.0200,
+      "response_time": {
+        "avg_ms": 1250.5,
+        "min_ms": 150,
+        "max_ms": 8900
+      },
+      "tokens": {
+        "total": 45000,
+        "average": 300.0
+      },
+      "cost": {
+        "total_usd": 0.0675,
+        "average_usd": 0.00045,
+        "currency": "USD"
+      },
+      "error_distribution": {
+        "GEMINI_API_ERROR": 3,
+        "TIMEOUT": 2
+      }
+    },
+    "alerts": [
+      {
+        "type": "HIGH_RESPONSE_TIME",
+        "severity": "warning",
+        "message": "Response time rata-rata 1250.5ms (threshold: 5000ms)",
+        "value": 1250.5,
+        "threshold": 5000
+      }
+    ],
+    "alert_count": 1
+  }
+}
+```
+
+### GET /api/metrics/chatbot/alerts
+**Role: PUBLIC (no authentication required)**  
+Dapatkan daftar alert untuk chatbot berdasarkan konfigurasi threshold.
+
+**Query Parameters**
+- `window`: Jendela waktu dalam menit (default: 60)
+
+**Request**
+```
+GET /api/metrics/chatbot/alerts?window=60
+```
+
+**Response 200**
+```json
+{
+  "success": true,
+  "window_minutes": 60,
+  "alert_count": 2,
+  "timestamp": "2026-06-21T10:30:00Z",
+  "alerts": [
+    {
+      "type": "HIGH_ERROR_RATE",
+      "severity": "warning",
+      "message": "Error rate adalah 0.0333 (threshold: 0.05)",
+      "value": 0.0333,
+      "threshold": 0.05
+    },
+    {
+      "type": "CRITICAL_ERROR_DETECTED",
+      "severity": "critical",
+      "message": "Error GEMINI_API_ERROR terjadi 3 kali dalam 60 menit terakhir",
+      "error_code": "GEMINI_API_ERROR",
+      "count": 3
+    }
+  ]
+}
+```
+
+**Alert Types**
+| Alert Type | Severity | Kondisi Trigger |
+|------------|----------|-----------------|
+| `HIGH_ERROR_RATE` | warning | Error rate > 5% dalam window |
+| `HIGH_RESPONSE_TIME` | warning | Rata-rata response time > 5000ms |
+| `HIGH_RATE_LIMIT` | info | Rate-limited requests > 10% dalam window |
+| `CRITICAL_ERROR_DETECTED` | critical | Error kritis (GEMINI_API_ERROR, TIMEOUT, dll) terdeteksi |
+
+### GET /api/metrics/chatbot/health
+**Role: PUBLIC (no authentication required)**  
+Dapatkan health status chatbot system berdasarkan metrics dan alerts.
+
+**Query Parameters**
+- `window`: Jendela waktu dalam menit (default: 60)
+
+**Request**
+```
+GET /api/metrics/chatbot/health?window=60
+```
+
+**Response 200 (Healthy)**
+```json
+{
+  "status": "healthy",
+  "healthy": true,
+  "success_rate": 0.9467,
+  "error_rate": 0.0333,
+  "total_requests": 150,
+  "error_count": 5,
+  "critical_alerts": 0,
+  "warning_alerts": 1,
+  "timestamp": "2026-06-21T10:30:00Z"
+}
+```
+
+**Response 503 (Critical)**
+```json
+{
+  "status": "critical",
+  "healthy": false,
+  "success_rate": 0.2000,
+  "error_rate": 0.8000,
+  "total_requests": 50,
+  "error_count": 40,
+  "critical_alerts": 5,
+  "warning_alerts": 3,
+  "timestamp": "2026-06-21T10:30:00Z"
+}
+```
+
+**Health Status**
+- `healthy` (HTTP 200): Tidak ada critical alerts
+- `warning` (HTTP 200): Ada warning alerts tapi tidak ada critical
+- `critical` (HTTP 503): Ada critical alerts
+
+---
+
 # 6) Aturan Bisnis Penting (Enforced Rules)
 1) Provider tidak boleh `start` order jika DP belum `PAID`.
 2) Pelunasan hanya dibuat setelah order `COMPLETED` dan `final_price` diinput provider.

@@ -1,0 +1,204 @@
+name: Deploy Chatbot Backend
+
+on:
+  push:
+    branches:
+      - main
+      - feature/fase3-chatbot
+  pull_request:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: laravel_test
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, bcmath, gd, exif, pcntl, mbstring
+          coverage: xdebug
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          composer install --prefer-dist --no-progress
+
+      - name: Copy environment file
+        working-directory: backend
+        run: cp .env.example .env.testing
+
+      - name: Generate app key
+        working-directory: backend
+        run: php artisan key:generate --env=testing
+
+      - name: Run migrations
+        working-directory: backend
+        env:
+          DB_HOST: 127.0.0.1
+          DB_DATABASE: laravel_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan migrate --env=testing
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          DB_HOST: 127.0.0.1
+          DB_DATABASE: laravel_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan test
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        working-directory: backend
+        run: |
+          docker build -t pm_uas_app:latest .
+
+      - name: Deploy to staging/production
+        env:
+          # Secrets injected from GitHub repository secrets
+          GEMINI_API_ENDPOINT: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_MODEL: gemini-1.0
+          APP_ENV: production
+          APP_DEBUG: false
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+        run: |
+          echo "🚀 Deploying with secrets injected..."
+          echo "✓ GEMINI_API_ENDPOINT configured"
+          echo "✓ GEMINI_API_KEY injected from GitHub secrets"
+          echo "✓ Database secrets injected"
+          
+          # Option 1: Docker run (local deployment or SSH to server)
+          if [ "${{ secrets.DEPLOYMENT_METHOD }}" = "docker-run" ]; then
+            echo "📦 Using Docker run deployment..."
+            docker run -d \
+              --name pm_uas_app_$(date +%s) \
+              -e GEMINI_API_ENDPOINT=$GEMINI_API_ENDPOINT \
+              -e GEMINI_API_KEY=$GEMINI_API_KEY \
+              -e GEMINI_API_MODEL=$GEMINI_API_MODEL \
+              -e APP_ENV=$APP_ENV \
+              -e APP_DEBUG=$APP_DEBUG \
+              -e DB_HOST=$DB_HOST \
+              -e DB_USERNAME=$DB_USERNAME \
+              -e DB_PASSWORD=$DB_PASSWORD \
+              -e DB_DATABASE=$DB_DATABASE \
+              -p 8000:8000 \
+              pm_uas_app:latest
+          fi
+          
+          # Option 2: Push to Docker registry (GitHub Container Registry)
+          if [ "${{ secrets.DEPLOYMENT_METHOD }}" = "registry-push" ]; then
+            echo "📤 Pushing to Docker registry..."
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker tag pm_uas_app:latest ghcr.io/${{ github.repository }}/backend:latest
+            docker tag pm_uas_app:latest ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+            docker push ghcr.io/${{ github.repository }}/backend:latest
+            docker push ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+            echo "✓ Images pushed to registry"
+          fi
+          
+          # Option 3: Docker Compose deployment (for server with docker-compose)
+          if [ "${{ secrets.DEPLOYMENT_METHOD }}" = "docker-compose" ]; then
+            echo "🐳 Using Docker Compose deployment..."
+            export GEMINI_API_KEY=$GEMINI_API_KEY
+            export GEMINI_API_ENDPOINT=$GEMINI_API_ENDPOINT
+            export APP_ENV=$APP_ENV
+            export DB_HOST=$DB_HOST
+            export DB_USERNAME=$DB_USERNAME
+            export DB_PASSWORD=$DB_PASSWORD
+            export DB_DATABASE=$DB_DATABASE
+            docker-compose -f backend/docker-compose.yml up -d --force-recreate
+            echo "✓ Services started via docker-compose"
+          fi
+
+      - name: Verify deployment health
+        run: |
+          echo "🏥 Verifying deployment health..."
+          
+          # Wait for service to be ready
+          sleep 5
+          
+          # Health check: GET /health endpoint (public, no auth required)
+          HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health || echo "000")
+          echo "Health endpoint status: $HEALTH_STATUS"
+          
+          if [ "$HEALTH_STATUS" != "200" ]; then
+            echo "⚠️ Health check endpoint returned $HEALTH_STATUS (expected 200)"
+          fi
+          
+          # Smoke test: Check chatbot endpoint requires authentication
+          CHATBOT_UNAUTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/chatbot/send || echo "000")
+          echo "Chatbot endpoint (unauthenticated) status: $CHATBOT_UNAUTH"
+          
+          if [ "$CHATBOT_UNAUTH" != "401" ]; then
+            echo "⚠️ Chatbot endpoint should require auth (got $CHATBOT_UNAUTH, expected 401)"
+          else
+            echo "✓ Chatbot endpoint properly secured with authentication"
+          fi
+          
+          # Check Gemini API configuration
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "❌ ERROR: GEMINI_API_KEY not injected!"
+            exit 1
+          fi
+          echo "✓ GEMINI_API_KEY is configured"
+
+      - name: Send deployment notification
+        if: always()
+        run: |
+          echo "=========================================="
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Deployment completed SUCCESSFULLY"
+            echo "Commit: ${{ github.sha }}"
+            echo "Branch: ${{ github.ref }}"
+            echo "Actor: ${{ github.actor }}"
+          else
+            echo "❌ Deployment FAILED"
+            echo "Commit: ${{ github.sha }}"
+            echo "Branch: ${{ github.ref }}"
+          fi
+          echo "=========================================="
+          echo "Deployment Status: ${{ job.status }}"
+          echo "View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

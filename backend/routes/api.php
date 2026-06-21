@@ -10,9 +10,43 @@ use App\Http\Controllers\Api\N8nIntegrationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ChatbotController;
+use App\Http\Controllers\Api\ChatbotMetricsController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\TreasurerController;
+
+// Health check endpoints (no authentication required)
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toIso8601String(),
+        'app' => config('app.name'),
+        'version' => '1.0.0',
+        'environment' => config('app.env'),
+    ]);
+});
+
+Route::get('/health/detailed', function () {
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        $db_status = 'ok';
+    } catch (\Exception $e) {
+        $db_status = 'error: ' . $e->getMessage();
+    }
+    
+    try {
+        $gemini_configured = !empty(config('services.gemini.key'));
+    } catch (\Exception $e) {
+        $gemini_configured = false;
+    }
+    
+    return response()->json([
+        'status' => 'ok',
+        'database' => $db_status,
+        'gemini_configured' => $gemini_configured,
+        'timestamp' => now()->toIso8601String(),
+    ]);
+});
 
 // Public routes (authentication)
 Route::prefix('auth')->group(function () {
@@ -72,6 +106,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback'])->middleware('throttle:30,1');
 Route::post('/integrations/n8n/events', [N8nIntegrationController::class, 'dispatchEvent'])->middleware('throttle:30,1');
+
+// Metrics endpoints (public access for monitoring tools)
+Route::prefix('metrics')->group(function () {
+    Route::get('/chatbot', [ChatbotMetricsController::class, 'metrics'])->middleware('throttle:30,1');
+    Route::get('/chatbot/alerts', [ChatbotMetricsController::class, 'alerts'])->middleware('throttle:30,1');
+    Route::get('/chatbot/health', [ChatbotMetricsController::class, 'health'])->middleware('throttle:30,1');
+});
+
 Route::get(config('monitoring.metrics_path', '/metrics'), [MetricsController::class, 'show']);
 Route::get('/user', function (Request $request) {
     return $request->user();

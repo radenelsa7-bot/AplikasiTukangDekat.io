@@ -8,11 +8,12 @@ RUN apk update && apk add --no-cache \
     libpng-dev \
     oniguruma-dev \
     libxml2-dev \
+    sqlite-dev \
     zip \
     unzip
 
 # Install PHP extensions yang dibutuhkan Laravel
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_sqlite
 
 # 3. Ambil Composer terbaru resmi dari Docker Hub
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

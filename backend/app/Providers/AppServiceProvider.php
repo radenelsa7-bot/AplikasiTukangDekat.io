@@ -41,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
             // Trust proxies for HTTPS headers from load balancers
             \Illuminate\Support\Facades\Request::setTrustedProxies(
                 ['*'],
-                \Illuminate\Http\Request::HEADER_X_FORWARDED_ALL
+                1 | 2 | 4 | 8 | 16
             );
         }
         // Register route middleware aliases for role enforcement
