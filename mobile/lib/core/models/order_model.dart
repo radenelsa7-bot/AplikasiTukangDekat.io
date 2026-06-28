@@ -31,7 +31,8 @@ class OrderData {
       address: json['address'] ?? '',
       notes: json['notes'],
       scheduleAt: json['schedule_at'] ?? '',
-      payments: (json['payments'] as List?)
+      payments:
+          (json['payments'] as List?)
               ?.map((item) => PaymentData.fromJson(item))
               .toList() ??
           [],
@@ -78,7 +79,8 @@ class OrdersResponse {
 
   factory OrdersResponse.fromJson(Map<String, dynamic> json) {
     return OrdersResponse(
-      data: (json['data'] as List?)
+      data:
+          (json['data'] as List?)
               ?.map((item) => OrderData.fromJson(item))
               .toList() ??
           [],
@@ -111,7 +113,7 @@ class CreateOrderRequest {
       'schedule_at': scheduleAt,
       'address': address,
     };
-    
+
     if (categoryId != null) {
       data['category_id'] = categoryId!;
     }
@@ -124,7 +126,7 @@ class CreateOrderRequest {
     if (estimatedPrice != null) {
       data['estimated_price'] = estimatedPrice!;
     }
-    
+
     return data;
   }
 }
