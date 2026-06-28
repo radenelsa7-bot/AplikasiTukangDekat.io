@@ -1,4 +1,4 @@
-<section class="container py-5">
+<section class="container py-5 hero">
   <div class="row align-items-center">
     <div class="col-lg-6" data-anim="fade-up">
       <span class="badge bg-success-subtle text-success mb-3">Jasa Profesional Terpercaya</span>
@@ -10,18 +10,12 @@
       </div>
     </div>
     <div class="col-lg-6 text-center position-relative" data-anim="float">
-      <div class="hero-illustration mx-auto" aria-hidden="true">
-        <!-- Inline simple illustration: toolbox + worker icons -->
-        <svg width="420" height="320" viewBox="0 0 420 320" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="0" y="0" width="420" height="320" rx="16" fill="#F8FAFC" />
-          <g transform="translate(20,20)">
-            <circle cx="60" cy="60" r="48" fill="#0E7490" opacity="0.12" />
-            <rect x="140" y="40" width="140" height="160" rx="12" fill="#F97316" opacity="0.08" />
-            <g>
-              <rect x="30" y="140" width="80" height="10" rx="5" fill="#1E293B" opacity="0.06" />
-            </g>
-          </g>
-        </svg>
+      <div class="hero-figure mx-auto" aria-hidden="true">
+        <img src="/assets/hero-illustration.svg" alt="Ilustrasi tukang" class="img-fluid" style="max-width:520px;">
+      </div>
+      <div class="hero-shape" aria-hidden="true">
+        <!-- decorative blob -->
+        <svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#0E7490"/><stop offset="1" stop-color="#F97316"/></linearGradient></defs><path d="M421 12c85 24 153 86 214 151 61 66 104 136 121 212 17 76 7 154-25 226-32 72-90 138-166 177-76 39-170 51-253 26-83-25-155-80-201-149C35 519 16 444 24 367 32 290 73 214 122 148c49-66 109-120 196-163 87-43 175-49 279-32z" fill="url(#hg)" opacity="0.08"/></svg>
       </div>
     </div>
   </div>
