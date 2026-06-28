@@ -3,15 +3,13 @@ class AuthResponse {
   final String? token;
   final UserData? user;
 
-  AuthResponse({
-    required this.message,
-    this.token,
-    this.user,
-  });
+  AuthResponse({required this.message, this.token, this.user});
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
     final data = json['data'];
-    final flattenedData = data is Map<String, dynamic> ? data : <String, dynamic>{};
+    final flattenedData = data is Map<String, dynamic>
+        ? data
+        : <String, dynamic>{};
 
     return AuthResponse(
       message: json['message'] ?? flattenedData['message'] ?? '',
@@ -19,8 +17,8 @@ class AuthResponse {
       user: (json['user'] is Map<String, dynamic>)
           ? UserData.fromJson(json['user'] as Map<String, dynamic>)
           : (flattenedData['user'] is Map<String, dynamic>)
-              ? UserData.fromJson(flattenedData['user'] as Map<String, dynamic>)
-              : null,
+          ? UserData.fromJson(flattenedData['user'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

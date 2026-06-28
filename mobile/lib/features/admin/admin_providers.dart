@@ -3,16 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/provider_model.dart';
 import '../../core/services/api_service.dart';
 
-final pendingProvidersProvider = FutureProvider<List<ProviderProfile>>((ref) async {
+final pendingProvidersProvider = FutureProvider<List<ProviderProfile>>((
+  ref,
+) async {
   final apiService = ref.read(apiServiceProvider);
   final response = await apiService.getPendingProviders();
   return response.data;
 });
 
 final adminVerificationControllerProvider =
-    StateNotifierProvider<AdminVerificationController, AdminVerificationState>((ref) {
-  return AdminVerificationController(ref);
-});
+    StateNotifierProvider<AdminVerificationController, AdminVerificationState>((
+      ref,
+    ) {
+      return AdminVerificationController(ref);
+    });
 
 class AdminVerificationState {
   final bool isLoading;
@@ -38,8 +42,10 @@ class AdminVerificationState {
   }
 }
 
-class AdminVerificationController extends StateNotifier<AdminVerificationState> {
-  AdminVerificationController(this._ref) : super(const AdminVerificationState());
+class AdminVerificationController
+    extends StateNotifier<AdminVerificationState> {
+  AdminVerificationController(this._ref)
+    : super(const AdminVerificationState());
 
   final Ref _ref;
 

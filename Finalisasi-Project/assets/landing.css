@@ -1,0 +1,48 @@
+:root{
+  --primary:#0E7490;
+  --secondary:#F97316;
+  --bg:#FFFFFF;
+  --light:#F8FAFC;
+  --dark:#1E293B;
+  --success:#10B981;
+  --font-sans: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+*{box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--dark);}
+.brand-mark{width:48px;height:48px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:10px}
+.navbar .nav-link{color:var(--dark);}
+.navbar .btn-primary{background:var(--primary);border:0}
+.hero-illustration{max-width:520px}
+.badge.bg-success-subtle{background:rgba(16,185,129,0.08);color:var(--success);border-radius:999px;padding:.5rem .75rem}
+
+.partner{color:var(--dark);opacity:.8;padding:.5rem 1rem;background:var(--light);border-radius:8px}
+
+.service-card{transition:transform .28s ease, box-shadow .28s ease}
+.service-card:hover{transform:translateY(-8px);box-shadow:0 12px 30px rgba(30,41,59,0.08)}
+.icon-placeholder{width:64px;height:64px;margin:0 auto;border-radius:12px;background:linear-gradient(180deg,var(--primary),rgba(14,116,144,.7));box-shadow:0 8px 20px rgba(14,116,144,0.08)}
+
+.portfolio-card img{transition:transform .35s ease}
+.portfolio-card:hover img{transform:scale(1.06)}
+
+.step{background:#fff;border:1px solid rgba(30,41,59,0.04)}
+
+/* counters */
+.counter{font-variant-numeric:tabular-nums}
+
+/* animations */
+[data-anim="fade-up"]{opacity:0;transform:translateY(14px);transition:all .6s ease}
+[data-anim="fade-left"]{opacity:0;transform:translateX(20px);transition:all .6s ease}
+[data-anim="fade-right"]{opacity:0;transform:translateX(-20px);transition:all .6s ease}
+[data-anim="zoom-in"]{opacity:0;transform:scale(.98);transition:all .45s cubic-bezier(.2,.9,.2,1)}
+[data-anim="float"]{transition:transform 3s ease-in-out}
+
+.in-view{opacity:1;transform:none}
+
+/* responsive tweaks */
+@media (max-width:768px){
+  .hero-illustration{max-width:340px}
+  .navbar .navbar-collapse{background:#fff;padding:1rem;border-radius:8px}
+}
+
+/* accessibility focus */
+a:focus{outline:3px solid rgba(14,116,144,0.14);outline-offset:3px}

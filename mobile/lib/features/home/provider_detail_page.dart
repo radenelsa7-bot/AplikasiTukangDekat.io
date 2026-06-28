@@ -263,10 +263,7 @@ class ProviderDetailPage extends ConsumerWidget {
                     padding: EdgeInsets.symmetric(vertical: 16),
                     child: Text(
                       'Akses hanya untuk admin: silakan gunakan menu Admin untuk manajemen dan verifikasi.',
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.black54, fontSize: 14),
                     ),
                   ),
               ],

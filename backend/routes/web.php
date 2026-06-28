@@ -8,6 +8,10 @@ Route::get('/', function () {
     return view('landing');
 });
 
+// Booking endpoint
+use App\Http\Controllers\BookingController;
+Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
+
 // Auth routes (kept for compatibility with views that reference route('login'))
 Route::get('/login', function () {
     return view('auth.login');
