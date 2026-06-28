@@ -31,7 +31,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
       });
     } catch (e) {
       setState(() {
-        _messages.add({'from': 'bot', 'text': 'Terjadi kesalahan saat menghubungi AI.'});
+        _messages.add({
+          'from': 'bot',
+          'text': 'Terjadi kesalahan saat menghubungi AI.',
+        });
       });
     } finally {
       setState(() {
@@ -54,17 +57,23 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                 final m = _messages[index];
                 final isUser = m['from'] == 'user';
                 return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment: isUser
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isUser ? Theme.of(context).colorScheme.primary : Colors.grey[200],
+                      color: isUser
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.grey[200],
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       m['text'] ?? '',
-                      style: TextStyle(color: isUser ? Colors.white : Colors.black87),
+                      style: TextStyle(
+                        color: isUser ? Colors.white : Colors.black87,
+                      ),
                     ),
                   ),
                 );
@@ -80,7 +89,9 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                   Expanded(
                     child: TextField(
                       controller: _ctrl,
-                      decoration: const InputDecoration(hintText: 'Tulis pesan...'),
+                      decoration: const InputDecoration(
+                        hintText: 'Tulis pesan...',
+                      ),
                     ),
                   ),
                   IconButton(

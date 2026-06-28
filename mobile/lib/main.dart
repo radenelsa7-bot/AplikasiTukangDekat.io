@@ -10,10 +10,10 @@ import 'core/http/dio_provider.dart' as dio_provider;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Load environment variables from .env file
   await dotenv.load();
-  
+
   // Enable persistent cookies (creates storage dir). If you prefer in-memory,
   // comment out the next line.
   await dio_provider.enablePersistCookies();

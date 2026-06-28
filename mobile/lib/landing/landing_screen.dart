@@ -3,9 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../features/auth/login_page.dart';
 
-// ─── BRAND TOKENS ──────────────────────────────────────────────────────────
-// Semua warna diturunkan dari 4 warna brand: navy, orange, cream, putih.
-
 const Color _navy = Color(0xFF0D2B55);
 const Color _navyDeep = Color(0xFF081B38);
 const Color _navyTint = Color(0xFFE7EBF3);
@@ -89,37 +86,21 @@ class _LandingScreenState extends State<LandingScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _cream,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _PremiumHero(
-                visible: _heroVisible,
-                floatingController: _floatingController,
-                onPrimaryAction: _navigateToLogin,
-              ),
-              AnimatedSection(
-                visible: _showServices,
-                child: _SearchAndStatsSection(onAction: _navigateToLogin),
-              ),
-              AnimatedSection(
-                visible: _showWhy,
-                child: _ServicesSection(onAction: _navigateToLogin),
-              ),
-              AnimatedSection(visible: _showHow, child: _WhyChooseSection()),
-              AnimatedSection(
-                visible: _showTestimonials,
-                child: _HowItWorksSection(),
-              ),
-              AnimatedSection(visible: _showCta, child: _TestimonialsSection()),
-              _FinalCtaSection(onMulaiSekarang: _navigateToLogin),
-              const _FooterSection(),
-              const SizedBox(height: 24),
-            ],
-          ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _HeroSection(),
+            _ServicesSection(),
+            _HowItWorksSection(),
+            _CtaSection(
+              onMulaiSekarang: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                );
+              },
+            ),
+            _TrustBarSection(),
+          ],
         ),
       ),
     );
@@ -131,6 +112,7 @@ class AnimatedSection extends StatelessWidget {
   final bool visible;
   const AnimatedSection({required this.child, required this.visible});
 
+class _HeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedOpacity(
@@ -162,218 +144,78 @@ class _PremiumHero extends StatelessWidget {
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width > 900;
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_navy, _navyDeep],
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: isDesktop ? 60 : 24,
-          vertical: isDesktop ? 48 : 28,
-        ),
-        child: Column(
-          children: [
-            _HeaderBar(),
-            const SizedBox(height: 34),
-            isDesktop
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _HeroTextBlock(
-                          onPrimaryAction: onPrimaryAction,
-                          visible: visible,
-                        ),
-                      ),
-                      const SizedBox(width: 36),
-                      Expanded(
-                        child: _HeroVisual(
-                          floatingController: floatingController,
-                        ),
-                      ),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      _HeroTextBlock(
-                        onPrimaryAction: onPrimaryAction,
-                        visible: visible,
-                      ),
-                      const SizedBox(height: 30),
-                      _HeroVisual(floatingController: floatingController),
-                    ],
-                  ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HeaderBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: _white.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.handyman, color: _orange, size: 18),
-              SizedBox(width: 10),
-              Text(
-                'TukangDekat',
-                style: TextStyle(
-                  color: _white,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const Spacer(),
-        if (MediaQuery.of(context).size.width > 980)
-          Row(
-            children: [
-              _HeaderNavItem(label: 'Layanan'),
-              _HeaderNavItem(label: 'Keunggulan'),
-              _HeaderNavItem(label: 'Cara Kerja'),
-              _HeaderNavItem(label: 'Testimoni'),
-              const SizedBox(width: 18),
-              _SecondaryActionButton(label: 'Masuk', onTap: () {}),
-            ],
-          )
-        else
-          _SecondaryActionButton(label: 'Masuk', onTap: () {}),
-      ],
-    );
-  }
-}
-
-class _HeaderNavItem extends StatelessWidget {
-  final String label;
-  const _HeaderNavItem({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: _white,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-}
-
-class _HeroTextBlock extends StatelessWidget {
-  final bool visible;
-  final VoidCallback onPrimaryAction;
-  const _HeroTextBlock({required this.visible, required this.onPrimaryAction});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 700),
-      opacity: visible ? 1 : 0,
-      child: AnimatedSlide(
-        duration: const Duration(milliseconds: 700),
-        offset: visible ? Offset.zero : const Offset(0, 0.1),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Tukang Terpercaya, Solusi Dekat',
+      width: double.infinity,
+      color: _navy,
+      padding: const EdgeInsets.fromLTRB(24, 64, 24, 40),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              color: _orange.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _orange.withValues(alpha: 0.35)),
+            ),
+            child: const Text(
+              '⚡  Platform Jasa Lokal Terpercaya',
               style: TextStyle(
                 color: _orange,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
               ),
             ),
-            const SizedBox(height: 18),
-            const Text(
-              'Marketplace Jasa Profesional untuk Rumah & Teknisi Terdekat',
+          ),
+          const SizedBox(height: 24),
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              color: _orange,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                'images/logo.jpg',
+                width: 88,
+                height: 88,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          RichText(
+            textAlign: TextAlign.center,
+            text: const TextSpan(
               style: TextStyle(
                 color: _white,
-                fontSize: 38,
+                fontSize: 28,
                 fontWeight: FontWeight.w800,
-                height: 1.05,
+                height: 1.25,
               ),
-            ),
-            const SizedBox(height: 18),
-            const Text(
-              'Pesan layanan listrik, AC, plumbing, renovasi, dan teknisi rumah tangga dengan proses yang cepat, aman, dan transparan.',
-              style: TextStyle(color: _textOnDark, fontSize: 16, height: 1.7),
-            ),
-            const SizedBox(height: 28),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _PrimaryActionButton(
-                  label: 'Mulai Pesan',
-                  onTap: onPrimaryAction,
+                TextSpan(text: 'Solusi Rumah Anda\nAda di '),
+                TextSpan(
+                  text: 'TukangDekat',
+                  style: TextStyle(color: _orange),
                 ),
-                const SizedBox(width: 14),
-                _SecondaryActionButton(label: 'Lihat Layanan', onTap: () {}),
               ],
             ),
-            const SizedBox(height: 28),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              decoration: BoxDecoration(
-                color: _white.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: const [
-                  Icon(Icons.search, color: _white, size: 20),
-                  SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      'Cari layanan: listrik, AC, plumbing, renovasi...',
-                      style: TextStyle(color: _white, fontSize: 14),
-                    ),
-                  ),
-                  Text(
-                    'Teknisi terdekat',
-                    style: TextStyle(
-                      color: _orange,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Hubungkan kebutuhan perbaikan rumah Anda dengan teknisi profesional di Kecamatan Bojongloa Kaler secara cepat dan transparan.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 13.5,
+              height: 1.6,
             ),
-            const SizedBox(height: 28),
-            Wrap(
-              spacing: 16,
-              runSpacing: 12,
-              children: const [
-                _HeroStatChip(label: '500+ Mitra Teknisi', icon: Icons.people),
-                _HeroStatChip(
-                  label: '2.4rb Order Selesai',
-                  icon: Icons.check_circle,
-                ),
-                _HeroStatChip(label: 'Rating 4.9/5', icon: Icons.star),
-                _HeroStatChip(label: 'Respon < 10 Menit', icon: Icons.timer),
-              ],
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 28),
+          const _StatsRow(),
+        ],
       ),
     );
   }
@@ -830,122 +672,66 @@ class _InfoPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconBg = data.isOrange
+        ? const Color(0xFFFFF3EC)
+        : const Color(0xFFEEF3FA);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: _navyDeep.withOpacity(0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFFE8E0D5)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: _navy, size: 18),
-          const SizedBox(width: 10),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(data.icon, style: const TextStyle(fontSize: 20)),
+            ),
+          ),
+          const SizedBox(height: 10),
           Text(
-            label,
-            style: const TextStyle(color: _navy, fontWeight: FontWeight.w600),
+            data.name,
+            style: const TextStyle(
+              color: _navy,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            data.desc,
+            style: const TextStyle(
+              color: Color(0xFF9CA3AF),
+              fontSize: 11,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3EC),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              data.tag,
+              style: const TextStyle(
+                color: _orange,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ServicesSection extends StatelessWidget {
-  final VoidCallback onAction;
-  const _ServicesSection({required this.onAction});
-
-  static const services = [
-    _ServiceData(
-      icon: Icons.bolt,
-      title: 'Tukang Listrik',
-      subtitle: 'Perbaikan, instalasi, dan pengecekan profesional',
-    ),
-    _ServiceData(
-      icon: Icons.ac_unit,
-      title: 'Service AC',
-      subtitle: 'Cuci, isi freon, dan perbaikan cepat',
-    ),
-    _ServiceData(
-      icon: Icons.plumbing,
-      title: 'Plumbing',
-      subtitle: 'Saluran air, kebocoran, dan wastafel',
-    ),
-    _ServiceData(
-      icon: Icons.home_repair_service,
-      title: 'Renovasi Rumah',
-      subtitle: 'Pengecatan, perbaikan, dan finishing',
-    ),
-    _ServiceData(
-      icon: Icons.tv,
-      title: 'Service Elektronik',
-      subtitle: 'TV, kulkas, mesin cuci, dan perangkat rumah',
-    ),
-    _ServiceData(
-      icon: Icons.handyman,
-      title: 'Teknisi Rumah Tangga',
-      subtitle: 'Jasa rumah tangga lengkap dalam satu platform',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final columns = screenWidth > 1000
-        ? 3
-        : screenWidth > 700
-        ? 2
-        : 1;
-    return Container(
-      color: _cream,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: screenWidth > 900 ? 60 : 24,
-          vertical: 36,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Kategori Layanan',
-              style: TextStyle(
-                color: _navy,
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Akses semua layanan tukang dan teknisi terpercaya di sekitar Anda.',
-              style: TextStyle(color: _textMuted, fontSize: 15, height: 1.7),
-            ),
-            const SizedBox(height: 24),
-            GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: services.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: columns,
-                crossAxisSpacing: 20,
-                mainAxisSpacing: 20,
-                childAspectRatio: 1.2,
-              ),
-              itemBuilder: (context, index) {
-                return _ServiceCategoryCard(
-                  data: services[index],
-                  onTap: onAction,
-                );
-              },
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1464,127 +1250,70 @@ class _FinalCtaSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 20),
-      padding: EdgeInsets.symmetric(horizontal: screenWidth > 900 ? 60 : 24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 30),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          gradient: const LinearGradient(colors: [_navy, _navyDeep]),
-          boxShadow: [
-            BoxShadow(
-              color: _navyDeep.withOpacity(0.2),
-              blurRadius: 32,
-              offset: const Offset(0, 18),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Siap Mencari Teknisi Terbaik di Sekitar Anda?',
-              style: TextStyle(
-                color: _white,
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'Mulai sekarang dan nikmati layanan profesional dengan pengalaman pemesanan yang mulus.',
-              style: TextStyle(color: _textOnDark, fontSize: 16, height: 1.75),
-            ),
-            const SizedBox(height: 28),
-            Row(
-              children: [
-                _PrimaryActionButton(
-                  label: 'Mulai Sekarang',
-                  onTap: onMulaiSekarang,
-                ),
-                const SizedBox(width: 16),
-                _SecondaryActionButton(label: 'Jelajahi Layanan', onTap: () {}),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FooterSection extends StatelessWidget {
-  const _FooterSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 900;
-    return Container(
-      color: _navyDeep,
-      padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 60 : 24,
-        vertical: 32,
+      margin: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: _navy,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          isDesktop
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Expanded(child: _FooterBrand()),
-                    SizedBox(width: 40),
-                    Expanded(child: _FooterLinks()),
-                    SizedBox(width: 40),
-                    Expanded(child: _FooterSupport()),
-                  ],
-                )
-              : const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _FooterBrand(),
-                    SizedBox(height: 24),
-                    _FooterLinks(),
-                    SizedBox(height: 24),
-                    _FooterSupport(),
-                  ],
-                ),
-          const SizedBox(height: 30),
-          const Divider(color: Colors.white24),
-          const SizedBox(height: 18),
           const Text(
-            '© 2026 TukangDekat. Semua hak dilindungi.',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
+            'Siap Pesan Jasa Sekarang?',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _white,
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Daftar gratis dan temukan teknisi terbaik di sekitar Anda dalam hitungan menit',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white60, fontSize: 13, height: 1.5),
+          ),
+          const SizedBox(height: 22),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onMulaiSekarang,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _orange,
+                foregroundColor: _white,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Mulai Sekarang',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: onMulaiSekarang,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _white,
+                side: const BorderSide(color: Colors.white24),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Daftar sebagai Mitra Teknisi',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _FooterBrand extends StatelessWidget {
-  const _FooterBrand();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text(
-          'TukangDekat',
-          style: TextStyle(
-            color: _white,
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        SizedBox(height: 12),
-        Text(
-          'Marketplace jasa tukang dan teknisi yang membantu Anda menemukan layanan profesional dengan cepat dan aman.',
-          style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.75),
-        ),
-      ],
     );
   }
 }

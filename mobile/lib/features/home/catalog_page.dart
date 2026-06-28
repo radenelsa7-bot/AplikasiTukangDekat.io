@@ -381,7 +381,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -494,7 +496,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     color: isSelected ? color : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? color : Colors.grey.withValues(alpha: 0.15),
+                      color: isSelected
+                          ? color
+                          : Colors.grey.withValues(alpha: 0.15),
                       width: isSelected ? 2 : 1,
                     ),
                     boxShadow: [

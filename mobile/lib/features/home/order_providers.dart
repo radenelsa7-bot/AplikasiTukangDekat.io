@@ -69,17 +69,26 @@ class CreateOrderController extends StateNotifier<CreateOrderState> {
   final Ref _ref;
 
   Future<bool> createOrder(CreateOrderRequest request) async {
-    state = state.copyWith(isLoading: true, errorMessage: null, fieldErrors: {});
+    state = state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      fieldErrors: {},
+    );
     try {
       final apiService = _ref.read(apiServiceProvider);
       final order = await apiService.createOrder(request);
-      state = state.copyWith(isLoading: false, createdOrder: order, fieldErrors: {});
+      state = state.copyWith(
+        isLoading: false,
+        createdOrder: order,
+        fieldErrors: {},
+      );
       // Refresh myOrdersProvider to show newly created order
       _ref.refresh(myOrdersProvider); // ignore: unused_result
       return true;
     } on DioException catch (e) {
       final responseData = e.response?.data;
-      if (e.response?.statusCode == 422 && responseData is Map<String, dynamic>) {
+      if (e.response?.statusCode == 422 &&
+          responseData is Map<String, dynamic>) {
         final fieldErrors = <String, String?>{};
         final errors = responseData['errors'];
         if (errors is Map<String, dynamic>) {

@@ -5,7 +5,7 @@ class AuthStorageService {
   final FlutterSecureStorage _storage;
 
   AuthStorageService({required FlutterSecureStorage storage})
-      : _storage = storage;
+    : _storage = storage;
 
   static const String _tokenKey = 'auth_token';
   static const String _userIdKey = 'user_id';
@@ -51,7 +51,10 @@ class AuthStorageService {
     }
 
     if (profilePhotoPath != null) {
-      await _storage.write(key: _userProfilePhotoPathKey, value: profilePhotoPath);
+      await _storage.write(
+        key: _userProfilePhotoPathKey,
+        value: profilePhotoPath,
+      );
     } else {
       await _storage.delete(key: _userProfilePhotoPathKey);
     }

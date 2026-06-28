@@ -30,4 +30,3 @@ class ApiConfig {
     return dotenv.env['APP_ENV'] ?? 'development';
   }
 }
-
