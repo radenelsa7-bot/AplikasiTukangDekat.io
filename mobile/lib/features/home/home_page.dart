@@ -66,8 +66,8 @@ class HomePage extends ConsumerWidget {
 
   Widget _buildAccountTab(BuildContext context, dynamic state) {
     final displayName = state.userFullName?.isNotEmpty == true
-      ? state.userFullName
-      : state.userEmail ?? 'N/A';
+        ? state.userFullName
+        : state.userEmail ?? 'N/A';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
