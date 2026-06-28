@@ -1,0 +1,39 @@
+// Landing page SCSS for Tukang Dekat
+$primary: #0E7490;
+$secondary: #F97316;
+$bg: #FFFFFF;
+$light: #F8FAFC;
+$dark: #1E293B;
+$success: #10B981;
+
+body { font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: $bg; color: $dark; }
+
+.brand-mark { width:48px; height:48px; background: linear-gradient(135deg, $primary, $secondary); border-radius:10px; }
+
+.badge--success { background: rgba($success, .08); color: $success; border-radius:999px; padding:.5rem .75rem; }
+
+.hero-illustration { max-width:520px; }
+
+.partner { color: $dark; opacity:.85; padding:.5rem 1rem; background: $light; border-radius:8px; }
+
+.service-card { transition: transform .28s ease, box-shadow .28s ease; }
+.service-card:hover { transform: translateY(-8px); box-shadow: 0 12px 30px rgba(30,41,59,0.08); }
+.icon-placeholder { width:64px; height:64px; margin:0 auto; border-radius:12px; background: linear-gradient(180deg, $primary, rgba(14,116,144,.7)); box-shadow:0 8px 20px rgba(14,116,144,0.08); }
+
+.portfolio-card img { transition: transform .35s ease; }
+.portfolio-card:hover img { transform: scale(1.06); }
+
+.step { background: #fff; border: 1px solid rgba(30,41,59,0.04); }
+
+.counter { font-variant-numeric: tabular-nums; }
+
+[data-anim='fade-up'] { opacity:0; transform: translateY(14px); transition: all .6s ease; }
+[data-anim='fade-left'] { opacity:0; transform: translateX(20px); transition: all .6s ease; }
+[data-anim='fade-right'] { opacity:0; transform: translateX(-20px); transition: all .6s ease; }
+[data-anim='zoom-in'] { opacity:0; transform: scale(.98); transition: all .45s cubic-bezier(.2,.9,.2,1); }
+[data-anim='float'] { transition: transform 3s ease-in-out; }
+.in-view { opacity:1; transform:none; }
+
+@media (max-width: 768px) {
+  .hero-illustration { max-width: 340px; }
+}
