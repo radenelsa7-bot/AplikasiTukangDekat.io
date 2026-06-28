@@ -72,14 +72,18 @@ class _HeroSection extends StatelessWidget {
                 color: _orange,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.asset(
-                  'images/logo.jpg',
-                  width: 88,
-                  height: 88,
-                  fit: BoxFit.cover,
-                  semanticLabel: 'Logo TukangDekat',
+              child: Center(
+                child: CircleAvatar(
+                  radius: 36,
+                  backgroundColor: Colors.white,
+                  child: Text(
+                    'TD',
+                    style: TextStyle(
+                      color: _orange,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 28,
+                    ),
+                  ),
                 ),
               ),
             ),
