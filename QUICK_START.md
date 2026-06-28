@@ -1,61 +1,62 @@
 <!-- markdownlint-disable -->
 
-# Panduan Cepat - TukangDekat (Ringkas)
+# QUICK_START.md — Cara Jalankan Proyek (TukangDekat)
 
-Panduan singkat ini membantu mahasiswa dan dosen menjalankan backend dan aplikasi mobile secara lokal untuk pengujian.
+Dokumen ringkas ini menjelaskan langkah paling aman untuk menjalankan **backend Laravel** dan **mobile Flutter** setelah `clone`.
 
-## 1) Jalankan Backend (Laravel)
+> Target: repo bisa dijalankan oleh tim/reviewer tanpa perlu tahu detail internal.
 
-Syarat: PHP 8.2+, Composer, MySQL
+---
+
+## 0) Persiapan
+
+- Pastikan MySQL berjalan
+- Pastikan PHP & Composer sudah terpasang
+- Pastikan Flutter SDK sudah terpasang
+- Pastikan `.env` dibuat dari `.env.example` (jangan commit `.env`)
+
+---
+
+## 1) Backend (Laravel API)
+
+### Jalankan dari scratch
 
 ```bash
-cd c:\laragon\www\Project-Aplikasi-Tukang-Dekat\backend
+cd backend
 cp .env.example .env
 composer install
 php artisan key:generate
-php artisan migrate --seed
-php artisan serve
+php artisan migrate
+php artisan serve --host=127.0.0.1 --port=8000
 ```
 
-Backend akan berjalan di `http://localhost:8000`
-
-## 2) Jalankan Mobile (Flutter)
-
-Syarat: Flutter SDK, Android Studio / emulator
+### Verifikasi cepat backend
 
 ```bash
-cd c:\laragon\www\Project-Aplikasi-Tukang-Dekat\mobile
+curl -s http://127.0.0.1:8000/api/catalog/categories | python -m json.tool
+```
+
+---
+
+## 2) Mobile (Flutter)
+
+### Jalankan
+
+```bash
+cd mobile
 flutter pub get
 flutter run -d chrome
 ```
 
-App Flutter akan terbuka di Chrome (atau perangkat/emulator yang dipilih).
+### Akun pengujian
 
-## 3) Akun Pengujian
+Gunakan akun test/seed yang disediakan pada dokumentasi project (lihat `docs`/file seed jika ada).
 
-Gunakan akun yang sudah disediakan pada data seed untuk pengujian cepat:
+---
 
-```
-Email: customer@test.com
-Password: password123
-```
+## 3) Dokumentasi lengkap
 
-## Fitur Utama yang Sudah Tersedia
+- `HELP_RUN_PROJECT.md` — tata cara aman & checklist saat tim menjalankan/merging
+- `backend/RUNBOOK.md` — runbook operasional/produksi
+- `backend/DEPLOYMENT.md` — panduan deploy + cron + queue
 
-- Autentikasi pengguna (register/login/logout)
-- Penelusuran kategori dan provider
-- Pembuatan dan melihat pesanan
-- Integrasi API antara mobile dan backend
-
-## Troubleshooting Singkat
-
-- Jika backend tidak jalan: pastikan Composer dependencies terinstal dan database tersedia; jalankan `php artisan migrate --seed`.
-- Jika Flutter error: jalankan `flutter clean` lalu `flutter pub get`.
-
-## File Penting
-
-- `backend/` — kode Laravel (API)
-- `mobile/` — kode Flutter
-- `docs/` — dokumentasi proyek (SRS, diagram, API)
-
-Jika butuh panduan lebih lengkap, lihat `PROJECT_STATUS.md` dan `backend/RUNBOOK.md`.

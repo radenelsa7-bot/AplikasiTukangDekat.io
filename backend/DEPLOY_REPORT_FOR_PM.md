@@ -1,44 +1,52 @@
-# Deploy Smoke Report (for PM)
+# Laporan Smoke Deploy (untuk PM)
 
 Branch: feature/backend-123-deploy-smoke
 Pull Request: https://github.com/radenelsa7-bot/PM_UAS_rekayasa_Sistem_Informasi/pull/38
-Date: 6 Juni 2026
+Tanggal: 6 Juni 2026
 
-Summary
-- Objective: Finalize smoke-test artefacts and documentation to validate deployment readiness.
-- Status: Documentation and smoke-test scripts prepared; smoke execution pending on staging.
+Ringkasan
+- Tujuan: Menyelesaikan artefak smoke-test dan dokumentasi untuk memvalidasi kesiapan deployment.
+- Status: Dokumentasi dan skrip smoke-test sudah disiapkan; eksekusi smoke test menunggu di staging.
 
-What I updated
-- `backend/DEPLOY_STATUS.md`: updated status, added step-by-step smoke-test instructions and environment requirements.
-- `backend/.github/workflows/ci-staging.yml`: improved staging CI workflow to skip when secrets are missing and updated triggers to include `feature/backend-123-deploy-smoke`.
-- Confirmed presence of:
-  - `deploy/smoke-test.sh` (script to run smoke test)
-  - `app/Console/Commands/DeploySmokeTest.php` (artisan `deploy:smoke` command)
-  - Supervisor configuration: `deploy/supervisor.conf`
+Apa yang telah saya perbarui
+- `backend/DEPLOY_STATUS.md`: memperbarui status, menambahkan instruksi smoke-test langkah demi langkah dan persyaratan lingkungan.
+- `backend/.github/workflows/ci-staging.yml`: memperbaiki workflow CI staging agar dilewati jika secrets hilang dan memperbarui trigger untuk menyertakan `feature/backend-123-deploy-smoke`.
+- Memastikan keberadaan:
+  - `deploy/smoke-test.sh` (skrip untuk menjalankan smoke test)
+  - `app/Console/Commands/DeploySmokeTest.php` (perintah artisan `deploy:smoke`)
+  - Konfigurasi Supervisor: `deploy/supervisor.conf`
 
-How to verify (Ops)
-1. Ensure server has PHP (>=8.1), composer, database and redis configured.
-2. Ensure queue worker running (systemd or supervisor).
-3. From backend directory run:
+Cara verifikasi (Ops)
+1. Pastikan server memiliki PHP (>=8.1), composer, database, dan redis yang dikonfigurasi.
+2. Pastikan queue worker berjalan (systemd atau supervisor).
+3. Dari direktori backend jalankan:
 
 ```bash
 ./deploy/smoke-test.sh
-# or
+# atau
 php artisan deploy:smoke --url="https://staging.example.com"
 ```
 
-Expected outcome: exit code 0 and printed information about health check and artisan readiness commands.
+Hasil yang diharapkan: kode keluar 0 dan informasi mengenai health check serta perintah readiness artisan tercetak.
 
-Notes
-- I pushed the documentation update to branch `feature/backend-123-deploy-smoke` on the remote.
-- GitHub Actions are now configured to run the staging workflow for this branch when repository secrets are available.
-- Pull request #38 is open and ready for review.
-- Smoke test execution is pending staging environment access.
+## Pembaruan Pekerjaan Saat Ini
+- Branch backend saat ini: `feature/backend-120-reviews-rating-api`
+- Menyelesaikan alur auto-create order DP dan beralih ke pekerjaan Reviews & Rating API.
+- Menambahkan endpoint ringkasan review provider dan dukungan agregasi rating.
+- Menambahkan feature test untuk pembuatan review dan ringkasan rating provider.
+- Verifikasi lokal terblokir karena runtime PHP tidak tersedia di lingkungan editor ini.
+- Langkah berikutnya yang direncanakan: jalankan test API Review baru dan validasi endpoint `/api/reviews/provider/{id}/summary` setelah runtime PHP tersedia.
 
-Blockers
-- Local smoke test via Docker cannot be executed in this environment because Docker is not installed.
-- Staging environment access is required to complete smoke validation and production queue worker testing.
+Catatan
+- Saya telah mendorong pembaruan dokumentasi ke branch `feature/backend-123-deploy-smoke` di remote.
+- GitHub Actions sekarang dikonfigurasi untuk menjalankan workflow staging untuk branch ini saat secrets repository tersedia.
+- Pull request #38 terbuka dan siap untuk ditinjau.
+- Eksekusi smoke test menunggu akses lingkungan staging.
 
-Next steps (to be done on staging environment)
-- Execute smoke test and record results in this file or `backend/DEPLOY_STATUS.md`.
-- If smoke test passes, mark `Full smoke test validation` and `Production queue worker testing` as completed in `backend/DEPLOY_STATUS.md`.
+Penghalang
+- Smoke test lokal via Docker tidak dapat dijalankan di lingkungan ini karena Docker tidak terpasang.
+- Akses lingkungan staging diperlukan untuk menyelesaikan validasi smoke dan pengujian queue worker produksi.
+
+Langkah berikutnya (untuk dilakukan di lingkungan staging)
+- Jalankan smoke test dan catat hasilnya di file ini atau `backend/DEPLOY_STATUS.md`.
+- Jika smoke test lulus, tandai `Full smoke test validation` dan `Production queue worker testing` sebagai selesai di `backend/DEPLOY_STATUS.md`.

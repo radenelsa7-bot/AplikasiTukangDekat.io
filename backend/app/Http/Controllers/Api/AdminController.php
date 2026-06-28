@@ -3,21 +3,22 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateVerificationRequest;
 use App\Models\ProviderProfile;
 use App\Services\N8nNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\ApiResponse;
 
 class AdminController extends Controller
 {
+  use ApiResponse;
   private function ensureAdmin(): ?\Illuminate\Http\JsonResponse
   {
     $user = Auth::user();
 
     if (!$user || $user->role !== 'ADMIN') {
-      return response()->json([
-        'message' => 'only admin can access this resource',
-      ], 403);
+      return $this->forbiddenResponse('only admin can access this resource');
     }
 
     return null;
@@ -25,36 +26,29 @@ class AdminController extends Controller
 
   public function getPendingProviders(Request $request)
   {
-    if ($response = $this->ensureAdmin()) {
-      return $response;
-    }
 
     $providers = ProviderProfile::with('user')
       ->where('is_verified', false)
       ->latest()
       ->get();
 
-    return response()->json([
-      'data' => $providers,
-    ], 200);
+    return $this->success($providers, 'Pending providers');
+    return $this->successResponse(['providers' => $providers], 'ok', 200);
   }
 
-  public function updateVerification(Request $request, $providerId)
+  public function updateVerification(UpdateVerificationRequest $request, $providerId)
   {
     if ($response = $this->ensureAdmin()) {
       return $response;
     }
 
-    $validated = $request->validate([
-      'is_verified' => 'required|boolean',
-    ]);
+    $validated = $request->validated();
 
     $provider = ProviderProfile::with('user')->find($providerId);
 
     if (!$provider) {
-      return response()->json([
-        'message' => 'provider not found',
-      ], 404);
+      return $this->notFound('Provider not found');
+      return $this->notFoundResponse('provider not found');
     }
 
     $provider->update([
@@ -72,9 +66,7 @@ class AdminController extends Controller
       ]
     );
 
-    return response()->json([
-      'message' => 'verification updated',
-      'data' => $provider,
-    ], 200);
+    return $this->success($provider, 'Verification updated');
+    return $this->successResponse(['provider' => $provider], 'verification updated', 200);
   }
 }

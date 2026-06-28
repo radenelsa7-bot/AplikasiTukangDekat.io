@@ -1,48 +1,115 @@
-version: "3.8"
 services:
-  app:
+  # Service 1: Backend Laravel kamu
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    image: pm_uas_app:latest
+    image: laravel-backend
+    container_name: laravel_app
+    working_dir: /var/www
+    ports:
+      - "8000:8000"
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    restart: unless-stopped
+    tty: true
+    environment:
+      - APP_NAME=db_schema_tukangdekat
+      - APP_ENV=local
+      - APP_KEY=base64:VW1xpgAuLd1/q+DG9fK4gGuwu1+IE8BfB2lxMM71+kI=
+      - APP_DEBUG=true
+      - APP_URL=http://localhost
+      - APP_LOCALE=en
+      - APP_FALLBACK_LOCALE=en
+      - APP_FAKER_LOCALE=en_US
+      - APP_MAINTENANCE_DRIVER=file
+      - BCRYPT_ROUNDS=12
+      - LOG_CHANNEL=stack
+      - LOG_STACK=single
+      - LOG_DEPRECATIONS_CHANNEL=null
+      - LOG_LEVEL=debug
+
+      # --- DI SINI PERUBAHAN UTAMA KONEKSI DATABASE ---
+      - DB_CONNECTION=mysql
+      - DB_HOST=db                     # Menunjuk ke service 'db' di bawah
+      - DB_PORT=3306
+      - DB_DATABASE=db_tukangdekat     # Nama database projectmu
+      - DB_USERNAME=root
+      - DB_PASSWORD=rahasia            # Password MySQL di Docker
+
+      - SESSION_DRIVER=database
+      - SESSION_LIFETIME=120
+      - SESSION_ENCRYPT=false
+      - SESSION_PATH=/
+      - SESSION_DOMAIN=null
+      - BROADCAST_CONNECTION=log
+      - FILESYSTEM_DISK=local
+      - QUEUE_CONNECTION=database
+      - CACHE_STORE=database
+      - MEMCACHED_HOST=127.0.0.1
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=127.0.0.1
+      - REDIS_PASSWORD=null
+      - REDIS_PORT=6379
+      - MAIL_MAILER=log
+      - MAIL_SCHEME=null
+      - MAIL_HOST=127.0.0.1
+      - MAIL_PORT=2525
+      - MAIL_USERNAME=null
+      - MAIL_PASSWORD=null
+      - MAIL_FROM_ADDRESS=hello@example.com
+      - MAIL_FROM_NAME=db_schema_tukangdekat
+      - AWS_ACCESS_KEY_ID=
+      - AWS_SECRET_ACCESS_KEY=
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_BUCKET=
+      - AWS_USE_PATH_STYLE_ENDPOINT=false
+      - VITE_APP_NAME=db_schema_tukangdekat
+      - PAYMENT_GATEWAY_DRIVER=xendit
+      - MIDTRANS_SERVER_KEY=Mid-client-Y9xttz868g76G2Fe
+      - MIDTRANS_CLIENT_KEY=Mid-server-JHZYBEDh_5mj1r7YyHnNJ4d2
+      - MIDTRANS_IS_PRODUCTION=false
+      - XENDIT_DISBURSEMENT_PATH=/payouts
+      - XENDIT_API_KEY=xnd_development_PUvW8aOJKSr7s5aBCtuCD3c8c7hqd3HRTlBraYbyrIeNBiN74J3ESbQYHjXkTN
+      - XENDIT_BASE_URL=https://api.xendit.co
+      - XENDIT_CHARGE_URL=https://api.xendit.co/v2/invoices
+      - XENDIT_DEBUG=0
+      - PAYOUT_GATEWAY=mock
+      - GITHUB_API_KEY=ghp_9sXoVh7n2Zt3v1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7
     volumes:
-      - ./:/var/www/html
-      - ./backend/vendor:/var/www/html/vendor
+      - ./backend:/var/www
     depends_on:
       - db
-    environment:
-      - APP_ENV=local
-      - DB_HOST=db
-      - DB_DATABASE=laravel
-      - DB_USERNAME=laravel
-      - DB_PASSWORD=secret
 
-  web:
-    image: nginx:stable
-    ports:
-      - "8080:80"
-    volumes:
-      - ./:/var/www/html
-      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - app
-
+  # Service 2: Database MySQL tempat penyimpanan data
   db:
     image: mysql:8.0
+    container_name: laravel_db
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: laravel
-      MYSQL_USER: laravel
-      MYSQL_PASSWORD: secret
-    volumes:
-      - dbdata:/var/lib/mysql
+      - MYSQL_DATABASE=db_tukangdekat     # Otomatis membuat database ini saat nyala
+      - MYSQL_ROOT_PASSWORD=rahasia       # Password root MySQL kamu
     ports:
       - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
 
-  redis:
-    image: redis:7
+  # --- TAMBAHAN BARU: Service 3 untuk n8n ---
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: tukangdekat_n8n
+    restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment:
+      - N8N_SECURE_COOKIE=false
+    depends_on:
+      - db # n8n baru menyala setelah database siap (opsional, tapi bagus untuk dependensi)
 
+# --- TAMBAHAN BARU: Mendaftarkan volume n8n_data ---
 volumes:
   dbdata:
+    driver: local
+  n8n_data:
+    driver: local

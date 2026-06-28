@@ -1,18 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+
 import '../../core/services/api_service.dart';
 import '../../core/services/auth_storage_service.dart';
 import 'auth_state.dart';
 
-final authControllerProvider =
-    StateNotifierProvider<AuthController, AuthState>((ref) {
-  return AuthController(ref);
-});
+final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
+  (ref) {
+    return AuthController(ref);
+  },
+);
 
 class AuthController extends StateNotifier<AuthState> {
   AuthController(this._ref) : super(const AuthState());
 
   final Ref _ref;
+
+  void updateState(AuthState Function(AuthState) update) {
+    state = update(state);
+  }
 
   Future<void> loadToken() async {
     state = state.copyWith(isLoading: true);
@@ -21,6 +27,13 @@ class AuthController extends StateNotifier<AuthState> {
       final userId = await _ref.read(authStorageProvider).getUserId();
       final userRole = await _ref.read(authStorageProvider).getUserRole();
       final userEmail = await _ref.read(authStorageProvider).getUserEmail();
+      final fullName = await _ref.read(authStorageProvider).getUserFullName();
+      final phoneNumber = await _ref
+          .read(authStorageProvider)
+          .getUserPhoneNumber();
+      final profilePhotoPath = await _ref
+          .read(authStorageProvider)
+          .getUserProfilePhotoPath();
 
       if (token != null) {
         _ref.read(apiServiceProvider).setToken(token);
@@ -30,6 +43,9 @@ class AuthController extends StateNotifier<AuthState> {
           userId: userId,
           userRole: userRole,
           userEmail: userEmail,
+          userFullName: fullName,
+          userPhoneNumber: phoneNumber,
+          userProfilePhotoPath: profilePhotoPath,
         );
       } else {
         state = const AuthState(isLoading: false);
@@ -49,7 +65,11 @@ class AuthController extends StateNotifier<AuthState> {
     required String password,
     required String role,
   }) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      fieldErrors: {},
+    );
     try {
       final apiService = _ref.read(apiServiceProvider);
       await apiService.register(
@@ -60,10 +80,35 @@ class AuthController extends StateNotifier<AuthState> {
         role: role,
       );
 
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, fieldErrors: {});
       return true;
     } on DioException catch (e) {
-      final errorMsg = e.response?.data['message'] ?? 'Registration failed';
+      final responseData = e.response?.data;
+      if (e.response?.statusCode == 422 &&
+          responseData is Map<String, dynamic>) {
+        final fieldErrors = <String, String?>{};
+        final errors = responseData['errors'];
+        if (errors is Map<String, dynamic>) {
+          errors.forEach((key, value) {
+            if (value is List && value.isNotEmpty) {
+              fieldErrors[key] = value.first?.toString();
+            } else if (value != null) {
+              fieldErrors[key] = value.toString();
+            }
+          });
+        }
+
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: responseData['message'] ?? 'Registration failed',
+          fieldErrors: fieldErrors,
+        );
+        return false;
+      }
+
+      final errorMsg = responseData is Map<String, dynamic>
+          ? responseData['message'] ?? 'Registration failed'
+          : 'Registration failed';
       state = state.copyWith(isLoading: false, errorMessage: errorMsg);
       return false;
     } catch (e) {
@@ -79,19 +124,21 @@ class AuthController extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final apiService = _ref.read(apiServiceProvider);
-      final response = await apiService.login(
-        email: email,
-        password: password,
-      );
+      final response = await apiService.login(email: email, password: password);
 
       if (response.token != null && response.user != null) {
         // Save token dan user data
         await _ref.read(authStorageProvider).saveToken(response.token!);
-        await _ref.read(authStorageProvider).saveUserData(
-          userId: response.user!.id,
-          userRole: response.user!.role,
-          userEmail: response.user!.email,
-        );
+        await _ref
+            .read(authStorageProvider)
+            .saveUserData(
+              userId: response.user!.id,
+              userRole: response.user!.role,
+              userEmail: response.user!.email,
+              fullName: response.user!.fullName,
+              phoneNumber: response.user!.phoneNumber,
+              profilePhotoPath: response.user!.profilePhotoPath,
+            );
 
         // Set token di Dio
         apiService.setToken(response.token!);
@@ -102,6 +149,9 @@ class AuthController extends StateNotifier<AuthState> {
           userId: response.user!.id,
           userRole: response.user!.role,
           userEmail: response.user!.email,
+          userFullName: response.user!.fullName,
+          userPhoneNumber: response.user!.phoneNumber,
+          userProfilePhotoPath: response.user!.profilePhotoPath,
         );
         return true;
       } else {
@@ -112,7 +162,8 @@ class AuthController extends StateNotifier<AuthState> {
         return false;
       }
     } on DioException catch (e) {
-      final errorMsg = e.response?.data['email']?[0] ??
+      final errorMsg =
+          e.response?.data['email']?[0] ??
           e.response?.data['message'] ??
           'Login failed';
       state = state.copyWith(isLoading: false, errorMessage: errorMsg);
@@ -140,6 +191,48 @@ class AuthController extends StateNotifier<AuthState> {
       apiService.clearToken();
       await _ref.read(authStorageProvider).clearAll();
       state = const AuthState(isLoading: false);
+    }
+  }
+
+  Future<bool> deleteProfilePhoto() async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final apiService = _ref.read(apiServiceProvider);
+      final result = await apiService.deleteProfilePhoto();
+
+      if (result['user'] is Map<String, dynamic>) {
+        final user = result['user'] as Map<String, dynamic>;
+        final fullName = user['full_name'] as String?;
+        final phoneNumber = user['phone_number'] as String?;
+        final profilePhotoPath = user['profile_photo_path'] as String?;
+
+        await _ref
+            .read(authStorageProvider)
+            .saveUserData(
+              userId: user['id'] ?? state.userId ?? 0,
+              userRole: user['role'] ?? state.userRole ?? 'CUSTOMER',
+              userEmail: user['email'] ?? state.userEmail ?? '',
+              fullName: fullName,
+              phoneNumber: phoneNumber,
+              profilePhotoPath: profilePhotoPath,
+            );
+
+        state = state.copyWith(
+          isLoading: false,
+          userFullName: fullName,
+          userPhoneNumber: phoneNumber,
+          userProfilePhotoPath: profilePhotoPath,
+        );
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to delete profile photo: $e',
+      );
+      return false;
     }
   }
 }

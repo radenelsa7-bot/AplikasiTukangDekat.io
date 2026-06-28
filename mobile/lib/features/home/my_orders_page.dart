@@ -14,8 +14,7 @@ class MyOrdersPage extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
 
     return ordersAsync.when(
-      loading: () =>
-          const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, st) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -37,11 +36,7 @@ class MyOrdersPage extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.receipt_long,
-                    size: 64,
-                    color: Colors.grey[300],
-                  ),
+                  Icon(Icons.receipt_long, size: 64, color: Colors.grey[300]),
                   const SizedBox(height: 16),
                   Text(
                     authState.userRole == 'PROVIDER'
@@ -95,27 +90,20 @@ class MyOrdersPage extends ConsumerWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: statusColor.withValues(alpha: 0.2),
-          child: Icon(
-            Icons.receipt_long,
-            color: statusColor,
-          ),
+          child: Icon(Icons.receipt_long, color: statusColor),
         ),
         title: Text('Order #${order.orderCode}'),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(
-              order.address,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            Text(order.address, maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 4),
             if (order.scheduleAt != null)
               Text(
-                DateFormat('dd MMM yyyy HH:mm').format(
-                  DateTime.parse(order.scheduleAt),
-                ),
+                DateFormat(
+                  'dd MMM yyyy HH:mm',
+                ).format(DateTime.parse(order.scheduleAt)),
               ),
           ],
         ),
@@ -124,10 +112,7 @@ class MyOrdersPage extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(4),
@@ -144,9 +129,7 @@ class MyOrdersPage extends ConsumerWidget {
             const SizedBox(height: 4),
             Text(
               'Rp${order.estimatedPrice ?? 0}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
         ),

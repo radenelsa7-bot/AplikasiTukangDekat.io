@@ -9,6 +9,7 @@ class AppTextField extends StatelessWidget {
     this.keyboardType,
     this.obscureText = false,
     this.validator,
+    this.errorText,
     this.prefixIcon,
     this.maxLines = 1,
     this.onChanged,
@@ -20,6 +21,7 @@ class AppTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final bool obscureText;
   final String? Function(String?)? validator;
+  final String? errorText;
   final Widget? prefixIcon;
   final int maxLines;
   final void Function(String)? onChanged;
@@ -37,9 +39,8 @@ class AppTextField extends StatelessWidget {
         labelText: label,
         hintText: hintText,
         prefixIcon: prefixIcon,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        errorText: errorText,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }

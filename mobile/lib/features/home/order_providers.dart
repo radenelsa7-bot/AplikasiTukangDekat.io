@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/api_service.dart';
+
 import '../../core/models/order_model.dart';
 import '../../core/models/review_model.dart';
 
@@ -11,41 +13,52 @@ final myOrdersProvider = FutureProvider<List<OrderData>>((ref) async {
 });
 
 // Order detail provider
-final orderDetailProvider = FutureProvider.family<OrderData, int>((ref, orderId) async {
+final orderDetailProvider = FutureProvider.family<OrderData, int>((
+  ref,
+  orderId,
+) async {
   final apiService = ref.read(apiServiceProvider);
   return await apiService.getOrderDetail(orderId);
 });
 
-final orderReviewProvider = FutureProvider.family<ReviewData?, int>((ref, orderId) async {
+final orderReviewProvider = FutureProvider.family<ReviewData?, int>((
+  ref,
+  orderId,
+) async {
   final apiService = ref.read(apiServiceProvider);
   return await apiService.getOrderReview(orderId);
 });
 
 // Create order controller
-final createOrderControllerProvider = StateNotifierProvider<CreateOrderController, CreateOrderState>((ref) {
-  return CreateOrderController(ref);
-});
+final createOrderControllerProvider =
+    StateNotifierProvider<CreateOrderController, CreateOrderState>((ref) {
+      return CreateOrderController(ref);
+    });
 
 class CreateOrderState {
   final bool isLoading;
   final String? errorMessage;
   final OrderData? createdOrder;
+  final Map<String, String?> fieldErrors;
 
   const CreateOrderState({
     this.isLoading = false,
     this.errorMessage,
     this.createdOrder,
+    this.fieldErrors = const {},
   });
 
   CreateOrderState copyWith({
     bool? isLoading,
     String? errorMessage,
     OrderData? createdOrder,
+    Map<String, String?>? fieldErrors,
   }) {
     return CreateOrderState(
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
       createdOrder: createdOrder ?? this.createdOrder,
+      fieldErrors: fieldErrors ?? this.fieldErrors,
     );
   }
 }
@@ -56,17 +69,49 @@ class CreateOrderController extends StateNotifier<CreateOrderState> {
   final Ref _ref;
 
   Future<bool> createOrder(CreateOrderRequest request) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      fieldErrors: {},
+    );
     try {
       final apiService = _ref.read(apiServiceProvider);
       final order = await apiService.createOrder(request);
       state = state.copyWith(
         isLoading: false,
         createdOrder: order,
+        fieldErrors: {},
       );
       // Refresh myOrdersProvider to show newly created order
       _ref.refresh(myOrdersProvider); // ignore: unused_result
       return true;
+    } on DioException catch (e) {
+      final responseData = e.response?.data;
+      if (e.response?.statusCode == 422 &&
+          responseData is Map<String, dynamic>) {
+        final fieldErrors = <String, String?>{};
+        final errors = responseData['errors'];
+        if (errors is Map<String, dynamic>) {
+          errors.forEach((key, value) {
+            if (value is List && value.isNotEmpty) {
+              fieldErrors[key] = value.first?.toString();
+            } else if (value != null) {
+              fieldErrors[key] = value.toString();
+            }
+          });
+        }
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: responseData['message'] ?? 'Order validation failed',
+          fieldErrors: fieldErrors,
+        );
+        return false;
+      }
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to create order: ${e.message}',
+      );
+      return false;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -82,9 +127,10 @@ class CreateOrderController extends StateNotifier<CreateOrderState> {
 }
 
 // Order action controller (untuk provider accept/start/complete)
-final orderActionControllerProvider = StateNotifierProvider<OrderActionController, OrderActionState>((ref) {
-  return OrderActionController(ref);
-});
+final orderActionControllerProvider =
+    StateNotifierProvider<OrderActionController, OrderActionState>((ref) {
+      return OrderActionController(ref);
+    });
 
 class OrderActionState {
   final bool isLoading;
@@ -125,10 +171,7 @@ class OrderActionController extends StateNotifier<OrderActionState> {
       _ref.refresh(myOrdersProvider); // ignore: unused_result
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Failed: $e',
-      );
+      state = state.copyWith(isLoading: false, errorMessage: 'Failed: $e');
       return false;
     }
   }
@@ -143,10 +186,7 @@ class OrderActionController extends StateNotifier<OrderActionState> {
       _ref.refresh(myOrdersProvider); // ignore: unused_result
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Failed: $e',
-      );
+      state = state.copyWith(isLoading: false, errorMessage: 'Failed: $e');
       return false;
     }
   }
@@ -161,10 +201,7 @@ class OrderActionController extends StateNotifier<OrderActionState> {
       _ref.refresh(myOrdersProvider); // ignore: unused_result
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Failed: $e',
-      );
+      state = state.copyWith(isLoading: false, errorMessage: 'Failed: $e');
       return false;
     }
   }

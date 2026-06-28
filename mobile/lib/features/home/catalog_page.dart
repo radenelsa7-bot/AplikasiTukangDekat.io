@@ -7,21 +7,28 @@ import 'provider_detail_page.dart';
 // ─── Category icon mapper ────────────────────────────────────────────────────
 IconData _categoryIcon(String name) {
   final n = name.toLowerCase();
-  if (n.contains('listrik') || n.contains('elektrik'))
+  if (n.contains('listrik') || n.contains('elektrik')) {
     return Icons.bolt_rounded;
-  if (n.contains('plumbing') || n.contains('pipa') || n.contains('air'))
+  }
+  if (n.contains('plumbing') || n.contains('pipa') || n.contains('air')) {
     return Icons.water_drop_rounded;
+  }
   if (n.contains('ac') || n.contains('pendingin')) return Icons.ac_unit_rounded;
-  if (n.contains('bangunan') || n.contains('konstruksi'))
+  if (n.contains('bangunan') || n.contains('konstruksi')) {
     return Icons.construction_rounded;
-  if (n.contains('elektronik') || n.contains('servis'))
+  }
+  if (n.contains('elektronik') || n.contains('servis')) {
     return Icons.devices_rounded;
-  if (n.contains('cat') || n.contains('pengecatan'))
+  }
+  if (n.contains('cat') || n.contains('pengecatan')) {
     return Icons.format_paint_rounded;
-  if (n.contains('kebersihan') || n.contains('cleaning'))
+  }
+  if (n.contains('kebersihan') || n.contains('cleaning')) {
     return Icons.cleaning_services_rounded;
-  if (n.contains('taman') || n.contains('landscaping'))
+  }
+  if (n.contains('taman') || n.contains('landscaping')) {
     return Icons.yard_rounded;
+  }
   if (n.contains('atap') || n.contains('genteng')) return Icons.roofing_rounded;
   if (n.contains('keamanan') || n.contains('kunci')) return Icons.lock_rounded;
   if (n.contains('gas')) return Icons.local_fire_department_rounded;
@@ -83,7 +90,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.07),
+                    color: Colors.black.withValues(alpha: 0.07),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),
@@ -175,7 +182,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: cs.primary.withOpacity(0.30),
+            color: cs.primary.withValues(alpha: 0.30),
             blurRadius: 28,
             offset: const Offset(0, 10),
           ),
@@ -191,7 +198,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               width: 140,
               height: 140,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
             ),
@@ -203,7 +210,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
             ),
@@ -227,7 +234,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -260,7 +267,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: cs.secondary.withOpacity(0.40),
+                            color: cs.secondary.withValues(alpha: 0.40),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -279,7 +286,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 Text(
                   'Temukan teknisi terdekat dengan cepat dan aman. Pesan & pantau langsung dari aplikasi.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.80),
+                    color: Colors.white.withValues(alpha: 0.80),
                     height: 1.6,
                   ),
                 ),
@@ -330,9 +337,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.20)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -374,7 +381,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -402,9 +411,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.15)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,14 +496,16 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     color: isSelected ? color : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? color : Colors.grey.withOpacity(0.15),
+                      color: isSelected
+                          ? color
+                          : Colors.grey.withValues(alpha: 0.15),
                       width: isSelected ? 2 : 1,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: isSelected
-                            ? color.withOpacity(0.25)
-                            : Colors.black.withOpacity(0.04),
+                            ? color.withValues(alpha: 0.25)
+                            : Colors.black.withValues(alpha: 0.04),
                         blurRadius: isSelected ? 12 : 6,
                         offset: const Offset(0, 3),
                       ),
@@ -508,8 +519,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         height: 42,
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? Colors.white.withOpacity(0.25)
-                              : color.withOpacity(0.10),
+                              ? Colors.white.withValues(alpha: 0.25)
+                              : color.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -703,7 +714,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -780,7 +791,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.12),
+                              color: Colors.amber.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -810,7 +821,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.10),
+                              color: Colors.green.withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Text(
@@ -833,7 +844,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: cs.primary.withOpacity(0.08),
+                    color: cs.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(

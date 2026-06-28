@@ -1,0 +1,112 @@
+Analyzing mobile...                                             
+
+   info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre. Try replacing the use of the deprecated member with the replacement - lib\app\theme\app_theme.dart:22:9 - deprecated_member_use
+   info - 'onBackground' is deprecated and shouldn't be used. Use onSurface instead. This feature was deprecated after v3.18.0-0.1.pre. Try replacing the use of the deprecated member with the replacement - lib\app\theme\app_theme.dart:23:9 - deprecated_member_use
+  error - The function 'StateNotifierProvider' isn't defined. Try importing the library that defines 'StateNotifierProvider', correcting the name to the name of an existing function, or defining a function named 'StateNotifierProvider' - lib\features\admin\admin_providers.dart:13:5 - undefined_function
+  error - Classes can only extend other classes. Try specifying a different superclass, or removing the extends clause - lib\features\admin\admin_providers.dart:41:43 - extends_non_class
+  error - Too many positional arguments: 0 expected, but 1 found. Try removing the extra arguments - lib\features\admin\admin_providers.dart:42:50 - extra_positional_arguments
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\admin\admin_providers.dart:50:5 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\admin\admin_providers.dart:50:13 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\admin\admin_providers.dart:64:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\admin\admin_providers.dart:64:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\admin\admin_providers.dart:67:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\admin\admin_providers.dart:67:15 - undefined_identifier
+  error - The function 'StateNotifierProvider' isn't defined. Try importing the library that defines 'StateNotifierProvider', correcting the name to the name of an existing function, or defining a function named 'StateNotifierProvider' - lib\features\auth\auth_controller.dart:8:32 - undefined_function
+  error - Classes can only extend other classes. Try specifying a different superclass, or removing the extends clause - lib\features\auth\auth_controller.dart:14:30 - extends_non_class
+  error - Too many positional arguments: 0 expected, but 1 found. Try removing the extra arguments - lib\features\auth\auth_controller.dart:15:37 - extra_positional_arguments
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:20:5 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:20:13 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:29:9 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:37:9 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:40:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:40:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:54:5 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:54:13 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:65:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:65:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:69:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:69:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:72:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:72:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:81:5 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:81:13 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:100:9 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:109:9 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:109:17 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:120:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:120:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:123:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:123:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:132:5 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:132:13 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:138:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\auth\auth_controller.dart:144:7 - undefined_identifier
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\features\home\catalog_page.dart:11:5 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\features\home\catalog_page.dart:13:5 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\features\home\catalog_page.dart:16:5 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\features\home\catalog_page.dart:18:5 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\features\home\catalog_page.dart:20:5 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\features\home\catalog_page.dart:22:5 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\features\home\catalog_page.dart:24:5 - curly_braces_in_flow_control_structures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:86:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:178:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:194:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:206:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:230:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:263:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:282:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:333:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:335:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:377:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:405:22 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:407:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:490:63 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:496:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:497:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:511:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:512:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:706:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:783:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:813:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\catalog_page.dart:836:39 - deprecated_member_use
+  error - The function 'StateProvider' isn't defined. Try importing the library that defines 'StateProvider', correcting the name to the name of an existing function, or defining a function named 'StateProvider' - lib\features\home\catalog_providers.dart:51:34 - undefined_function
+  error - The function 'StateProvider' isn't defined. Try importing the library that defines 'StateProvider', correcting the name to the name of an existing function, or defining a function named 'StateProvider' - lib\features\home\catalog_providers.dart:54:29 - undefined_function
+warning - Unused import: '../../shared/widgets/site_header.dart'. Try removing the import directive - lib\features\home\create_order_page.dart:7:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\home_page.dart:43:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\my_orders_page.dart:92:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\my_orders_page.dart:117:36 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\home\order_detail_page.dart:55:31 - deprecated_member_use
+  error - The function 'StateNotifierProvider' isn't defined. Try importing the library that defines 'StateNotifierProvider', correcting the name to the name of an existing function, or defining a function named 'StateNotifierProvider' - lib\features\home\order_providers.dart:33:5 - undefined_function
+  error - Classes can only extend other classes. Try specifying a different superclass, or removing the extends clause - lib\features\home\order_providers.dart:61:37 - extends_non_class
+  error - Too many positional arguments: 0 expected, but 1 found. Try removing the extra arguments - lib\features\home\order_providers.dart:62:44 - extra_positional_arguments
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:67:5 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:67:13 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:71:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:71:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:76:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:76:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:85:5 - undefined_identifier
+  error - The function 'StateNotifierProvider' isn't defined. Try importing the library that defines 'StateNotifierProvider', correcting the name to the name of an existing function, or defining a function named 'StateNotifierProvider' - lib\features\home\order_providers.dart:91:5 - undefined_function
+  error - Classes can only extend other classes. Try specifying a different superclass, or removing the extends clause - lib\features\home\order_providers.dart:119:37 - extends_non_class
+  error - Too many positional arguments: 0 expected, but 1 found. Try removing the extra arguments - lib\features\home\order_providers.dart:120:44 - extra_positional_arguments
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:125:5 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:125:13 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:129:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:129:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:134:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:134:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:140:5 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:140:13 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:144:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:144:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:149:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:149:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:155:5 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:155:13 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:159:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:159:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:164:7 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:164:15 - undefined_identifier
+  error - Undefined name 'state'. Try correcting the name to one that is defined, or defining the name - lib\features\home\order_providers.dart:170:5 - undefined_identifier
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\shared\widgets\site_footer.dart:58:37 - deprecated_member_use
+

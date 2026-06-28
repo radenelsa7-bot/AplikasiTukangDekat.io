@@ -86,3 +86,18 @@ php artisan payouts:process
 php artisan payouts:process-pending --limit=25
 php artisan schedule:list
 ```
+
+### Monitoring & Alerting
+
+- Lihat dokumentasi monitoring di `backend/docs/MONITORING_RUNBOOK.md`.
+- Lihat dokumentasi pengujian monitoring di `backend/docs/TESTING_RUNBOOK.md`.
+- Pastikan `.env` memiliki konfigurasi `PAYOUT_ALERT_EMAIL` atau `PAYOUT_ALERT_WEBHOOK` jika alerting ingin diaktifkan.
+- Untuk memeriksa endpoint metrics lokal:
+
+```bash
+curl http://127.0.0.1:8000/api/metrics
+```
+
+### Dokumentasi API Admin & Treasurer
+
+- Lihat dokumentasi endpoint admin dan treasurer di `backend/docs/admin_treasurer_endpoints.md`.

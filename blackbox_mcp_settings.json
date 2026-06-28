@@ -1,0 +1,15 @@
+{
+  "servers": [
+    {
+      "name": "github.com/postmanlabs/postman-mcp-server",
+      "type": "npm",
+      "package": "@postman/postman-mcp-server",
+      "command": "npx",
+      "args": [
+        "@postman/postman-mcp-server",
+        "--minimal"
+      ]
+    }
+  ]
+}
+

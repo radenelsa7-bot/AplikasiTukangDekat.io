@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
+import '../../shared/widgets/site_footer.dart';
 import '../../core/models/order_model.dart';
 import '../../core/models/provider_model.dart';
+import '../auth/auth_controller.dart';
 import 'order_providers.dart';
 
 class CreateOrderPage extends ConsumerStatefulWidget {
@@ -82,10 +84,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     }
     if (_selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pilih jam'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Pilih jam'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -99,25 +98,22 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       return;
     }
 
-    final scheduleAt = DateTime(
-      _selectedDate!.year,
-      _selectedDate!.month,
-      _selectedDate!.day,
-      _selectedTime!.hour,
-      _selectedTime!.minute,
-    );
-
-    // Format ke Y-m-d H:i:s untuk backend
-    final scheduleAtFormatted = DateFormat('yyyy-MM-dd HH:mm:ss').format(scheduleAt);
-
     final request = CreateOrderRequest(
       providerId: widget.providerId,
       categoryId: widget.categoryId,
-      providerServiceId: _selectedService!.id,
+      providerServiceId: _selectedService?.id,
+      scheduleAt: DateFormat('yyyy-MM-dd HH:mm:ss').format(
+        DateTime(
+          _selectedDate!.year,
+          _selectedDate!.month,
+          _selectedDate!.day,
+          _selectedTime!.hour,
+          _selectedTime!.minute,
+        ),
+      ),
       address: _addressCtrl.text.trim(),
-      notes: _notesCtrl.text.trim(),
-      scheduleAt: scheduleAtFormatted,
-      estimatedPrice: _selectedService!.basePrice,
+      notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      estimatedPrice: _selectedService?.basePrice,
     );
 
     final success = await ref
@@ -138,10 +134,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       final errorMsg =
           ref.read(createOrderControllerProvider).errorMessage ?? 'Order gagal';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMsg),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
       );
     }
   }
@@ -149,6 +142,30 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(createOrderControllerProvider);
+    final authState = ref.watch(authControllerProvider);
+
+    if (authState.userRole != 'CUSTOMER') {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Buat Order')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.block, size: 72, color: Colors.red),
+                SizedBox(height: 16),
+                Text(
+                  'Hanya pelanggan (CUSTOMER) dapat membuat order.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Buat Order')),
@@ -178,7 +195,9 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                   items: widget.services.map((service) {
                     return DropdownMenuItem(
                       value: service,
-                      child: Text('${service.name} - Rp${service.basePrice}/${service.priceUnit}'),
+                      child: Text(
+                        '${service.name} - Rp${service.basePrice}/${service.priceUnit}',
+                      ),
                     );
                   }).toList(),
                   onChanged: (ProviderService? newService) {
@@ -195,6 +214,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                 label: 'Alamat Lokasi',
                 maxLines: 3,
                 prefixIcon: const Icon(Icons.location_on),
+                errorText: state.fieldErrors['address'],
                 validator: (v) {
                   if ((v ?? '').trim().isEmpty) return 'Alamat wajib diisi';
                   return null;
@@ -208,6 +228,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                 label: 'Catatan Tambahan (opsional)',
                 maxLines: 3,
                 prefixIcon: const Icon(Icons.note),
+                errorText: state.fieldErrors['notes'],
               ),
               const SizedBox(height: 16),
 
@@ -322,6 +343,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
           ),
         ),
       ),
+      bottomNavigationBar: const TukangDekatFooter(),
     );
   }
 }

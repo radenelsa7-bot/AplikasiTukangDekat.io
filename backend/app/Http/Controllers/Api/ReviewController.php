@@ -3,111 +3,60 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
 use App\Models\Review;
+use App\Models\ProviderProfile;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
-  /**
-   * Create review untuk order
-   */
-  public function createReview(Request $request, $orderId)
-  {
-    $user = Auth::user();
+    use ApiResponse;
 
-    if ($user->role !== 'CUSTOMER') {
-      return response()->json([
-        'message' => 'only customer can create review',
-      ], 403);
+    /**
+     * Store atau membuat review baru
+     */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'provider_id' => 'required|exists:provider_profiles,id',
+            'order_id'    => 'required|exists:orders,id',
+            'rating'      => 'required|integer|min:1|max:5',
+            'comment'     => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->errorResponse($validator->errors()->first(), 400);
+        }
+
+        $review = Review::create([
+            'user_id'     => Auth::id() ?? $request->user_id,
+            'provider_id' => $request->provider_id,
+            'order_id'    => $request->order_id,
+            'rating'      => $request->rating,
+            'comment'     => $request->comment,
+        ]);
+
+        return $this->successResponse(['review' => $review], 'Review dikirim dengan sukses', 201);
     }
 
-    $order = Order::find($orderId);
+    /**
+     * Get reviews untuk provider
+     */
+    public function getProviderReviews($providerId)
+    {
+        $perPage = request()->query('per_page', 20);
 
-    if (!$order) {
-      return response()->json([
-        'message' => 'order not found',
-      ], 404);
+        $provider = ProviderProfile::find($providerId);
+        if (!$provider) {
+            return $this->notFoundResponse('Provider tidak ditemukan');
+        }
+
+        $reviews = Review::where('provider_id', $providerId)
+            ->latest()
+            ->paginate($perPage);
+
+        return $this->successResponse(['reviews' => $reviews], 'ok', 200);
     }
-
-    if ($order->customer_id !== $user->id) {
-      return response()->json([
-        'message' => 'unauthorized',
-      ], 403);
-    }
-
-    if ($order->status !== 'COMPLETED' && $order->status !== 'CLOSED') {
-      return response()->json([
-        'message' => 'order not completed yet',
-      ], 400);
-    }
-
-    // Check apakah sudah ada review
-    if ($order->review) {
-      return response()->json([
-        'message' => 'review already exists for this order',
-      ], 400);
-    }
-
-    $validated = $request->validate([
-      'rating' => 'required|integer|between:1,5',
-      'comment' => 'nullable|string',
-    ]);
-
-    $review = Review::create([
-      'order_id' => $order->id,
-      'customer_id' => $user->id,
-      'provider_id' => $order->provider_id,
-      'rating' => $validated['rating'],
-      'comment' => $validated['comment'] ?? null,
-    ]);
-
-    // Update provider avg_rating
-    $providerProfile = $order->provider->providerProfile;
-    if ($providerProfile) {
-      $avgRating = Review::where('provider_id', $order->provider_id)->avg('rating');
-      $providerProfile->update(['avg_rating' => round($avgRating, 2)]);
-    }
-
-    return response()->json([
-      'message' => 'review created',
-      'data' => $review,
-    ], 201);
-  }
-
-  /**
-   * Get reviews untuk provider
-   */
-  public function getProviderReviews($providerId)
-  {
-    $reviews = Review::where('provider_id', $providerId)
-      ->with(['customer', 'order'])
-      ->latest()
-      ->get();
-
-    return response()->json([
-      'data' => $reviews,
-    ], 200);
-  }
-
-  /**
-   * Get review untuk order
-   */
-  public function getOrderReview($orderId)
-  {
-    $review = Review::where('order_id', $orderId)
-      ->with(['customer', 'provider'])
-      ->first();
-
-    if (!$review) {
-      return response()->json([
-        'message' => 'review not found',
-      ], 404);
-    }
-
-    return response()->json([
-      'data' => $review,
-    ], 200);
-  }
 }

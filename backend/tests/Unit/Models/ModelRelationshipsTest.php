@@ -54,8 +54,10 @@ class ModelRelationshipsTest extends TestCase
     {
         $customer = User::factory()->create();
         $provider = User::factory()->create();
-        $order = Order::factory()->create(['customer_id' => $customer->id, 'provider_id' => $provider->id]);
-        Review::factory(2)->create(['order_id' => $order->id, 'customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        $order1 = Order::factory()->create(['customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        $order2 = Order::factory()->create(['customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        Review::factory()->create(['order_id' => $order1->id, 'customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        Review::factory()->create(['order_id' => $order2->id, 'customer_id' => $customer->id, 'provider_id' => $provider->id]);
 
         $this->assertCount(2, $customer->customerReviews);
         $this->assertInstanceOf(Review::class, $customer->customerReviews->first());
@@ -65,8 +67,10 @@ class ModelRelationshipsTest extends TestCase
     {
         $customer = User::factory()->create();
         $provider = User::factory()->create();
-        $order = Order::factory()->create(['customer_id' => $customer->id, 'provider_id' => $provider->id]);
-        Review::factory(2)->create(['order_id' => $order->id, 'customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        $order1 = Order::factory()->create(['customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        $order2 = Order::factory()->create(['customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        Review::factory()->create(['order_id' => $order1->id, 'customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        Review::factory()->create(['order_id' => $order2->id, 'customer_id' => $customer->id, 'provider_id' => $provider->id]);
 
         $this->assertCount(2, $provider->providerReviews);
     }
@@ -224,8 +228,10 @@ class ModelRelationshipsTest extends TestCase
         $provider = User::factory()->create();
         $profile = ProviderProfile::factory()->create(['user_id' => $provider->id]);
         $customer = User::factory()->create();
-        $order = Order::factory()->create(['customer_id' => $customer->id, 'provider_id' => $provider->id]);
-        Review::factory(2)->create(['order_id' => $order->id, 'customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        $order1 = Order::factory()->create(['customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        $order2 = Order::factory()->create(['customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        Review::factory()->create(['order_id' => $order1->id, 'customer_id' => $customer->id, 'provider_id' => $provider->id]);
+        Review::factory()->create(['order_id' => $order2->id, 'customer_id' => $customer->id, 'provider_id' => $provider->id]);
 
         $this->assertCount(2, $profile->reviews);
         $this->assertInstanceOf(Review::class, $profile->reviews->first());

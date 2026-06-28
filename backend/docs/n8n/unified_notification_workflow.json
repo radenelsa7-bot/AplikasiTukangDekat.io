@@ -1,0 +1,200 @@
+{
+  "name": "TukangDekat - Unified WA Notification Workflow",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "n8n-events",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": { "responseCode": 200 }
+      },
+      "name": "Webhook n8n-events",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"event_name\"]}}",
+              "operation": "regex",
+              "value2": "order_created|order_accepted|order_rejected|dp_paid|order_completed|final_paid"
+            }
+          ]
+        }
+      },
+      "name": "Validate event_name",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "multiOptions": [
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "order_created"
+            },
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "order_accepted"
+            },
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "order_rejected"
+            },
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "dp_paid"
+            },
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "order_completed"
+            },
+            {
+              "operator": { "name": "=" },
+              "value": "={{$json[\"event_name\"]}}",
+              "type": "string",
+              "leftValue": "",
+              "rightValue": "final_paid"
+            }
+          ]
+        }
+      },
+      "name": "Route by event_name",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [750, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst customerName = payload.customer_name || 'Customer';\nconst providerName = payload.provider_name || 'Provider';\nconst orderCode = payload.order_code || 'N/A';\nconst estimatedPrice = payload.estimated_price ?? 0;\nconst dpAmount = payload.dp_amount ?? 0;\nconst customerPhone = payload.customer_phone || '';\nconst providerPhone = payload.provider_phone || '';\n\nreturn [\n  {\n    json: {\n      phone: customerPhone,\n      recipient_type: 'customer',\n      message: `Halo ${customerName}, pesanan *${orderCode}* sudah dibuat. Estimasi harga Rp ${estimatedPrice}. Silakan tunggu konfirmasi provider.\\n\\nKode Order: ${orderCode}\\nTotal DP: Rp ${dpAmount}`\n    }\n  },\n  {\n    json: {\n      phone: providerPhone,\n      recipient_type: 'provider',\n      message: `Halo ${providerName}, ada order baru *${orderCode}*. Silakan cek detail pesanan dan segera respon.`\n    }\n  }\n];"
+      },
+      "name": "Build messages (order_created)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 50]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst customerName = payload.customer_name || 'Customer';\nconst customerPhone = payload.customer_phone || '';\nconst orderCode = payload.order_code || 'N/A';\nconst providerName = payload.provider_name || 'Provider';\n\nreturn [{\n  json: {\n    phone: customerPhone,\n    recipient_type: 'customer',\n    message: `Halo ${customerName}, pesanan *${orderCode}* telah diterima oleh ${providerName}. Silakan tunggu konfirmasi jadwal atau hubungi provider untuk detail.`\n  }\n}];"
+      },
+      "name": "Build messages (order_accepted)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 120]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst customerName = payload.customer_name || 'Customer';\nconst customerPhone = payload.customer_phone || '';\nconst orderCode = payload.order_code || 'N/A';\nconst reason = payload.reason || payload.rejection_reason || '';\n\nreturn [{\n  json: {\n    phone: customerPhone,\n    recipient_type: 'customer',\n    message: `Halo ${customerName}, maaf pesanan *${orderCode}* ditolak oleh provider. ${reason ? 'Alasan: ' + reason : ''} Silakan buat order baru atau hubungi support.`\n  }\n}];"
+      },
+      "name": "Build messages (order_rejected)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 190]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst orderCode = payload.order_code || 'N/A';\nconst amount = payload.amount || payload.dp_amount || 0;\nconst customerName = payload.customer_name || 'Customer';\nconst providerName = payload.provider_name || 'Provider';\nconst customerPhone = payload.customer_phone || '';\nconst providerPhone = payload.provider_phone || '';\n\nreturn [\n  {\n    json: {\n      phone: customerPhone,\n      recipient_type: 'customer',\n      message: `Halo ${customerName}, DP sebesar Rp ${amount} untuk order *${orderCode}* telah kami terima. Terima kasih.`\n    }\n  },\n  {\n    json: {\n      phone: providerPhone,\n      recipient_type: 'provider',\n      message: `Halo ${providerName}, DP untuk order *${orderCode}* sebesar Rp ${amount} sudah terbayar. Silakan persiapkan pekerjaan.`\n    }\n  }\n];"
+      },
+      "name": "Build messages (dp_paid)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 260]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst customerName = payload.customer_name || 'Customer';\nconst customerPhone = payload.customer_phone || '';\nconst orderCode = payload.order_code || 'N/A';\nconst remaining = payload.remaining_amount || payload.amount || 0;\n\nreturn [{\n  json: {\n    phone: customerPhone,\n    recipient_type: 'customer',\n    message: `Halo ${customerName}, pekerjaan untuk order *${orderCode}* sudah selesai. Mohon selesaikan pembayaran pelunasan sebesar Rp ${remaining}. Terima kasih.`\n  }\n}];"
+      },
+      "name": "Build messages (order_completed)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 330]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.payload || {};\nconst orderCode = payload.order_code || 'N/A';\nconst amount = payload.amount || payload.amount_paid || 0;\nconst customerName = payload.customer_name || 'Customer';\nconst providerName = payload.provider_name || 'Provider';\nconst customerPhone = payload.customer_phone || '';\nconst providerPhone = payload.provider_phone || '';\n\nreturn [\n  {\n    json: {\n      phone: customerPhone,\n      recipient_type: 'customer',\n      message: `Halo ${customerName}, pembayaran final sebesar Rp ${amount} untuk order *${orderCode}* telah diterima. Terima kasih.`\n    }\n  },\n  {\n    json: {\n      phone: providerPhone,\n      recipient_type: 'provider',\n      message: `Halo ${providerName}, pembayaran final untuk order *${orderCode}* sebesar Rp ${amount} sudah selesai. Terima kasih.`\n    }\n  }\n];"
+      },
+      "name": "Build messages (final_paid)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 400]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://api.wablas.com/send-message",
+        "jsonParameters": true,
+        "options": {
+          "headers": [
+            { "name": "Authorization", "value": "Bearer {{$credentials.waApi.apiKey}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "bodyParametersJson": "={ \"phone\": $json[\"phone\"], \"message\": $json[\"message\"] }"
+      },
+      "name": "Send WA message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1200, 250]
+    }
+  ],
+  "connections": {
+    "Webhook n8n-events": {
+      "main": [[ { "node": "Validate event_name", "type": "main", "index": 0 } ]]
+    },
+    "Validate event_name": {
+      "main": [[ { "node": "Route by event_name", "type": "main", "index": 0 } ]]
+    },
+    "Route by event_name": {
+      "main": [
+        [ { "node": "Build messages (order_created)", "type": "main", "index": 0 } ],
+        [ { "node": "Build messages (order_accepted)", "type": "main", "index": 0 } ],
+        [ { "node": "Build messages (order_rejected)", "type": "main", "index": 0 } ],
+        [ { "node": "Build messages (dp_paid)", "type": "main", "index": 0 } ],
+        [ { "node": "Build messages (order_completed)", "type": "main", "index": 0 } ],
+        [ { "node": "Build messages (final_paid)", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Build messages (order_created)": {
+      "main": [[ { "node": "Send WA message", "type": "main", "index": 0 } ]]
+    },
+    "Build messages (order_accepted)": {
+      "main": [[ { "node": "Send WA message", "type": "main", "index": 0 } ]]
+    },
+    "Build messages (order_rejected)": {
+      "main": [[ { "node": "Send WA message", "type": "main", "index": 0 } ]]
+    },
+    "Build messages (dp_paid)": {
+      "main": [[ { "node": "Send WA message", "type": "main", "index": 0 } ]]
+    },
+    "Build messages (order_completed)": {
+      "main": [[ { "node": "Send WA message", "type": "main", "index": 0 } ]]
+    },
+    "Build messages (final_paid)": {
+      "main": [[ { "node": "Send WA message", "type": "main", "index": 0 } ]]
+    }
+  },
+  "settings": {},
+  "staticData": {}
+}
