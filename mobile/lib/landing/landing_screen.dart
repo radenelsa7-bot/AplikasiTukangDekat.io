@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../features/auth/login_screen.dart';
 
 const Color _navy = Color(0xFF0D2B55);
@@ -87,18 +88,14 @@ class _HeroSectionState extends State<_HeroSection> {
                   color: _orange,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Center(
-                  child: CircleAvatar(
-                    radius: 36,
-                    backgroundColor: Colors.white,
-                    child: Text(
-                      'TD',
-                      style: TextStyle(
-                        color: _orange,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 28,
-                      ),
-                    ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: SvgPicture.asset(
+                    'images/logo.svg',
+                    width: 88,
+                    height: 88,
+                    fit: BoxFit.cover,
+                    semanticsLabel: 'Logo TukangDekat',
                   ),
                 ),
               ),
@@ -132,7 +129,14 @@ class _HeroSectionState extends State<_HeroSection> {
                 height: 1.6,
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 18),
+            SvgPicture.asset(
+              'images/hero_banner.svg',
+              width: 320,
+              height: 120,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 18),
             const _StatsRow(),
           ],
         ),
@@ -320,6 +324,20 @@ class _ServiceCard extends StatelessWidget {
     final iconBg = data.isOrange
         ? const Color(0xFFFFF3EC)
         : const Color(0xFFEEF3FA);
+    String assetFor() {
+      final n = data.name.toLowerCase();
+      if (n.contains('listrik') || n.contains('instalasi')) {
+        return 'images/service_electric.svg';
+      }
+      if (n.contains('plumb') || n.contains('pipa')) {
+        return 'images/service_plumber.svg';
+      }
+      if (n.contains('bangunan') || n.contains('renovasi')) {
+        return 'images/service_building.svg';
+      }
+      return 'images/service_electric.svg';
+    }
+
     return Material(
       color: _white,
       elevation: 2,
@@ -341,7 +359,12 @@ class _ServiceCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
-                  child: Text(data.icon, style: const TextStyle(fontSize: 20)),
+                  child: SvgPicture.asset(
+                    assetFor(),
+                    width: 28,
+                    height: 28,
+                    fit: BoxFit.scaleDown,
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
