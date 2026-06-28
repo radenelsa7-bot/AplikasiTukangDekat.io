@@ -62,7 +62,8 @@ class ProviderProfile {
       address: json['address'],
       isVerified: json['is_verified'] ?? false,
       avgRating: double.tryParse(json['avg_rating'].toString()) ?? 0,
-      services: (json['services'] as List?)
+      services:
+          (json['services'] as List?)
               ?.map((item) => ProviderService.fromJson(item))
               .toList() ??
           [],
@@ -77,7 +78,8 @@ class ProvidersResponse {
 
   factory ProvidersResponse.fromJson(Map<String, dynamic> json) {
     return ProvidersResponse(
-      data: (json['data'] as List?)
+      data:
+          (json['data'] as List?)
               ?.map((item) => ProviderProfile.fromJson(item))
               .toList() ??
           [],

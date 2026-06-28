@@ -1,3 +1,4 @@
+version: '3.9'
 services:
   # Service 1: Backend Laravel kamu
   backend:
@@ -9,7 +10,8 @@ services:
     working_dir: /var/www
     ports:
       - "8000:8000"
-    command: php artisan serve --host=0.0.0.0 --port=8000
+    command: >
+      sh -c "until php -r 'try { new PDO(\"mysql:host=db;port=3306;dbname=db_tukangdekat\",\"root\",\"rahasia\"); } catch (Throwable $e) { exit(1); }'; do echo 'Waiting for db...'; sleep 2; done; php artisan serve --host=0.0.0.0 --port=8000"
     restart: unless-stopped
     tty: true
     environment:
@@ -36,7 +38,7 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=rahasia            # Password MySQL di Docker
 
-      - SESSION_DRIVER=database
+      - SESSION_DRIVER=file
       - SESSION_LIFETIME=120
       - SESSION_ENCRYPT=false
       - SESSION_PATH=/
@@ -44,7 +46,7 @@ services:
       - BROADCAST_CONNECTION=log
       - FILESYSTEM_DISK=local
       - QUEUE_CONNECTION=database
-      - CACHE_STORE=database
+      - CACHE_STORE=file
       - MEMCACHED_HOST=127.0.0.1
       - REDIS_CLIENT=phpredis
       - REDIS_HOST=127.0.0.1
@@ -78,13 +80,19 @@ services:
     volumes:
       - ./backend:/var/www
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   # Service 2: Database MySQL tempat penyimpanan data
   db:
     image: mysql:8.0
     container_name: laravel_db
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prahasia"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       - MYSQL_DATABASE=db_tukangdekat     # Otomatis membuat database ini saat nyala
       - MYSQL_ROOT_PASSWORD=rahasia       # Password root MySQL kamu

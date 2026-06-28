@@ -28,7 +28,8 @@ class CategoriesResponse {
 
   factory CategoriesResponse.fromJson(Map<String, dynamic> json) {
     return CategoriesResponse(
-      data: (json['data'] as List?)
+      data:
+          (json['data'] as List?)
               ?.map((item) => ServiceCategory.fromJson(item))
               .toList() ??
           [],

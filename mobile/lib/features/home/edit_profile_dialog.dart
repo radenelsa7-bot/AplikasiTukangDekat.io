@@ -82,10 +82,7 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
       MultipartFile? mf;
       if (_picked != null) {
         if (_pickedBytes != null) {
-          mf = MultipartFile.fromBytes(
-            _pickedBytes!,
-            filename: _picked!.name,
-          );
+          mf = MultipartFile.fromBytes(_pickedBytes!, filename: _picked!.name);
         } else {
           // Fallback for platforms where path is available (mobile)
           mf = await MultipartFile.fromFile(
@@ -145,10 +142,14 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
           message = e.message!;
         }
       } catch (_) {}
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menyimpan profil')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gagal menyimpan profil')));
     } finally {
       setState(() => _isSaving = false);
     }
@@ -164,12 +165,17 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
-    final hasCurrentPhoto = authState.userProfilePhotoPath != null || _picked != null || _pickedBytes != null;
+    final hasCurrentPhoto =
+        authState.userProfilePhotoPath != null ||
+        _picked != null ||
+        _pickedBytes != null;
     final ImageProvider<Object>? backgroundImage = _pickedBytes != null
-      ? MemoryImage(_pickedBytes!)
-      : (authState.userProfilePhotoPath != null
-        ? NetworkImage('${Uri.base.origin}/storage/${authState.userProfilePhotoPath}')
-        : null);
+        ? MemoryImage(_pickedBytes!)
+        : (authState.userProfilePhotoPath != null
+              ? NetworkImage(
+                  '${Uri.base.origin}/storage/${authState.userProfilePhotoPath}',
+                )
+              : null);
 
     return AlertDialog(
       title: const Text('Edit Profil'),
