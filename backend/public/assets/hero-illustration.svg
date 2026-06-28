@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1">
+      <stop offset="0%" stop-color="#0E7490" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#F97316" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="600" rx="24" fill="#F8FAFC"/>
+  <!-- abstract background shapes -->
+  <g transform="translate(40,40)" opacity="0.12">
+    <circle cx="120" cy="120" r="100" fill="#0E7490" />
+    <rect x="300" y="30" width="240" height="160" rx="24" fill="#F97316" />
+  </g>
+  <!-- people and tools simplified vector -->
+  <g transform="translate(180,160)">
+    <!-- worker body -->
+    <circle cx="120" cy="48" r="36" fill="#FFEDD5" stroke="#000" stroke-opacity="0.04"/>
+    <rect x="80" y="86" width="80" height="90" rx="10" fill="#0E7490"/>
+    <!-- helmet -->
+    <rect x="96" y="28" width="48" height="18" rx="8" fill="#F97316"/>
+    <!-- tool box -->
+    <rect x="20" y="150" width="72" height="48" rx="8" fill="#fff" stroke="#e6e6e6"/>
+    <rect x="22" y="152" width="68" height="12" rx="6" fill="#0E7490"/>
+  </g>
+  <!-- small icons -->
+  <g transform="translate(520,200)">
+    <rect x="0" y="0" width="160" height="100" rx="12" fill="#fff" stroke="#e9f5f6"/>
+    <circle cx="40" cy="48" r="20" fill="#0E7490" />
+    <rect x="72" y="36" width="64" height="24" rx="6" fill="#F97316"/>
+  </g>
+</svg>

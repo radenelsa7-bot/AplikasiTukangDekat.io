@@ -48,9 +48,9 @@ class _HeroSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             decoration: BoxDecoration(
-              color: _orange.withValues(alpha: 0.15),
+              color: Color.fromRGBO(249, 115, 22, 0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _orange.withValues(alpha: 0.35)),
+              border: Border.all(color: Color.fromRGBO(249, 115, 22, 0.35)),
             ),
             child: const Text(
               '⚡  Platform Jasa Lokal Terpercaya',
@@ -63,20 +63,24 @@ class _HeroSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(
-              color: _orange,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                'images/logo.jpg',
-                width: 88,
-                height: 88,
-                fit: BoxFit.cover,
+          Semantics(
+            label: 'Logo TukangDekat',
+            child: Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: _orange,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'images/logo.jpg',
+                  width: 88,
+                  height: 88,
+                  fit: BoxFit.cover,
+                  semanticLabel: 'Logo TukangDekat',
+                ),
               ),
             ),
           ),
@@ -611,39 +615,46 @@ class _CtaSection extends StatelessWidget {
           const SizedBox(height: 22),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onMulaiSekarang,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _orange,
-                foregroundColor: _white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            child: Tooltip(
+              message: 'Mulai pendaftaran dan buat pesanan',
+              child: ElevatedButton(
+                onPressed: onMulaiSekarang,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _orange,
+                  foregroundColor: _white,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                  minimumSize: const Size.fromHeight(48),
                 ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Mulai Sekarang',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                child: const Text(
+                  'Mulai Sekarang',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
               ),
             ),
           ),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton(
-              onPressed: onMulaiSekarang,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _white,
-                side: const BorderSide(color: Colors.white24),
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            child: Tooltip(
+              message: 'Daftar sebagai mitra untuk bergabung menjadi teknisi',
+              child: OutlinedButton(
+                onPressed: onMulaiSekarang,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _white,
+                  side: const BorderSide(color: Colors.white24),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'Daftar sebagai Mitra Teknisi',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                child: const Text(
+                  'Daftar sebagai Mitra Teknisi',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ),

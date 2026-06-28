@@ -11,13 +11,13 @@
     @php
       $key = \Illuminate\Support\Str::slug(\Illuminate\Support\Str::lower($s));
       $icons = [
-        'tukang-bangunan' => '/assets/icon-construction.svg',
-        'tukang-ac' => '/assets/icon-ac.svg',
-        'tukang-listrik' => '/assets/icon-electrician.svg',
-        'tukang-ledeng' => '/assets/icon-plumber.svg',
+        'tukang-bangunan' => '/assets/service-illustration-building.svg',
+        'tukang-ac' => '/assets/service-illustration-electric.svg',
+        'tukang-listrik' => '/assets/service-illustration-electric.svg',
+        'tukang-ledeng' => '/assets/service-illustration-plumber.svg',
         'cleaning-service' => '/assets/icon-cleaning.svg',
       ];
-      $icon = $icons[$key] ?? '/assets/icon-construction.svg';
+      $icon = $icons[$key] ?? '/assets/service-illustration-building.svg';
     @endphp
     <div class="col-sm-6 col-md-4 col-lg-3">
       <div class="card service-card h-100" data-anim="zoom-in">
