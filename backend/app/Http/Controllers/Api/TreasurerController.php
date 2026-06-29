@@ -22,7 +22,7 @@ class TreasurerController extends Controller
             Log::warning('No user found in TreasurerController.ensureTreasurer');
         }
 
-        if (!$user || $user->role !== 'TREASURER') {
+        if (!$user || !in_array($user->role, ['TREASURER', 'ADMIN'], true)) {
             Log::warning('Unauthorized treasurer access attempt', ['user' => $user ? $user->id : null]);
             return $this->forbiddenResponse('only treasurer can access this resource');
         }
@@ -34,7 +34,7 @@ class TreasurerController extends Controller
     {
         // Route uses role.treasurer; defensive check only
         $user = Auth::user() ?? Auth::guard('web')->user();
-        if (!$user || $user->role !== 'TREASURER') {
+        if (!$user || !in_array($user->role, ['TREASURER', 'ADMIN'], true)) {
             return $this->forbidden('Only treasurer can access this resource');
         }
 

@@ -139,7 +139,8 @@ class ApiService {
   Future<ProviderProfile> getProviderDetail(int providerId) async {
     try {
       final response = await dio.get('/api/catalog/providers/$providerId');
-      return ProviderProfile.fromJson(response.data['data']);
+      final payload = Map<String, dynamic>.from(response.data['data'] ?? {});
+      return ProviderProfile.fromJson(payload['provider'] ?? {});
     } catch (e) {
       rethrow;
     }
@@ -296,7 +297,7 @@ class ApiService {
   Future<void> simulatePaymentCallback(int paymentId) async {
     try {
       await dio.post(
-        '/webhooks/payment',
+        '/api/webhooks/payment',
         data: {
           'payment_id': paymentId,
           'transaction_id': 'SIM-$paymentId',
@@ -311,7 +312,8 @@ class ApiService {
   Future<PaymentData> getPaymentStatus(int paymentId) async {
     try {
       final response = await dio.get('/api/payments/$paymentId');
-      return PaymentData.fromJson(response.data['data']);
+      final payload = Map<String, dynamic>.from(response.data['data'] ?? {});
+      return PaymentData.fromJson(payload['payment'] ?? {});
     } catch (e) {
       rethrow;
     }
@@ -326,7 +328,7 @@ class ApiService {
   }) async {
     try {
       await dio.post(
-        '/api/reviews/order/$orderId',
+        '/api/orders/$orderId/review',
         data: {'rating': rating, 'comment': comment},
       );
     } catch (e) {
@@ -336,7 +338,9 @@ class ApiService {
 
   Future<ReviewsResponse> getProviderReviews(int providerId) async {
     try {
-      final response = await dio.get('/api/reviews/provider/$providerId');
+      final response = await dio.get(
+        '/api/catalog/providers/$providerId/reviews',
+      );
       return ReviewsResponse.fromJson(response.data);
     } catch (e) {
       rethrow;
@@ -345,10 +349,9 @@ class ApiService {
 
   Future<ReviewData?> getOrderReview(int orderId) async {
     try {
-      final response = await dio.get('/api/reviews/order/$orderId');
-      return ReviewData.fromJson(
-        Map<String, dynamic>.from(response.data['data']),
-      );
+      final response = await dio.get('/api/reviews/$orderId');
+      final payload = Map<String, dynamic>.from(response.data['data'] ?? {});
+      return ReviewData.fromJson(payload['review'] ?? {});
     } catch (e) {
       return null;
     }

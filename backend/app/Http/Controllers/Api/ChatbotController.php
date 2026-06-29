@@ -51,7 +51,7 @@ class ChatbotController extends Controller
       ])->post($url, $payload);
 
       if ($response->failed()) {
-        return $this->error('AI service error', 500, ['details' => $response->body()]);
+        return $this->error('AI service error', 500, null, ['details' => $response->body()]);
       }
 
       $body = $response->json();
@@ -68,7 +68,7 @@ class ChatbotController extends Controller
 
       return $this->success(['reply' => $reply], 'OK', 200);
     } catch (\Exception $e) {
-      return $this->error('Failed to contact AI service', 500, ['exception' => $e->getMessage()]);
+      return $this->error('Failed to contact AI service', 500, null, ['exception' => $e->getMessage()]);
     }
   }
 }

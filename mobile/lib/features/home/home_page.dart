@@ -5,6 +5,8 @@ import '../../shared/widgets/site_header.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_page.dart';
 import '../admin/admin_verification_page.dart';
+import '../../config/api_config.dart';
+import '../treasurer/treasurer_report_page.dart';
 import 'catalog_page.dart';
 import 'my_orders_page.dart';
 import 'edit_profile_dialog.dart';
@@ -16,16 +18,20 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(authControllerProvider);
     final isAdmin = state.userRole == 'ADMIN';
+    final isTreasurer = state.userRole == 'TREASURER';
     final tabs = [
       const Tab(icon: Icon(Icons.home), text: 'Beranda'),
       const Tab(icon: Icon(Icons.receipt_long), text: 'Pesanan'),
       if (isAdmin) const Tab(icon: Icon(Icons.verified_user), text: 'Admin'),
+      if (isTreasurer)
+        const Tab(icon: Icon(Icons.account_balance_wallet), text: 'Bendahara'),
       const Tab(icon: Icon(Icons.account_circle), text: 'Akun'),
     ];
     final pages = [
       const CatalogPage(),
       const MyOrdersPage(),
       if (isAdmin) const AdminVerificationPage(),
+      if (isTreasurer) const TreasurerReportPage(),
       _buildAccountTab(context, state),
     ];
 
@@ -93,7 +99,7 @@ class HomePage extends ConsumerWidget {
                         ).colorScheme.surfaceContainerHighest,
                         backgroundImage: state.userProfilePhotoPath != null
                             ? NetworkImage(
-                                '${Uri.base.origin}/storage/${state.userProfilePhotoPath}',
+                                '${ApiConfig.baseUrl}/storage/${state.userProfilePhotoPath}',
                               )
                             : null,
                         child: state.userProfilePhotoPath == null

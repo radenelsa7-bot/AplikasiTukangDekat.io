@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/api_config.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/auth_storage_service.dart';
 import '../auth/auth_controller.dart';
@@ -173,7 +174,7 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
         ? MemoryImage(_pickedBytes!)
         : (authState.userProfilePhotoPath != null
               ? NetworkImage(
-                  '${Uri.base.origin}/storage/${authState.userProfilePhotoPath}',
+                  '${ApiConfig.baseUrl}/storage/${authState.userProfilePhotoPath}',
                 )
               : null);
 
