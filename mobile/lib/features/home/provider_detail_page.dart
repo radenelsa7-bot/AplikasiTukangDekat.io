@@ -66,7 +66,7 @@ class ProviderDetailPage extends ConsumerWidget {
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        '${provider.avgRating} ⭐',
+                                        provider.avgRating.toStringAsFixed(1),
                                         style: Theme.of(
                                           context,
                                         ).textTheme.bodyMedium,

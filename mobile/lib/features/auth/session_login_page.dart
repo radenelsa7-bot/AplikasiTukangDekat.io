@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/api_service.dart';
@@ -23,7 +24,8 @@ class _SessionLoginPageState extends ConsumerState<SessionLoginPage> {
         email: _emailCtl.text.trim(),
         password: _passCtl.text.trim(),
       );
-      setState(() => _output = res.toString());
+      final pretty = const JsonEncoder.withIndent('  ').convert(res);
+      setState(() => _output = pretty);
     } catch (e) {
       setState(() => _output = 'Error: $e');
     } finally {

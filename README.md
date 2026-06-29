@@ -1,68 +1,96 @@
-# Repository TukangDekat (UTS → UAS)
+# TukangDekat — Ringkasan Proyek
 
-Repository ini digunakan untuk pengerjaan proyek **TukangDekat** (UTS: analisis & desain, UAS: implementasi berjalan penuh menggunakan arsitektur modern).
+Repo ini berisi implementasi lengkap aplikasi TukangDekat: backend API (Laravel) dan client mobile (Flutter).
 
----
-
-## 📁 Struktur Folder Proyek
-
-Aplikasi ini menggunakan struktur *Monorepo* untuk menyatukan seluruh komponen sistem:
-
-- `backend/` 🚀 → **Laravel 12 API** (Berjalan di dalam isolasi lingkungan Docker).
-- `mobile/` 📱 → **Flutter App** (Aplikasi mobile multiplatform).
-- `docs/` 📄 → Dokumen analisis sistem, termasuk SRS, dokumen perancangan, dan workflow.
-- `scripts/` ⚡ → Kumpulan script otomatisasi pembantu development (seperti python converter).
-- `testing/` 🧪 → Berkas pengujian unit test dan integrasi fitur.
+Ringkasan singkat:
+- Backend: Laravel API, berjalan di Docker.
+- Mobile: Flutter app (Android/iOS/web-ready).
+- Dokumentasi: `docs/` berisi SRS, panduan deploy, dan catatan pengembangan.
 
 ---
 
-## 🛠️ Cara Cepat Menjalankan Proyek (Quick Start)
+## Perubahan Terbaru (ringkas)
 
-Manajemen server backend dan database sekarang sepenuhnya menggunakan **Docker Compose**. Anda tidak perlu menginstal PHP, Composer, atau MySQL secara manual di sistem operasi host Anda.
+- Menyelaraskan response API dan trait `ApiResponse` untuk konsistensi controller.
+- Menambahkan middleware `EnsureTreasurerRole` dan memperbaiki endpoint treasurer/export.
+- Memperbaiki controller `Catalog`, `Review`, dan `Chatbot` untuk penanganan error lebih baik.
+- Menambahkan `backend/.env.example` dan mengurangi hardcoded secrets di `docker-compose.yml`.
+- Perbaikan pada client Flutter: model parsing, API service, dan UI (termasuk penulisan ulang `landing_screen.dart`).
+- Memperbarui dokumentasi SRS (`docs/srs/SRS_TukangDekat_v1.1.md`) untuk mencerminkan fitur terbaru.
 
-> **Dokumen Panduan Lengkap:** Untuk langkah troubleshooting mendetail, integrasi endpoint API, dan konfigurasi environment antar-device, wajib membaca berkas utama: [HELP_RUN_PROJECT.md](./HELP_RUN_PROJECT.md).
+---
 
-### 1) Backend & Database (Docker)
-Pastikan **Docker Desktop** Anda sudah aktif, lalu jalankan perintah berikut di root folder proyek:
+## Struktur Folder
+
+- `backend/` — Laravel API, migration, seeder, dan dokumentasi backend.
+- `mobile/` — Flutter project, UI, fitur auth, katalog, provider, dan laporan treasurer.
+- `docs/` — SRS, panduan deploy, dan checklist QA.
+- `scripts/`, `testing/`, dll. — utilitas dan tes.
+
+---
+
+## Cara Cepat Menjalankan (Developers)
+
+1) Jalankan seluruh stack (root project):
 
 ```bash
-# 1. Bangun dan nyalakan kontainer server di background
 docker compose up -d --build
+```
 
-# 2. Unduh paket dependency Composer ke dalam kontainer
+2) Di dalam container backend (opsional install composer/plugins):
+
+```bash
 docker compose exec backend composer install
-
-# 3. Jalankan migrasi database beserta data benih (seeder) awal
 docker compose exec backend php artisan migrate --seed
 ```
 
-### 2) Akun seed data
-Seeder default membuat akun test dengan password yang sama.
-Gunakan kredensial berikut untuk login setelah `php artisan migrate --seed` selesai:
+3) Menjalankan aplikasi Flutter (lokal developer machine):
 
-- Admin: `admin@example.com` / `password`
-- Customer: `fajar@example.com` / `password123`
-- Customer: `nabila@example.com` / `password123`
-- Customer: `aldo@example.com` / `password123`
-- Provider: `andi.listrik@example.com` / `password123`
-- Provider: `budi.plumbing@example.com` / `password123`
-- Provider: `citra.ac@example.com` / `password123`
+```bash
+cd mobile
+flutter pub get
+flutter analyze
+flutter run -d <device>
+```
 
+Catatan: jika `flutter analyze` meminta "Developer Mode" atau plugin tertentu, aktifkan Developer Mode pada mesin Windows/Android sesuai pesan, atau jalankan analisis pada mesin yang memenuhi requirement Flutter.
 
-## 🔧 Troubleshooting Login
+---
 
-Jika aplikasi Flutter/web menampilkan kesalahan login atau error koneksi database seperti:
+## Akun seed (contoh)
 
-- `SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: db_tukangdekat)`
-- `Login failed`
+Setelah menjalankan seeder, berikut beberapa akun test yang tersedia untuk keperluan pengujian (email / password):
 
-Maka kemungkinan besar backend tidak terkoneksi dengan container MySQL yang benar. Untuk kasus ini, perbaikan meliputi:
+- Admin: admin@example.com / password
+- Customer: fajar@example.com / password123
+- Customer: nabila@example.com / password123
+- Customer: aldo@example.com / password123
+- Provider: andi.listrik@example.com / password123
+- Provider: budi.plumbing@example.com / password123
+- Provider: citra.ac@example.com / password123
 
-1. Mengubah `backend/.env` agar `DB_HOST=db` dan `DB_PASSWORD=rahasia`.
-2. Mengubah service `backend` di `docker-compose.yml` agar menjalankan HTTP server:
-   - `php artisan serve --host=0.0.0.0 --port=8000`
-3. Membersihkan cache konfigurasi Laravel di dalam container:
-   - `docker compose exec backend php artisan config:clear`
-   - `docker compose exec backend php artisan optimize:clear`
+Catatan: Jika Anda membutuhkan akun tambahan atau ingin melihat konfigurasi lengkap, periksa file seeder di folder `backend/database/seeders`.
 
-Dokumentasi lengkap perbaikan tersedia di: [LOGIN_ERROR_FIX.md](./LOGIN_ERROR_FIX.md)
+---
+
+## Troubleshooting singkat
+
+- Pastikan `backend/.env` menggunakan host database `DB_HOST=db` saat menjalankan lewat Docker Compose.
+- Jika ada error koneksi: jalankan `docker compose logs backend` dan `docker compose logs db` untuk investigasi.
+- Untuk masalah login/CSRF/Sanctum: periksa konfigurasi `SANCTUM_STATEFUL_DOMAINS` dan `SESSION_DOMAIN` di `.env`.
+
+Referensi: [HELP_RUN_PROJECT.md](./HELP_RUN_PROJECT.md)
+
+---
+
+## Catatan Pengembangan & Next Steps
+
+- Jalankan smoke tests terutama pada alur auth, katalog, order, pembayaran, dan review.
+- Jalankan `flutter analyze` dan `flutter test` pada lingkungan developer yang memenuhi syarat plugin.
+- Minta reviewer untuk mengecek endpoint API yang diubah (catalog, review, treasurer, chatbot).
+
+---
+
+Branch saat ini: `Finalisasi-Project` (default branch upstream: `main`).
+
+Jika butuh saya bantu update README lebih spesifik (mis. menambahkan badge CI, instruksi docker-compose env, atau tabel endpoint), beri tahu area yang diinginkan.

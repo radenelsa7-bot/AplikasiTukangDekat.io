@@ -9,7 +9,7 @@ class EnsureTreasurerRole
 {
     public function handle(Request $request, Closure $next)
     {
-        if ($request->user()?->role !== 'TREASURER') {
+        if (!in_array($request->user()?->role, ['TREASURER', 'ADMIN'], true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only treasurers can access this resource.',

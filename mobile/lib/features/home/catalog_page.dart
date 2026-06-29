@@ -109,7 +109,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           ),
 
           // ── Langkah Mudah ────────────────────────────────────────────────
-          _buildSectionHeader(context, 'Langkah Mudah', null),
+          _buildSectionHeader(context, ref, 'Langkah Mudah', null),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -148,7 +148,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           ),
 
           // ── Kategori Layanan ─────────────────────────────────────────────
-          _buildSectionHeader(context, 'Kategori Layanan', 'Lihat Semua'),
+          _buildSectionHeader(context, ref, 'Kategori Layanan', 'Lihat Semua'),
           _buildCategories(context, ref, selectedCategory),
 
           // ── Provider List ────────────────────────────────────────────────
@@ -305,7 +305,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    ref.read(searchQueryProvider.notifier).state = '';
+                    ref.read(selectedCategoryProvider.notifier).state = null;
+                  },
                   icon: const Icon(Icons.search_rounded, size: 18),
                   label: const Text('Mulai Cari Sekarang'),
                   style: ElevatedButton.styleFrom(
@@ -362,6 +365,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   // ─── Section Header ───────────────────────────────────────────────────────
   Widget _buildSectionHeader(
     BuildContext context,
+    WidgetRef ref,
     String title,
     String? action,
   ) {
@@ -378,20 +382,29 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             ),
           ),
           if (action != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                action,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+            GestureDetector(
+              onTap: () {
+                ref.read(searchQueryProvider.notifier).state = '';
+                ref.read(selectedCategoryProvider.notifier).state = null;
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  action,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ),

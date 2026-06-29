@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ServiceCategory;
 use App\Models\ProviderProfile;
+use App\Models\ServiceCategory;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
@@ -12,18 +12,24 @@ class CatalogController extends Controller
 {
     use ApiResponse;
 
-    /**
-     * Get semua service categories
-     */
     public function getCategories()
     {
         $categories = ServiceCategory::where('is_active', true)->get();
         return response()->json(['data' => $categories], 200);
     }
 
-    /**
-     * Get providers berdasarkan category
-     */
+    public function getProviders()
+    {
+        $providers = ProviderProfile::where('is_verified', true)
+            ->with(['services' => function ($query) {
+                $query->where('is_active', true);
+            }, 'user'])
+            ->latest()
+            ->get();
+
+        return $this->successResponse(['providers' => $providers], 'ok', 200);
+    }
+
     public function getProvidersByCategory($categoryId)
     {
         $category = ServiceCategory::find($categoryId);
@@ -35,18 +41,15 @@ class CatalogController extends Controller
         $providers = ProviderProfile::whereHas('services', function ($query) use ($categoryId) {
             $query->where('category_id', $categoryId)->where('is_active', true);
         })
-        ->where('is_verified', true)
-        ->with(['services' => function ($query) use ($categoryId) {
-            $query->where('category_id', $categoryId)->where('is_active', true);
-        }])
-        ->get();
+            ->where('is_verified', true)
+            ->with(['services' => function ($query) use ($categoryId) {
+                $query->where('category_id', $categoryId)->where('is_active', true);
+            }, 'user'])
+            ->get();
 
         return $this->successResponse(['providers' => $providers], 'ok', 200);
     }
 
-    /**
-     * Get detail provider
-     */
     public function getProviderDetail($providerId)
     {
         $provider = ProviderProfile::with(['services' => function ($query) {
@@ -60,9 +63,6 @@ class CatalogController extends Controller
         return $this->successResponse(['provider' => $provider], 'ok', 200);
     }
 
-    /**
-     * Search providers (by name atau area)
-     */
     public function searchProviders(Request $request)
     {
         $query = $request->query('q', '');
@@ -79,7 +79,9 @@ class CatalogController extends Controller
                         $userQ->where('name', 'like', "%$query%");
                     });
             })
-            ->with('services')
+            ->with(['services' => function ($query) {
+                $query->where('is_active', true);
+            }, 'user'])
             ->get();
 
         return $this->successResponse(['providers' => $providers], 'ok', 200);

@@ -3,10 +3,10 @@
 # Software Requirements Specification
 for
 **TukangDekat – Platform Pemesanan Jasa Lokal Kecamatan Bojongloa Kaler Berbasis Mobile & API**
-Version 1.0 approved (UTS)
+Version 1.1 approved (implementation review)
 Prepared by **Nabila, Aldo, Tetep, Nabil, Fatin, Fazna, Elsa, Fajar**
 Universitas Kebangsaan Republik Indonesia
-2026-03-23
+2026-06-28
 
 ## Table of Contents
 Revision History  
@@ -42,6 +42,7 @@ Appendix C: To Be Determined List
 | Name | Date | Reason For Changes | Version |
 |---|---:|---|---:|
 | Kelompok A1 | 2026-03-23 | Initial SRS for TukangDekat | 1.0 |
+| Kelompok A1 | 2026-06-28 | Add session-based auth, profile photo, review flow, chatbot, payout, export, observability, and CI/CD coverage | 1.1 |
 
 ---
 
@@ -216,6 +217,32 @@ Kamera perangkat dapat digunakan untuk unggah foto kerusakan (opsional).
 - FR-25 Bendahara dapat melihat daftar transaksi DP dan pelunasan.  
 - FR-26 Bendahara dapat melihat ringkasan transaksi berdasarkan rentang tanggal.
 
+## 4.9 Chatbot Assistance
+**Priority:** Medium  
+- FR-27 Sistem menyediakan chatbot interaktif yang membantu pelanggan memahami status order dan langkah berikutnya.  
+- FR-28 Chatbot dapat mengingat konteks order terakhir pengguna untuk memberikan jawaban yang lebih relevan.
+
+## 4.10 Provider Payout
+**Priority:** Medium  
+- FR-29 Sistem dapat mencatat pencairan dana provider berdasarkan transaksi yang telah selesai.  
+- FR-30 Administrator/bendahara dapat meninjau status payout dan riwayat pencairan.  
+- FR-31 Sistem mendukung alur payout otomatis/berbasis job untuk transaksi yang telah memenuhi syarat.  
+- FR-32 Sistem menandai payout yang gagal dan memudahkan retry manual.
+
+## 4.11 Profile Management
+**Priority:** Medium  
+- FR-33 Pengguna dapat mengunggah foto profil.  
+- FR-34 Pengguna dapat menghapus foto profil yang sebelumnya telah diunggah.
+
+## 4.12 QRIS Image Capture
+**Priority:** Medium  
+- FR-35 Sistem menyediakan fitur capture QRIS dari URL checkout payment untuk kebutuhan testing dan verifikasi visual.
+
+## 4.13 Data Export
+**Priority:** Medium  
+- FR-36 Bendahara dapat mengekspor laporan transaksi dalam format CSV.  
+- FR-37 Bendahara dapat mengekspor laporan transaksi dalam format XLS/Excel.
+
 ---
 
 # 5. Other Nonfunctional Requirements
@@ -238,7 +265,20 @@ Kamera perangkat dapat digunakan untuk unggah foto kerusakan (opsional).
 - NFR-09 Reliability: transaksi pembayaran menggunakan database transaction.
 - NFR-10 Usability: proses pemesanan dapat dilakukan dengan langkah yang sederhana.
 
-## 5.5 Business Rules
+## 5.5 Monitoring & Observability
+- NFR-11 Sistem menyediakan endpoint metrics terukur untuk pemantauan performa dan health check.  
+- NFR-12 Sistem menuliskan log audit dan event penting untuk troubleshooting.
+
+## 5.6 CI/CD & Delivery
+- NFR-13 Proyek mendukung workflow CI/CD melalui GitHub Actions untuk validasi build dan test.  
+- NFR-14 Deployment dan environment configuration dapat dijalankan melalui Docker Compose dan template environment.
+
+## 5.7 Security & Operational Controls
+- NFR-15 Secret API dan credentials disimpan melalui environment variable dan tidak disematkan langsung dalam konfigurasi.  
+- NFR-16 Endpoint sensitif dilindungi dengan rate limiting dan idempotency untuk webhook.  
+- NFR-17 Sistem mendukung session-based authentication untuk kebutuhan web/SPA.
+
+## 5.8 Business Rules
 - BR-01 DP sebesar 50% dari estimasi biaya.
 - BR-02 Provider hanya dapat memulai pengerjaan setelah DP dibayar.
 - BR-03 Pelunasan dilakukan setelah order selesai.
@@ -268,6 +308,7 @@ Kamera perangkat dapat digunakan untuk unggah foto kerusakan (opsional).
 - API Contract (lampiran)
 
 ## Appendix C: To Be Determined List
-1. Payment gateway final yang digunakan (rencana: Midtrans sandbox).
-2. Komisi platform dan settlement ke provider.
-3. Refund policy DP bila pembatalan.
+1. Payment gateway final yang digunakan (rencana: Midtrans sandbox). [TBD]
+2. Komisi platform dan settlement ke provider. [TBD]
+3. Refund policy DP bila pembatalan. [TBD]
+4. Session-based login, profile photo upload/delete, chatbot, payout, export CSV/XLS, observability metrics, dan CI/CD workflow telah terimplementasi. [IMPLEMENTED]

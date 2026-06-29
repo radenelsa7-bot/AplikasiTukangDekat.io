@@ -1,19 +1,13 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import '../features/auth/login_page.dart';
 
 const Color _navy = Color(0xFF0D2B55);
 const Color _navyDeep = Color(0xFF081B38);
-const Color _navyTint = Color(0xFFE7EBF3);
 const Color _orange = Color(0xFFF97316);
-const Color _orangeDeep = Color(0xFFEA580C);
-const Color _orangeTint = Color(0xFFFFF1E6);
 const Color _cream = Color(0xFFF5EFE6);
 const Color _white = Colors.white;
 const Color _border = Color(0xFFE8E0D5);
-const Color _textMuted = Color(0xFF8B8174);
-const Color _textOnDark = Color(0xFFD9D3C4);
+const Color _textMuted = Color(0xFF7E756E);
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -29,9 +23,7 @@ class _LandingScreenState extends State<LandingScreen>
 
   bool _heroVisible = false;
   bool _showServices = false;
-  bool _showWhy = false;
   bool _showHow = false;
-  bool _showTestimonials = false;
   bool _showCta = false;
 
   @override
@@ -44,27 +36,19 @@ class _LandingScreenState extends State<LandingScreen>
     )..repeat(reverse: true);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        _heroVisible = true;
-      });
+      setState(() => _heroVisible = true);
     });
   }
 
   void _onScroll() {
     final offset = _scrollController.offset;
-    if (!_showServices && offset > 260) {
+    if (!_showServices && offset > 220) {
       setState(() => _showServices = true);
     }
-    if (!_showWhy && offset > 700) {
-      setState(() => _showWhy = true);
-    }
-    if (!_showHow && offset > 1180) {
+    if (!_showHow && offset > 760) {
       setState(() => _showHow = true);
     }
-    if (!_showTestimonials && offset > 1700) {
-      setState(() => _showTestimonials = true);
-    }
-    if (!_showCta && offset > 2200) {
+    if (!_showCta && offset > 1250) {
       setState(() => _showCta = true);
     }
   }
@@ -76,28 +60,33 @@ class _LandingScreenState extends State<LandingScreen>
     super.dispose();
   }
 
-  void _navigateToLogin() {
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _cream,
       body: SingleChildScrollView(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            _HeroSection(),
-            _ServicesSection(),
-            _HowItWorksSection(),
-            _CtaSection(
-              onMulaiSekarang: () {
-                Navigator.of(context).pushReplacement(
+            AnimatedSection(
+              visible: _heroVisible,
+              child: _HeroSection(
+                floatingController: _floatingController,
+                onPrimaryAction: () => Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => const LoginPage()),
-                );
-              },
+                ),
+              ),
+            ),
+            AnimatedSection(visible: _showServices, child: _ServicesSection()),
+            AnimatedSection(visible: _showHow, child: _HowItWorksSection()),
+            AnimatedSection(
+              visible: _showCta,
+              child: _FinalCtaSection(
+                onMulaiSekarang: () => Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                ),
+              ),
             ),
             _TrustBarSection(),
           ],
@@ -110,9 +99,13 @@ class _LandingScreenState extends State<LandingScreen>
 class AnimatedSection extends StatelessWidget {
   final Widget child;
   final bool visible;
-  const AnimatedSection({required this.child, required this.visible});
 
-class _HeroSection extends StatelessWidget {
+  const AnimatedSection({
+    super.key,
+    required this.child,
+    required this.visible,
+  });
+
   @override
   Widget build(BuildContext context) {
     return AnimatedOpacity(
@@ -129,775 +122,101 @@ class _HeroSection extends StatelessWidget {
   }
 }
 
-class _PremiumHero extends StatelessWidget {
-  final bool visible;
+class _HeroSection extends StatelessWidget {
   final AnimationController floatingController;
   final VoidCallback onPrimaryAction;
-  const _PremiumHero({
-    required this.visible,
+
+  const _HeroSection({
     required this.floatingController,
     required this.onPrimaryAction,
   });
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final isDesktop = width > 900;
     return Container(
       width: double.infinity,
-      color: _navy,
-      padding: const EdgeInsets.fromLTRB(24, 64, 24, 40),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_navyDeep, _navy],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 56, 24, 40),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: _orange.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(20),
+              color: _orange.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(999),
               border: Border.all(color: _orange.withValues(alpha: 0.35)),
             ),
             child: const Text(
-              '⚡  Platform Jasa Lokal Terpercaya',
+              'Platform jasa lokal modern',
               style: TextStyle(
                 color: _orange,
+                fontWeight: FontWeight.w700,
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
               ),
             ),
           ),
           const SizedBox(height: 24),
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(
-              color: _orange,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                'images/logo.jpg',
-                width: 88,
-                height: 88,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          RichText(
-            textAlign: TextAlign.center,
-            text: const TextSpan(
-              style: TextStyle(
-                color: _white,
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                height: 1.25,
-              ),
-              children: [
-                TextSpan(text: 'Solusi Rumah Anda\nAda di '),
-                TextSpan(
-                  text: 'TukangDekat',
-                  style: TextStyle(color: _orange),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Hubungkan kebutuhan perbaikan rumah Anda dengan teknisi profesional di Kecamatan Bojongloa Kaler secara cepat dan transparan.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13.5,
-              height: 1.6,
-            ),
-          ),
-          const SizedBox(height: 28),
-          const _StatsRow(),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroStatChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  const _HeroStatChip({required this.label, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: _white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _white.withOpacity(0.12)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: _orange, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: _white,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroVisual extends StatelessWidget {
-  final AnimationController floatingController;
-  const _HeroVisual({required this.floatingController});
-
-  @override
-  Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 4 / 3,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
+          AnimatedBuilder(
+            animation: floatingController,
+            builder: (_, child) {
+              final offset = (floatingController.value - 0.5).abs() * 10;
+              return Transform.translate(
+                offset: Offset(0, offset),
+                child: child!,
+              );
+            },
             child: Container(
+              width: 220,
+              height: 220,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    _navyDeep.withOpacity(0.95),
-                    _navy.withOpacity(0.85),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                color: Colors.white.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.home_repair_service_rounded,
+                  color: _white,
+                  size: 78,
                 ),
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: _navyDeep.withOpacity(0.35),
-                    blurRadius: 30,
-                    offset: const Offset(0, 16),
-                  ),
-                ],
               ),
             ),
-          ),
-          Positioned(
-            top: 24,
-            left: 24,
-            right: 24,
-            bottom: 24,
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 10,
-                  right: 0,
-                  child: _DecorativeCircle(
-                    size: 96,
-                    color: _orange.withOpacity(0.16),
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: 10,
-                  child: _DecorativeCircle(
-                    size: 74,
-                    color: _white.withOpacity(0.12),
-                  ),
-                ),
-                Positioned(
-                  top: 18,
-                  left: 18,
-                  child: _HeroCard(
-                    color: _white,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Icon(Icons.home_repair_service, color: _navy, size: 28),
-                        SizedBox(height: 14),
-                        Text(
-                          'Teknisi Rumah',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          'Jasa renovasi, pemasangan, dan perbaikan cepat.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: _textMuted,
-                            height: 1.6,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 24,
-                  right: 18,
-                  child: _FloatingHeroCard(
-                    controller: floatingController,
-                    child: _HeroCard(
-                      color: _orange,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Icon(Icons.bolt, color: _white, size: 28),
-                          SizedBox(height: 14),
-                          Text(
-                            'Service AC',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: _white,
-                            ),
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            'Respon cepat, solusi sejuk & bersih.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white70,
-                              height: 1.6,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 18,
-                  top: 102,
-                  child: _FloatingHeroCard(
-                    controller: floatingController,
-                    reverse: true,
-                    child: _HeroCard(
-                      color: _navy,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Icon(Icons.plumbing, color: _orange, size: 28),
-                          SizedBox(height: 14),
-                          Text(
-                            'Plumbing',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: _white,
-                            ),
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            'Atasi kebocoran dan masalah pipa profesional.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white70,
-                              height: 1.6,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 18,
-                  left: 24,
-                  child: _HeroCard(
-                    color: _white.withOpacity(0.08),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Icon(Icons.timer, color: _white, size: 24),
-                        SizedBox(height: 14),
-                        Text(
-                          'Estimasi Respon 10 Menit',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: _white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DecorativeCircle extends StatelessWidget {
-  final double size;
-  final Color color;
-  const _DecorativeCircle({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-    );
-  }
-}
-
-class _HeroCard extends StatelessWidget {
-  final Color color;
-  final Widget child;
-  const _HeroCard({required this.color, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 180,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: _navyDeep.withOpacity(0.15),
-            blurRadius: 24,
-            offset: const Offset(0, 14),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class _FloatingHeroCard extends StatelessWidget {
-  final AnimationController controller;
-  final Widget child;
-  final bool reverse;
-  const _FloatingHeroCard({
-    required this.controller,
-    required this.child,
-    this.reverse = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, widget) {
-        final progress = controller.value;
-        final dy =
-            math.sin(progress * math.pi * 2 + (reverse ? math.pi : 0)) * 8;
-        return Transform.translate(offset: Offset(0, dy), child: widget);
-      },
-      child: child,
-    );
-  }
-}
-
-class _PrimaryActionButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  const _PrimaryActionButton({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        elevation: 0,
-        backgroundColor: _orange,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-      ),
-    );
-  }
-}
-
-class _SecondaryActionButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  const _SecondaryActionButton({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedScale(
-      duration: const Duration(milliseconds: 150),
-      scale: 1,
-      child: OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: _white,
-          side: BorderSide(color: _white.withOpacity(0.24)),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-      ),
-    );
-  }
-}
-
-class _SearchAndStatsSection extends StatelessWidget {
-  final VoidCallback onAction;
-  const _SearchAndStatsSection({required this.onAction});
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 900;
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 60 : 24,
-        vertical: 30,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Temukan Teknisi Profesional dengan Cepat',
-            style: TextStyle(
-              color: _navy,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Pasang, perbaiki, dan renovasi dengan teknisi terpercaya dekat lokasi Anda. Semua layanan tersedia dalam satu platform.',
-            style: TextStyle(color: _textMuted, fontSize: 15, height: 1.7),
           ),
           const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-            decoration: BoxDecoration(
-              color: _white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: _navyDeep.withOpacity(0.05),
-                  blurRadius: 24,
-                  offset: const Offset(0, 14),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText:
-                              'Cari layanan, mis. Service AC atau listrik',
-                          hintStyle: TextStyle(
-                            color: _textMuted.withOpacity(0.9),
-                          ),
-                          prefixIcon: const Icon(Icons.search, color: _navy),
-                          filled: true,
-                          fillColor: _cream,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: onAction,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _orange,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 18,
-                        ),
-                      ),
-                      child: const Text(
-                        'Telusuri',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Wrap(
-                  spacing: 18,
-                  runSpacing: 14,
-                  children: const [
-                    _InfoPill(
-                      icon: Icons.verified,
-                      label: 'Mitra Terverifikasi',
-                    ),
-                    _InfoPill(icon: Icons.lock, label: 'Pembayaran Aman'),
-                    _InfoPill(icon: Icons.schedule, label: 'Respon Cepat'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _InfoPill({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final iconBg = data.isOrange
-        ? const Color(0xFFFFF3EC)
-        : const Color(0xFFEEF3FA);
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: _white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E0D5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(data.icon, style: const TextStyle(fontSize: 20)),
-            ),
-          ),
-          const SizedBox(height: 10),
           Text(
-            data.name,
-            style: const TextStyle(
-              color: _navy,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            data.desc,
-            style: const TextStyle(
-              color: Color(0xFF9CA3AF),
-              fontSize: 11,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF3EC),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              data.tag,
-              style: const TextStyle(
-                color: _orange,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ServiceData {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  const _ServiceData({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-}
-
-class _ServiceCategoryCard extends StatefulWidget {
-  final _ServiceData data;
-  final VoidCallback onTap;
-  const _ServiceCategoryCard({required this.data, required this.onTap});
-
-  @override
-  State<_ServiceCategoryCard> createState() => _ServiceCategoryCardState();
-}
-
-class _ServiceCategoryCardState extends State<_ServiceCategoryCard> {
-  bool _hover = false;
-  bool _pressed = false;
-
-  void _update(bool hover) {
-    setState(() {
-      _hover = hover;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scale = _pressed ? 0.98 : (_hover ? 1.02 : 1.0);
-    return MouseRegion(
-      onEnter: (_) => _update(true),
-      onExit: (_) => _update(false),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: scale,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          child: Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
+            'Temukan teknisi terpercaya dengan cepat',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               color: _white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: _border),
-              boxShadow: [
-                BoxShadow(
-                  color: _navyDeep.withOpacity(0.06),
-                  blurRadius: 22,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: _orangeTint,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(widget.data.icon, color: _orange, size: 26),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  widget.data.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: _navy,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  widget.data.subtitle,
-                  style: const TextStyle(
-                    color: _textMuted,
-                    fontSize: 13,
-                    height: 1.6,
-                  ),
-                ),
-                const Spacer(),
-                Row(
-                  children: const [
-                    Text(
-                      'Selengkapnya',
-                      style: TextStyle(
-                        color: _orange,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(width: 6),
-                    Icon(Icons.arrow_forward, color: _orange, size: 18),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _WhyChooseSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: screenWidth > 900 ? 60 : 24,
-        vertical: 30,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Mengapa Pilih TukangDekat?',
-            style: TextStyle(
-              color: _navy,
-              fontSize: 28,
               fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Platform modern yang membantu Anda menemukan jasa profesional, aman, dan dapat diandalkan.',
-            style: TextStyle(color: _textMuted, fontSize: 15, height: 1.7),
+          Text(
+            'Pesan layanan rumah, pantau status order, dan lakukan pembayaran lewat QRIS dari satu aplikasi yang simpel dan modern.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white70, height: 1.6, fontSize: 14),
           ),
-          const SizedBox(height: 28),
-          Wrap(
-            spacing: 20,
-            runSpacing: 20,
-            children: const [
-              _FeatureCard(
-                icon: Icons.shield,
-                title: 'Aman & Terpercaya',
-                description:
-                    'Verifikasi teknisi lengkap dengan reputasi dan ulasan nyata.',
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: onPrimaryAction,
+            icon: const Icon(Icons.arrow_forward_rounded),
+            label: const Text('Masuk ke aplikasi'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _orange,
+              foregroundColor: _white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
-              _FeatureCard(
-                icon: Icons.flash_on,
-                title: 'Cepat & Responsif',
-                description:
-                    'Permintaan ditangani dalam hitungan menit oleh teknisi terdekat.',
-              ),
-              _FeatureCard(
-                icon: Icons.analytics,
-                title: 'Transparan',
-                description:
-                    'Estimasi harga dan progress pekerjaan terlihat jelas.',
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -905,61 +224,110 @@ class _WhyChooseSection extends StatelessWidget {
   }
 }
 
-class _FeatureCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-  const _FeatureCard({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
-
+class _ServicesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 320,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: _white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: _navyDeep.withOpacity(0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
+    final services = [
+      _ServiceCard(
+        icon: Icons.bolt_rounded,
+        title: 'Listrik',
+        desc: 'Perbaikan, instalasi, dan pemeriksaan cepat.',
       ),
+      _ServiceCard(
+        icon: Icons.water_drop_rounded,
+        title: 'Plumbing',
+        desc: 'Pipa bocor, keran, dan perawatan saluran air.',
+      ),
+      _ServiceCard(
+        icon: Icons.ac_unit_rounded,
+        title: 'AC',
+        desc: 'Service dan pembersihan pendingin ruangan.',
+      ),
+      _ServiceCard(
+        icon: Icons.construction_rounded,
+        title: 'Bangunan',
+        desc: 'Perbaikan ringan dan pekerjaan rumah kecil.',
+      ),
+    ];
+
+    return Container(
+      color: _cream,
+      padding: const EdgeInsets.fromLTRB(24, 36, 24, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: _orangeTint,
-              borderRadius: BorderRadius.circular(18),
+          Text(
+            'Layanan favorit',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
             ),
-            child: Icon(icon, color: _orange, size: 28),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Pilih kebutuhan Anda dan temukan teknisi dengan cepat.',
+            style: TextStyle(color: _textMuted, height: 1.6),
           ),
           const SizedBox(height: 18),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: services.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+              childAspectRatio: 1.1,
+            ),
+            itemBuilder: (_, index) => services[index],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ServiceCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String desc;
+
+  const _ServiceCard({
+    required this.icon,
+    required this.title,
+    required this.desc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: _orange.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: _orange, size: 22),
+          ),
+          const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: _navy,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Text(
-            description,
-            style: const TextStyle(
-              color: _textMuted,
-              fontSize: 14,
-              height: 1.7,
-            ),
+            desc,
+            style: TextStyle(color: _textMuted, fontSize: 12, height: 1.5),
           ),
         ],
       ),
@@ -968,141 +336,48 @@ class _FeatureCard extends StatelessWidget {
 }
 
 class _HowItWorksSection extends StatelessWidget {
-  static const steps = [
-    _StepData(
-      number: '1',
-      title: 'Pilih Layanan',
-      description:
-          'Pilih kategori jasa dan jelaskan kebutuhan Anda secara singkat.',
-    ),
-    _StepData(
-      number: '2',
-      title: 'Pilih Teknisi',
-      description: 'Lihat profil, rating, dan estimasi biaya sebelum memesan.',
-    ),
-    _StepData(
-      number: '3',
-      title: 'Selesai & Bayar',
-      description: 'Teknisi datang, kerja selesai, bayar setelah puas.',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 900;
-    return Container(
-      color: _navyDeep,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: isDesktop ? 60 : 24,
-          vertical: 40,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Cara Kerja TukangDekat',
-              style: TextStyle(
-                color: _white,
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Dari pencarian sampai pembayaran, semua dibuat sederhana dan profesional.',
-              style: TextStyle(color: _textOnDark, fontSize: 15, height: 1.7),
-            ),
-            const SizedBox(height: 32),
-            isDesktop
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: steps
-                        .map((step) => Expanded(child: _StepTile(data: step)))
-                        .toList(),
-                  )
-                : Column(
-                    children: steps
-                        .map(
-                          (step) => Padding(
-                            padding: const EdgeInsets.only(bottom: 18),
-                            child: _StepTile(data: step),
-                          ),
-                        )
-                        .toList(),
-                  ),
-          ],
-        ),
+    final steps = [
+      _StepItem(
+        number: '1',
+        title: 'Cari kebutuhan',
+        desc: 'Pilih layanan yang Anda butuhkan.',
       ),
-    );
-  }
-}
-
-class _StepData {
-  final String number;
-  final String title;
-  final String description;
-  const _StepData({
-    required this.number,
-    required this.title,
-    required this.description,
-  });
-}
-
-class _StepTile extends StatelessWidget {
-  final _StepData data;
-  const _StepTile({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: _white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _border),
-        boxShadow: [
-          BoxShadow(
-            color: _navyDeep.withOpacity(0.05),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          ),
-        ],
+      _StepItem(
+        number: '2',
+        title: 'Pilih teknisi',
+        desc: 'Bandingkan rating, area, dan harga.',
       ),
+      _StepItem(
+        number: '3',
+        title: 'Pantau order',
+        desc: 'DP, pelunasan, dan status semuanya terintegrasi.',
+      ),
+    ];
+
+    return Container(
+      color: _white,
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: _orangeTint,
-            child: Text(
-              data.number,
-              style: const TextStyle(
-                color: _orange,
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
           Text(
-            data.title,
-            style: const TextStyle(
-              fontSize: 18,
+            'Cara kerjanya',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
-              color: _navy,
+              letterSpacing: -0.3,
             ),
           ),
           const SizedBox(height: 10),
           Text(
-            data.description,
-            style: const TextStyle(
-              color: _textMuted,
-              fontSize: 14,
-              height: 1.7,
-            ),
+            'Semua alur dibuat sederhana untuk pengguna dan teknisi.',
+            style: TextStyle(color: _textMuted, height: 1.6),
+          ),
+          const SizedBox(height: 16),
+          ...steps.map(
+            (e) =>
+                Padding(padding: const EdgeInsets.only(bottom: 12), child: e),
           ),
         ],
       ),
@@ -1110,131 +385,58 @@ class _StepTile extends StatelessWidget {
   }
 }
 
-class _TestimonialsSection extends StatelessWidget {
-  static const testimonials = [
-    _TestimonialData(
-      name: 'Ayu W.',
-      note:
-          'Teknisi datang cepat dan servisenya sangat rapi. Saya merasa aman dan puas.',
-      rating: 5,
-    ),
-    _TestimonialData(
-      name: 'Rudi H.',
-      note:
-          'Proses pemesanan mudah sekali. Teknisi jelas profesional dan harga transparan.',
-      rating: 5,
-    ),
-    _TestimonialData(
-      name: 'Nina S.',
-      note:
-          'Sangat membantu! Renovasi kecil selesai tepat waktu dengan hasil rapi.',
-      rating: 5,
-    ),
-  ];
+class _StepItem extends StatelessWidget {
+  final String number;
+  final String title;
+  final String desc;
 
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: screenWidth > 900 ? 60 : 24,
-        vertical: 40,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Testimoni Pelanggan',
-            style: TextStyle(
-              color: _navy,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Ulasan nyata dari pelanggan yang sudah merasakan layanan terpercaya dan profesional.',
-            style: TextStyle(color: _textMuted, fontSize: 15, height: 1.7),
-          ),
-          const SizedBox(height: 28),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final columns = constraints.maxWidth > 1000
-                  ? 3
-                  : constraints.maxWidth > 700
-                  ? 2
-                  : 1;
-              return Wrap(
-                spacing: 20,
-                runSpacing: 20,
-                children: testimonials.map((testimonial) {
-                  return SizedBox(
-                    width:
-                        (constraints.maxWidth - (columns - 1) * 20) / columns,
-                    child: _TestimonialCard(data: testimonial),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TestimonialData {
-  final String name;
-  final String note;
-  final int rating;
-  const _TestimonialData({
-    required this.name,
-    required this.note,
-    required this.rating,
+  const _StepItem({
+    required this.number,
+    required this.title,
+    required this.desc,
   });
-}
-
-class _TestimonialCard extends StatelessWidget {
-  final _TestimonialData data;
-  const _TestimonialCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: _navyDeep.withOpacity(0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 14),
-          ),
-        ],
+        color: _cream,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: List.generate(
-              data.rating,
-              (index) => const Icon(Icons.star, color: _orange, size: 18),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: _navy,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: const TextStyle(
+                  color: _white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 18),
-          Text(
-            data.note,
-            style: const TextStyle(
-              color: _textMuted,
-              fontSize: 14,
-              height: 1.7,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(desc, style: TextStyle(color: _textMuted, height: 1.4)),
+              ],
             ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            data.name,
-            style: const TextStyle(fontWeight: FontWeight.w800, color: _navy),
           ),
         ],
       ),
@@ -1244,73 +446,43 @@ class _TestimonialCard extends StatelessWidget {
 
 class _FinalCtaSection extends StatelessWidget {
   final VoidCallback onMulaiSekarang;
+
   const _FinalCtaSection({required this.onMulaiSekarang});
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: _navy,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
+      decoration: const BoxDecoration(color: _navy),
       child: Column(
         children: [
-          const Text(
-            'Siap Pesan Jasa Sekarang?',
-            textAlign: TextAlign.center,
-            style: TextStyle(
+          Text(
+            'Siap memulai?',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: _white,
-              fontSize: 19,
               fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Daftar gratis dan temukan teknisi terbaik di sekitar Anda dalam hitungan menit',
+          Text(
+            'Masuk ke akun Anda dan rasakan pengalaman pemesanan jasa yang lebih rapi.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white60, fontSize: 13, height: 1.5),
+            style: TextStyle(color: Colors.white70, height: 1.6),
           ),
-          const SizedBox(height: 22),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onMulaiSekarang,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _orange,
-                foregroundColor: _white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Mulai Sekarang',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: onMulaiSekarang,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _orange,
+              foregroundColor: _white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: onMulaiSekarang,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _white,
-                side: const BorderSide(color: Colors.white24),
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Daftar sebagai Mitra Teknisi',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
-            ),
+            child: const Text('Mulai Sekarang'),
           ),
         ],
       ),
@@ -1318,71 +490,48 @@ class _FinalCtaSection extends StatelessWidget {
   }
 }
 
-class _FooterLinks extends StatelessWidget {
-  const _FooterLinks();
-
+class _TrustBarSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text(
-          'Tautan',
-          style: TextStyle(
-            color: _white,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        SizedBox(height: 14),
-        Text('Layanan', style: TextStyle(color: Colors.white70, fontSize: 14)),
-        SizedBox(height: 8),
-        Text(
-          'Keunggulan',
-          style: TextStyle(color: Colors.white70, fontSize: 14),
-        ),
-        SizedBox(height: 8),
-        Text(
-          'Testimoni',
-          style: TextStyle(color: Colors.white70, fontSize: 14),
-        ),
-      ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
+      color: _cream,
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 10,
+        children: const [
+          _TrustChip(label: 'Verified provider'),
+          _TrustChip(label: 'Pembayaran aman'),
+          _TrustChip(label: 'Notifikasi real-time'),
+        ],
+      ),
     );
   }
 }
 
-class _FooterSupport extends StatelessWidget {
-  const _FooterSupport();
+class _TrustChip extends StatelessWidget {
+  final String label;
+
+  const _TrustChip({required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text(
-          'Bantuan',
-          style: TextStyle(
-            color: _white,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: _white,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: _border),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: _navy,
         ),
-        SizedBox(height: 14),
-        Text(
-          'Support Center',
-          style: TextStyle(color: Colors.white70, fontSize: 14),
-        ),
-        SizedBox(height: 8),
-        Text(
-          'Cara Kerja',
-          style: TextStyle(color: Colors.white70, fontSize: 14),
-        ),
-        SizedBox(height: 8),
-        Text(
-          'Syarat & Ketentuan',
-          style: TextStyle(color: Colors.white70, fontSize: 14),
-        ),
-      ],
+      ),
     );
   }
 }
