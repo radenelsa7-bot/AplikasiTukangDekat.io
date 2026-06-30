@@ -24,26 +24,49 @@ class CheckRole
       return response()->json(['message' => 'unauthenticated'], 401);
     }
 
+    $normalizedRole = strtoupper($user->role);
+
     if ($mode === 'admin') {
-      if ($user->role !== 'ADMIN') {
+      if ($normalizedRole !== 'ADMIN') {
+        return response()->json(['message' => 'forbidden'], 403);
+      }
+      return $next($request);
+    }
+
+    if ($mode === 'customer') {
+      if ($normalizedRole !== 'CUSTOMER') {
+        return response()->json(['message' => 'forbidden'], 403);
+      }
+      return $next($request);
+    }
+
+    if ($mode === 'provider') {
+      if ($normalizedRole !== 'PROVIDER') {
+        return response()->json(['message' => 'forbidden'], 403);
+      }
+      return $next($request);
+    }
+
+    if ($mode === 'treasurer') {
+      if (!in_array($normalizedRole, ['TREASURER', 'ADMIN'], true)) {
         return response()->json(['message' => 'forbidden'], 403);
       }
       return $next($request);
     }
 
     if ($mode === 'readonly') {
-      if ($user->role === 'TREASURER' || $user->role === 'ADMIN') {
+      if (in_array($normalizedRole, ['TREASURER', 'ADMIN'], true)) {
         return $next($request);
       }
       return response()->json(['message' => 'forbidden'], 403);
     }
 
     if ($mode === 'write') {
-      if ($user->role === 'ADMIN') {
+      if ($normalizedRole === 'ADMIN') {
         return $next($request);
       }
 
-      if ($user->role === 'TREASURER') {
+      if ($normalizedRole === 'TREASURER') {
         return response()->json(['message' => 'forbidden'], 403);
       }
 

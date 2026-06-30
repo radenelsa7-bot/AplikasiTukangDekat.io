@@ -32,7 +32,6 @@ class AdminController extends Controller
       ->latest()
       ->get();
 
-    return $this->success($providers, 'Pending providers');
     return $this->successResponse(['providers' => $providers], 'ok', 200);
   }
 
@@ -47,12 +46,12 @@ class AdminController extends Controller
     $provider = ProviderProfile::with('user')->find($providerId);
 
     if (!$provider) {
-      return $this->notFound('Provider not found');
       return $this->notFoundResponse('provider not found');
     }
 
     $provider->update([
       'is_verified' => $validated['is_verified'],
+      'is_active' => $provider->is_active ?? true,
     ]);
 
     app(N8nNotificationService::class)->dispatch(
@@ -66,7 +65,23 @@ class AdminController extends Controller
       ]
     );
 
-    return $this->success($provider, 'Verification updated');
-    return $this->successResponse(['provider' => $provider], 'verification updated', 200);
+    return $this->successResponse($provider, 'verification updated', 200);
+  }
+
+  public function deactivateProvider($providerId)
+  {
+    if ($response = $this->ensureAdmin()) {
+      return $response;
+    }
+
+    $provider = ProviderProfile::find($providerId);
+
+    if (!$provider) {
+      return $this->notFoundResponse('provider not found');
+    }
+
+    $provider->update(['is_active' => false]);
+
+    return $this->successResponse($provider, 'provider deactivated', 200);
   }
 }

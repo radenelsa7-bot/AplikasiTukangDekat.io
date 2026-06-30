@@ -67,7 +67,7 @@ class OrderController extends Controller
                     'status' => 'UNPAID',
                 ]);
 
-            return ['order' => $order, 'dpAmount' => $dpAmount];
+                return ['order' => $order, 'dpAmount' => $dpAmount];
             });
 
             $order = $result['order'];
@@ -141,6 +141,50 @@ class OrderController extends Controller
     /**
      * Provider terima/tolak order
      */
+    public function cancelOrder(Request $request, $orderId)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'CUSTOMER') {
+            return $this->forbidden('Only customers can cancel orders.');
+        }
+
+        $order = Order::with(['customer', 'payments'])->find($orderId);
+
+        if (!$order) {
+            return $this->notFound('Order not found');
+        }
+
+        if ($order->customer_id !== $user->id) {
+            return $this->forbidden('Unauthorized');
+        }
+
+        if (!in_array($order->status, ['CREATED', 'ACCEPTED'], true)) {
+            return $this->conflict('Order cannot be cancelled in its current status');
+        }
+
+        try {
+            return DB::transaction(function () use ($order) {
+                $order->update(['status' => 'CANCELLED']);
+
+                $refundPayments = $order->payments()
+                    ->where('payment_type', 'DP')
+                    ->where('status', 'PAID')
+                    ->get();
+
+                foreach ($refundPayments as $refundPayment) {
+                    $refundPayment->update(
+                        $this->paymentFinanceService->applyRefundPolicy($refundPayment, $order, 'order_cancelled_by_customer')
+                    );
+                }
+
+                return $this->success(['status' => $order->status], 'Order cancelled');
+            });
+        } catch (\Throwable $e) {
+            return $this->internalServerError('Failed to cancel order');
+        }
+    }
+
     public function respondToOrder(RespondToOrderRequest $request, $orderId)
     {
         $user = Auth::user();

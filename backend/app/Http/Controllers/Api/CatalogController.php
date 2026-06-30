@@ -21,6 +21,7 @@ class CatalogController extends Controller
     public function getProviders()
     {
         $providers = ProviderProfile::where('is_verified', true)
+            ->where('is_active', true)
             ->with(['services' => function ($query) {
                 $query->where('is_active', true);
             }, 'user'])
@@ -42,6 +43,7 @@ class CatalogController extends Controller
             $query->where('category_id', $categoryId)->where('is_active', true);
         })
             ->where('is_verified', true)
+            ->where('is_active', true)
             ->with(['services' => function ($query) use ($categoryId) {
                 $query->where('category_id', $categoryId)->where('is_active', true);
             }, 'user'])
@@ -72,6 +74,7 @@ class CatalogController extends Controller
         }
 
         $providers = ProviderProfile::where('is_verified', true)
+            ->where('is_active', true)
             ->where(function ($q) use ($query) {
                 $q->where('business_name', 'like', "%$query%")
                     ->orWhere('area', 'like', "%$query%")
