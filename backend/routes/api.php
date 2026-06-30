@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [OrderController::class, 'createOrder'])->middleware(['throttle:10,1', 'role.customer']);
         Route::get('/my-orders', [OrderController::class, 'getMyOrders'])->middleware('throttle:20,1');
         Route::get('/{orderId}', [OrderController::class, 'getOrder'])->middleware('throttle:30,1');
+        Route::post('/{orderId}/cancel', [OrderController::class, 'cancelOrder'])->middleware(['throttle:10,1', 'role.customer']);
         Route::post('/{orderId}/respond', [OrderController::class, 'respondToOrder'])->middleware(['throttle:10,1', 'role.provider']);
         Route::post('/{orderId}/start-work', [OrderController::class, 'startWork'])->middleware(['throttle:10,1', 'role.provider']);
         Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder'])->middleware(['throttle:10,1', 'role.provider']);
@@ -55,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware(['throttle:3,1', 'role.write']);
     });
 
+    Route::get('/reviews/provider/{providerId}/summary', [ReviewController::class, 'getProviderReviewSummary'])->middleware('throttle:30,1');
     Route::get('/reviews/{orderId}', [ReviewController::class, 'getOrderReview'])->middleware('throttle:30,1');
 
     Route::post('/chatbot/send', [ChatbotController::class, 'sendMessage'])->middleware('throttle:10,1');
@@ -63,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/providers/pending', [AdminController::class, 'getPendingProviders'])->middleware('throttle:30,1');
         Route::patch('/providers/{providerId}/verification', [AdminController::class, 'updateVerification'])->middleware('throttle:20,1');
         Route::post('/providers/{providerId}/verify', [AdminController::class, 'updateVerification'])->middleware('throttle:20,1');
+        Route::post('/providers/{providerId}/deactivate', [AdminController::class, 'deactivateProvider'])->middleware('throttle:20,1');
     });
 
     Route::prefix('treasurer')->middleware('role.treasurer')->group(function () {

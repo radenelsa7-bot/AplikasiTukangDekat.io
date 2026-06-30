@@ -18,11 +18,13 @@ class ProviderProfile extends Model
     'area',
     'address',
     'is_verified',
+    'is_active',
     'avg_rating',
   ];
 
   protected $casts = [
     'is_verified' => 'boolean',
+    'is_active' => 'boolean',
     'avg_rating' => 'decimal:2',
   ];
 

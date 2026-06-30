@@ -32,6 +32,10 @@ class ReviewController extends Controller
             return $this->notFoundResponse('Order tidak ditemukan');
         }
 
+        if ($order->customer_id !== Auth::id()) {
+            return $this->forbiddenResponse('Anda tidak berhak memberikan review untuk order ini.');
+        }
+
         if (!in_array($order->status, ['COMPLETED', 'CLOSED'], true)) {
             return $this->errorResponse('Order harus berstatus COMPLETED atau CLOSED sebelum review dibuat.', 422);
         }
@@ -54,7 +58,7 @@ class ReviewController extends Controller
 
         $this->updateProviderAvgRating($order->provider_id);
 
-        return $this->successResponse(['review' => $review], 'Review dikirim dengan sukses', 201);
+        return $this->successResponse($review, 'Review dikirim dengan sukses', 201);
     }
 
     public function store(Request $request)
@@ -66,16 +70,42 @@ class ReviewController extends Controller
     {
         $perPage = (int) request()->query('per_page', 20);
 
-        $provider = ProviderProfile::find($providerId);
+        $provider = ProviderProfile::where('user_id', $providerId)->orWhere('id', $providerId)->first();
         if (!$provider) {
             return $this->notFoundResponse('Provider tidak ditemukan');
         }
 
-        $reviews = Review::where('provider_id', $providerId)
+        $reviews = Review::where('provider_id', $provider->user_id)
             ->latest()
             ->paginate($perPage);
 
         return $this->successResponse(['reviews' => $reviews], 'ok', 200);
+    }
+
+    public function getProviderReviewSummary($providerId)
+    {
+        $provider = ProviderProfile::where('user_id', $providerId)->orWhere('id', $providerId)->first();
+        if (!$provider) {
+            return $this->notFoundResponse('Provider tidak ditemukan');
+        }
+
+        $reviews = Review::where('provider_id', $provider->user_id)->get();
+        $distribution = array_fill_keys(['1', '2', '3', '4', '5'], 0);
+
+        foreach ($reviews as $review) {
+            $distribution[(string) $review->rating] = ($distribution[(string) $review->rating] ?? 0) + 1;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'ok',
+            'data' => [
+                'provider_id' => $provider->user_id,
+                'average_rating' => $reviews->isEmpty() ? 0.0 : (float) number_format($reviews->avg('rating'), 1, '.', ''),
+                'total_reviews' => $reviews->count(),
+                'distribution' => $distribution,
+            ],
+        ], 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }
 
     public function getOrderReview($orderId)
@@ -91,7 +121,7 @@ class ReviewController extends Controller
 
     private function updateProviderAvgRating($providerId): void
     {
-        $provider = ProviderProfile::find($providerId);
+        $provider = ProviderProfile::where('user_id', $providerId)->first();
         if (!$provider) {
             return;
         }
