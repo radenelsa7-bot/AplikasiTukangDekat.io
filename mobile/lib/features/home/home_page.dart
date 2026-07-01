@@ -17,11 +17,14 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(authControllerProvider);
+    final canAccessOrders =
+        state.userRole == 'CUSTOMER' || state.userRole == 'PROVIDER';
     final isAdmin = state.userRole == 'ADMIN';
     final isTreasurer = state.userRole == 'TREASURER';
     final tabs = [
       const Tab(icon: Icon(Icons.home), text: 'Beranda'),
-      const Tab(icon: Icon(Icons.receipt_long), text: 'Pesanan'),
+      if (canAccessOrders)
+        const Tab(icon: Icon(Icons.receipt_long), text: 'Pesanan'),
       if (isAdmin) const Tab(icon: Icon(Icons.verified_user), text: 'Admin'),
       if (isTreasurer)
         const Tab(icon: Icon(Icons.account_balance_wallet), text: 'Bendahara'),
@@ -29,7 +32,7 @@ class HomePage extends ConsumerWidget {
     ];
     final pages = [
       const CatalogPage(),
-      const MyOrdersPage(),
+      if (canAccessOrders) const MyOrdersPage(),
       if (isAdmin) const AdminVerificationPage(),
       if (isTreasurer) const TreasurerReportPage(),
       _buildAccountTab(context, state),

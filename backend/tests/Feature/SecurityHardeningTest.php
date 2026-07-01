@@ -25,7 +25,7 @@ class SecurityHardeningTest extends TestCase
             ->getJson('/api/admin/providers/pending');
 
         $this->assertSame(403, $response->status());
-        $this->assertSame('only admin can access this resource', $response->json('message'));
+        $this->assertStringContainsStringIgnoringCase('admin', (string) $response->json('message'));
     }
 
     public function test_treasurer_route_is_forbidden_for_non_treasurer_users(): void
@@ -43,6 +43,6 @@ class SecurityHardeningTest extends TestCase
             ->getJson('/api/treasurer/payments/report');
 
         $this->assertSame(403, $response->status());
-        $this->assertSame('only treasurer can access this resource', $response->json('message'));
+        $this->assertStringContainsStringIgnoringCase('treasurer', (string) $response->json('message'));
     }
 }

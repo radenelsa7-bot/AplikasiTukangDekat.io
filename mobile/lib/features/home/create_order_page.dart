@@ -29,6 +29,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   final _formKey = GlobalKey<FormState>();
   final _addressCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
+  final _attachmentUrlsCtrl = TextEditingController();
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   ProviderService? _selectedService;
@@ -46,6 +47,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   void dispose() {
     _addressCtrl.dispose();
     _notesCtrl.dispose();
+    _attachmentUrlsCtrl.dispose();
     super.dispose();
   }
 
@@ -114,6 +116,13 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       address: _addressCtrl.text.trim(),
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       estimatedPrice: _selectedService?.basePrice,
+      attachmentUrls: _attachmentUrlsCtrl.text.trim().isEmpty
+          ? null
+          : _attachmentUrlsCtrl.text
+            .split('\n')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList(),
     );
 
     final success = await ref
@@ -229,6 +238,15 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                 maxLines: 3,
                 prefixIcon: const Icon(Icons.note),
                 errorText: state.fieldErrors['notes'],
+              ),
+              const SizedBox(height: 16),
+
+              AppTextField(
+                controller: _attachmentUrlsCtrl,
+                label: 'URL Foto Kerusakan (opsional, 1 URL per baris)',
+                maxLines: 3,
+                prefixIcon: const Icon(Icons.image_outlined),
+                errorText: state.fieldErrors['attachment_urls.0'],
               ),
               const SizedBox(height: 16),
 
