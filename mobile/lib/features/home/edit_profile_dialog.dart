@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../config/api_config.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/auth_storage_service.dart';
 import '../auth/auth_controller.dart';
@@ -39,6 +38,7 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
     );
     if (file != null) {
       final bytes = await file.readAsBytes();
+      if (!mounted) return;
       setState(() {
         _picked = file;
         _pickedBytes = bytes;
@@ -58,22 +58,6 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
           _picked = null;
           _pickedBytes = null;
         });
-
-        await ref
-            .read(authStorageProvider)
-            .saveUserData(
-              userId: ref.read(authControllerProvider).userId ?? 0,
-              userRole: ref.read(authControllerProvider).userRole ?? 'CUSTOMER',
-              userEmail: ref.read(authControllerProvider).userEmail ?? '',
-              fullName: ref.read(authControllerProvider).userFullName,
-              phoneNumber: ref.read(authControllerProvider).userPhoneNumber,
-              profilePhotoPath: null,
-            );
-
-        ref.read(authControllerProvider.notifier).updateState(
-              (current) => current.copyWith(userProfilePhotoPath: null),
-            );
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Foto profil berhasil dihapus')),
         );
@@ -82,7 +66,7 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
           const SnackBar(content: Text('Gagal menghapus foto profil')),
         );
       }
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gagal menghapus foto profil')),
@@ -100,13 +84,13 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
         if (_pickedBytes != null) {
           mf = MultipartFile.fromBytes(_pickedBytes!, filename: _picked!.name);
         } else {
+          // Fallback for platforms where path is available (mobile)
           mf = await MultipartFile.fromFile(
             _picked!.path,
             filename: _picked!.name,
           );
         }
       }
-
       final api = ref.read(apiServiceProvider);
       final result = await api.updateProfile(
         fullName: _nameCtrl.text.isEmpty ? null : _nameCtrl.text,
@@ -114,12 +98,14 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
         photoFile: mf,
       );
 
+      // Update auth state and storage with new profile data
       if (result['user'] is Map<String, dynamic>) {
         final user = result['user'] as Map<String, dynamic>;
         final fullName = user['full_name'] as String?;
         final phoneNumber = user['phone_number'] as String?;
         final profilePhotoPath = user['profile_photo_path'] as String?;
 
+        // Update storage
         await ref
             .read(authStorageProvider)
             .saveUserData(
@@ -131,7 +117,10 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
               profilePhotoPath: profilePhotoPath,
             );
 
-        ref.read(authControllerProvider.notifier).updateState(
+        // Update auth controller state
+        ref
+            .read(authControllerProvider.notifier)
+            .updateState(
               (current) => current.copyWith(
                 userFullName: fullName,
                 userPhoneNumber: phoneNumber,
@@ -156,13 +145,11 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(
-        const SnackBar(content: Text('Gagal menyimpan profil')),
-      );
+      ).showSnackBar(const SnackBar(content: Text('Gagal menyimpan profil')));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -179,14 +166,16 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final hasCurrentPhoto =
-        authState.userProfilePhotoPath != null || _picked != null || _pickedBytes != null;
+        authState.userProfilePhotoPath != null ||
+        _picked != null ||
+        _pickedBytes != null;
     final ImageProvider<Object>? backgroundImage = _pickedBytes != null
         ? MemoryImage(_pickedBytes!)
         : (authState.userProfilePhotoPath != null
-            ? NetworkImage(
-                '${ApiConfig.baseUrl}/storage/${authState.userProfilePhotoPath}',
-              )
-            : null);
+              ? NetworkImage(
+                  '${Uri.base.origin}/storage/${authState.userProfilePhotoPath}',
+                )
+              : null);
 
     return AlertDialog(
       title: const Text('Edit Profil'),
@@ -208,13 +197,11 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
             TextField(
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Nama'),
-              textInputAction: TextInputAction.next,
             ),
             TextField(
               controller: _phoneCtrl,
               decoration: const InputDecoration(labelText: 'No HP'),
               keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.done,
             ),
           ],
         ),

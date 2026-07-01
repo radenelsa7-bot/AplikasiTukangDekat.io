@@ -77,32 +77,26 @@ class ProvidersResponse {
   ProvidersResponse({required this.data});
 
   factory ProvidersResponse.fromJson(Map<String, dynamic> json) {
-    final payload = json['data'];
-    if (payload is List) {
-      return ProvidersResponse(
-        data: payload
-            .map(
-              (item) =>
-                  ProviderProfile.fromJson(Map<String, dynamic>.from(item)),
-            )
-            .toList(),
-      );
-    }
-
-    if (payload is Map<String, dynamic>) {
-      final list = payload['providers'];
-      if (list is List) {
-        return ProvidersResponse(
-          data: list
-              .map(
-                (item) =>
-                    ProviderProfile.fromJson(Map<String, dynamic>.from(item)),
-              )
-              .toList(),
-        );
+    final rawData = json['data'];
+    List items;
+    if (rawData is List) {
+      items = rawData;
+    } else if (rawData is Map<String, dynamic>) {
+      final providers = rawData['providers'];
+      if (providers is List) {
+        items = providers;
+      } else {
+        items = [];
       }
+    } else {
+      items = [];
     }
-
-    return ProvidersResponse(data: const []);
+    return ProvidersResponse(
+      data: items
+          .map(
+            (item) => ProviderProfile.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+    );
   }
 }

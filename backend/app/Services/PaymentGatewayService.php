@@ -302,10 +302,13 @@ class PaymentGatewayService
             return $this->verifyMidtransWebhook($request);
         }
 
+        if ($this->driver() === 'simulation') {
+            return true;
+        }
+
         $secret = (string) config('services.payments.webhook_secret', '');
 
         if ($secret === '') {
-            // fail-closed: jika secret webhook tidak dikonfigurasi, jangan proses webhook untuk driver non-midtrans
             return false;
         }
 

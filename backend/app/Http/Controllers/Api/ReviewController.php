@@ -3,131 +3,120 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Review\CreateReviewRequest;
 use App\Models\Order;
-use App\Models\ProviderProfile;
 use App\Models\Review;
+use App\Models\ProviderProfile;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ReviewController extends Controller
 {
     use ApiResponse;
 
-    public function createReview(Request $request, $orderId)
+    public function createReview(CreateReviewRequest $request, $orderId)
     {
-        $validator = Validator::make($request->all() + ['order_id' => $orderId], [
-            'order_id' => 'required|exists:orders,id',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->errorResponse($validator->errors()->first(), 400);
-        }
+        $user = Auth::user();
 
         $order = Order::find($orderId);
+
         if (!$order) {
-            return $this->notFoundResponse('Order tidak ditemukan');
+            return $this->notFound('Order not found');
         }
 
-        if ($order->customer_id !== Auth::id()) {
-            return $this->forbiddenResponse('Anda tidak berhak memberikan review untuk order ini.');
+        if ($order->customer_id !== $user->id) {
+            return $this->forbidden('You can only review your own orders');
         }
 
-        if (!in_array($order->status, ['COMPLETED', 'CLOSED'], true)) {
-            return $this->errorResponse('Order harus berstatus COMPLETED atau CLOSED sebelum review dibuat.', 422);
+        if ($order->status !== 'CLOSED') {
+            return $this->conflict('Reviews can only be submitted for closed orders');
         }
 
-        $existingReview = Review::where('order_id', $orderId)
-            ->where('customer_id', Auth::id())
-            ->exists();
-
-        if ($existingReview) {
-            return $this->errorResponse('Anda sudah memberikan review untuk order ini.', 409);
+        $existing = Review::where('order_id', $orderId)->first();
+        if ($existing) {
+            return $this->conflict('A review has already been submitted for this order');
         }
 
-        $review = Review::create([
-            'customer_id' => Auth::id(),
-            'provider_id' => $order->provider_id,
-            'order_id' => $order->id,
-            'rating' => (int) $request->input('rating'),
-            'comment' => $request->input('comment'),
-        ]);
+        $validated = $request->validated();
 
-        $this->updateProviderAvgRating($order->provider_id);
+        try {
+            $review = DB::transaction(function () use ($order, $validated, $user) {
+                $review = Review::create([
+                    'order_id' => $order->id,
+                    'customer_id' => $user->id,
+                    'provider_id' => $order->provider_id,
+                    'rating' => $validated['rating'],
+                    'comment' => $validated['comment'] ?? null,
+                ]);
 
-        return $this->successResponse($review, 'Review dikirim dengan sukses', 201);
-    }
+                $this->recalculateProviderRating($order->provider_id);
 
-    public function store(Request $request)
-    {
-        return $this->createReview($request, $request->input('order_id'));
-    }
+                return $review;
+            });
 
-    public function getProviderReviews($providerId)
-    {
-        $perPage = (int) request()->query('per_page', 20);
-
-        $provider = ProviderProfile::where('user_id', $providerId)->orWhere('id', $providerId)->first();
-        if (!$provider) {
-            return $this->notFoundResponse('Provider tidak ditemukan');
+            return $this->success([
+                'review_id' => $review->id,
+                'rating' => $review->rating,
+                'comment' => $review->comment,
+            ], 'Review submitted successfully', 201);
+        } catch (\Throwable $e) {
+            Log::error('Create review error: ' . $e->getMessage());
+            return $this->internalServerError('Failed to submit review');
         }
-
-        $reviews = Review::where('provider_id', $provider->user_id)
-            ->latest()
-            ->paginate($perPage);
-
-        return $this->successResponse(['reviews' => $reviews], 'ok', 200);
-    }
-
-    public function getProviderReviewSummary($providerId)
-    {
-        $provider = ProviderProfile::where('user_id', $providerId)->orWhere('id', $providerId)->first();
-        if (!$provider) {
-            return $this->notFoundResponse('Provider tidak ditemukan');
-        }
-
-        $reviews = Review::where('provider_id', $provider->user_id)->get();
-        $distribution = array_fill_keys(['1', '2', '3', '4', '5'], 0);
-
-        foreach ($reviews as $review) {
-            $distribution[(string) $review->rating] = ($distribution[(string) $review->rating] ?? 0) + 1;
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'ok',
-            'data' => [
-                'provider_id' => $provider->user_id,
-                'average_rating' => $reviews->isEmpty() ? 0.0 : (float) number_format($reviews->avg('rating'), 1, '.', ''),
-                'total_reviews' => $reviews->count(),
-                'distribution' => $distribution,
-            ],
-        ], 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }
 
     public function getOrderReview($orderId)
     {
-        $review = Review::where('order_id', $orderId)->first();
+        $review = Review::where('order_id', $orderId)
+            ->with(['customer:id,name', 'provider:id,name'])
+            ->first();
 
         if (!$review) {
-            return $this->notFoundResponse('Review tidak ditemukan');
+            return $this->notFound('Review not found for this order');
         }
 
-        return $this->successResponse(['review' => $review], 'ok', 200);
+        return $this->success($review, 'Review retrieved');
     }
 
-    private function updateProviderAvgRating($providerId): void
+    public function getProviderReviews($providerId)
     {
-        $provider = ProviderProfile::where('user_id', $providerId)->first();
+        $perPage = request()->query('per_page', 20);
+
+        $provider = ProviderProfile::find($providerId);
         if (!$provider) {
-            return;
+            return $this->notFound('Provider not found');
         }
 
-        $average = Review::where('provider_id', $providerId)->avg('rating');
-        $provider->avg_rating = round((float) $average, 1);
-        $provider->save();
+        $reviews = Review::where('provider_id', $provider->user_id)
+            ->with('customer:id,name')
+            ->latest()
+            ->paginate($perPage);
+
+        $avgRating = Review::where('provider_id', $provider->user_id)->avg('rating');
+        $reviewCount = Review::where('provider_id', $provider->user_id)->count();
+
+        return $this->success([
+            'reviews' => $reviews->items(),
+            'average_rating' => round($avgRating ?? 0, 2),
+            'review_count' => $reviewCount,
+            'meta' => [
+                'current_page' => $reviews->currentPage(),
+                'last_page' => $reviews->lastPage(),
+                'per_page' => $reviews->perPage(),
+                'total' => $reviews->total(),
+            ],
+        ], 'Provider reviews retrieved');
+    }
+
+    private function recalculateProviderRating(int $providerId): void
+    {
+        $avgRating = Review::where('provider_id', $providerId)->avg('rating') ?? 0;
+
+        ProviderProfile::where('user_id', $providerId)->update([
+            'avg_rating' => round($avgRating, 2),
+        ]);
     }
 }

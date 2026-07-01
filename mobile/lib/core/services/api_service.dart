@@ -139,8 +139,13 @@ class ApiService {
   Future<ProviderProfile> getProviderDetail(int providerId) async {
     try {
       final response = await dio.get('/api/catalog/providers/$providerId');
-      final payload = Map<String, dynamic>.from(response.data['data'] ?? {});
-      return ProviderProfile.fromJson(payload['provider'] ?? {});
+      final data = response.data['data'];
+      if (data is Map<String, dynamic> && data.containsKey('provider')) {
+        return ProviderProfile.fromJson(
+          Map<String, dynamic>.from(data['provider']),
+        );
+      }
+      return ProviderProfile.fromJson(Map<String, dynamic>.from(data));
     } catch (e) {
       rethrow;
     }
@@ -281,7 +286,13 @@ class ApiService {
   Future<Map<String, dynamic>> generateQRIS(int paymentId) async {
     try {
       final response = await dio.post('/api/payments/$paymentId/generate-qris');
-      final data = Map<String, dynamic>.from(response.data['data'] ?? {});
+      final rawData = response.data['data'];
+      Map<String, dynamic> data;
+      if (rawData is Map<String, dynamic> && rawData.containsKey('qris')) {
+        data = Map<String, dynamic>.from(rawData['qris']);
+      } else {
+        data = Map<String, dynamic>.from(rawData ?? {});
+      }
       final checkoutUrl = data['checkout_url'];
       if (checkoutUrl != null) {
         data['checkout_url'] = checkoutUrl.toString();
@@ -293,7 +304,7 @@ class ApiService {
   }
 
   /// Simulate payment gateway callback (for testing)
-  /// In production, payment gateway will call /webhooks/payment
+  /// In production, payment gateway will call /api/webhooks/payment
   Future<void> simulatePaymentCallback(int paymentId) async {
     try {
       await dio.post(
@@ -312,8 +323,11 @@ class ApiService {
   Future<PaymentData> getPaymentStatus(int paymentId) async {
     try {
       final response = await dio.get('/api/payments/$paymentId');
-      final payload = Map<String, dynamic>.from(response.data['data'] ?? {});
-      return PaymentData.fromJson(payload['payment'] ?? {});
+      final data = response.data['data'];
+      if (data is Map<String, dynamic> && data.containsKey('payment')) {
+        return PaymentData.fromJson(Map<String, dynamic>.from(data['payment']));
+      }
+      return PaymentData.fromJson(Map<String, dynamic>.from(data));
     } catch (e) {
       rethrow;
     }
@@ -350,8 +364,9 @@ class ApiService {
   Future<ReviewData?> getOrderReview(int orderId) async {
     try {
       final response = await dio.get('/api/reviews/$orderId');
-      final payload = Map<String, dynamic>.from(response.data['data'] ?? {});
-      return ReviewData.fromJson(payload['review'] ?? {});
+      return ReviewData.fromJson(
+        Map<String, dynamic>.from(response.data['data']),
+      );
     } catch (e) {
       return null;
     }

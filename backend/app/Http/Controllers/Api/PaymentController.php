@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderStatusLog;
 use App\Models\Payment;
 use App\Services\PaymentGatewayService;
 use App\Services\PaymentFinanceService;
@@ -119,14 +120,6 @@ class PaymentController extends Controller
                 $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
 
                 $order = $payment->order;
-                if (
-                    strtoupper((string) $payment->payment_type) === 'DP'
-                    && $order
-                    && $order->status === 'CREATED'
-                ) {
-                    $order->update(['status' => 'ACCEPTED']);
-                }
-
                 $eventName = match (strtoupper($payment->payment_type)) {
                     'DP' => 'dp_paid',
                     'FINAL' => 'final_paid',
@@ -153,7 +146,16 @@ class PaymentController extends Controller
             }
 
             if ($payment->payment_type === 'FINAL') {
-                $payment->order->update(['status' => 'CLOSED']);
+                $order = $payment->order;
+                $oldStatus = $order->status;
+                $order->update(['status' => 'CLOSED']);
+                OrderStatusLog::create([
+                    'order_id' => $order->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => 'CLOSED',
+                    'changed_by' => null,
+                    'reason' => 'Final payment received via webhook',
+                ]);
             }
 
             DB::commit();
@@ -276,7 +278,16 @@ class PaymentController extends Controller
         );
 
         if ($payment->payment_type === 'FINAL') {
-            $payment->order->update(['status' => 'CLOSED']);
+            $order = $payment->order;
+            $oldStatus = $order->status;
+            $order->update(['status' => 'CLOSED']);
+            OrderStatusLog::create([
+                'order_id' => $order->id,
+                'old_status' => $oldStatus,
+                'new_status' => 'CLOSED',
+                'changed_by' => Auth::id(),
+                'reason' => 'Final payment captured manually',
+            ]);
         }
 
         return $this->successResponse(['payment' => $payment], 'payment captured', 200);

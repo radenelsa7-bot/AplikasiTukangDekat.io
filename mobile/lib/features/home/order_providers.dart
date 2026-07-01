@@ -185,8 +185,21 @@ class OrderActionController extends StateNotifier<OrderActionState> {
       // Refresh orders after starting work
       _ref.refresh(myOrdersProvider); // ignore: unused_result
       return true;
+    } on DioException catch (e) {
+      String errorMsg = 'Gagal memulai pekerjaan';
+      if (e.response?.statusCode == 422) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic> && data['message'] != null) {
+          errorMsg = data['message'].toString();
+        } else {
+          errorMsg =
+              'DP harus dibayar terlebih dahulu sebelum memulai pekerjaan';
+        }
+      }
+      state = state.copyWith(isLoading: false, errorMessage: errorMsg);
+      return false;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed: $e');
+      state = state.copyWith(isLoading: false, errorMessage: 'Gagal: $e');
       return false;
     }
   }

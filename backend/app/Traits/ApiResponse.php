@@ -126,24 +126,4 @@ trait ApiResponse
     {
         return $this->error($message, 500, $errorCode ?? 'INTERNAL_SERVER_ERROR');
     }
-
-    protected function successResponse($data = null, string $message = 'ok', int $status = 200, array $meta = []): JsonResponse
-    {
-        return $this->success($data, $message, $status);
-    }
-
-    protected function errorResponse(string $message, int $status = 400, array $errors = []): JsonResponse
-    {
-        return $this->error($message, $status, null, $errors);
-    }
-
-    protected function notFoundResponse(string $message = 'Resource not found'): JsonResponse
-    {
-        return $this->notFound($message);
-    }
-
-    protected function forbiddenResponse(string $message = 'Forbidden'): JsonResponse
-    {
-        return $this->forbidden($message);
-    }
 }

@@ -7,6 +7,7 @@ use App\Http\Requests\Treasurer\PaymentReportRequest;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Traits\ApiResponse;
 
@@ -22,7 +23,7 @@ class TreasurerController extends Controller
             Log::warning('No user found in TreasurerController.ensureTreasurer');
         }
 
-        if (!$user || !in_array($user->role, ['TREASURER', 'ADMIN'], true)) {
+        if (!$user || $user->role !== 'TREASURER') {
             Log::warning('Unauthorized treasurer access attempt', ['user' => $user ? $user->id : null]);
             return $this->forbiddenResponse('only treasurer can access this resource');
         }
@@ -34,7 +35,7 @@ class TreasurerController extends Controller
     {
         // Route uses role.treasurer; defensive check only
         $user = Auth::user() ?? Auth::guard('web')->user();
-        if (!$user || !in_array($user->role, ['TREASURER', 'ADMIN'], true)) {
+        if (!$user || $user->role !== 'TREASURER') {
             return $this->forbidden('Only treasurer can access this resource');
         }
 
@@ -355,5 +356,55 @@ class TreasurerController extends Controller
                 'provider_id' => $validated['provider_id'] ?? null,
             ],
         ], 'ok', 200);
+    }
+
+    public function summaryReport(Request $request)
+    {
+        $user = Auth::user() ?? Auth::guard('web')->user();
+        if (!$user || $user->role !== 'TREASURER') {
+            return $this->forbidden('Only treasurer can access this resource');
+        }
+
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'group_by' => 'nullable|in:day,week,month',
+        ]);
+
+        $groupBy = $request->query('group_by', 'day');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        $dateExpr = match ($groupBy) {
+            'week' => DB::raw("DATE(DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY)) as period"),
+            'month' => DB::raw("DATE_FORMAT(created_at, '%Y-%m-01') as period"),
+            default => DB::raw("DATE(created_at) as period"),
+        };
+
+        $query = Payment::select(
+            $dateExpr,
+            DB::raw("SUM(CASE WHEN payment_type = 'DP' AND status = 'PAID' THEN amount ELSE 0 END) as total_dp"),
+            DB::raw("SUM(CASE WHEN payment_type = 'FINAL' AND status = 'PAID' THEN amount ELSE 0 END) as total_final"),
+            DB::raw("SUM(CASE WHEN status = 'PAID' THEN amount ELSE 0 END) as total_revenue"),
+            DB::raw("COUNT(CASE WHEN status = 'PAID' THEN 1 END) as transaction_count"),
+        );
+
+        if ($startDate) {
+            $query->whereDate('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->whereDate('created_at', '<=', $endDate);
+        }
+
+        $results = $query->groupBy('period')->orderBy('period', 'desc')->get();
+
+        return $this->success([
+            'report' => $results,
+            'group_by' => $groupBy,
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ],
+        ], 'Summary report retrieved');
     }
 }

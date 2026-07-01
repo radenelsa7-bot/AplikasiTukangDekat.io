@@ -41,42 +41,19 @@ class ReviewsResponse {
   ReviewsResponse({required this.data});
 
   factory ReviewsResponse.fromJson(Map<String, dynamic> json) {
-    final payload = json['data'];
-    if (payload is List) {
-      return ReviewsResponse(
-        data: payload
-            .map((item) => ReviewData.fromJson(Map<String, dynamic>.from(item)))
-            .toList(),
-      );
+    final rawData = json['data'];
+    List items;
+    if (rawData is List) {
+      items = rawData;
+    } else if (rawData is Map<String, dynamic>) {
+      items = rawData['reviews'] as List? ?? [];
+    } else {
+      items = [];
     }
-
-    if (payload is Map<String, dynamic>) {
-      final list = payload['reviews'];
-      if (list is List) {
-        return ReviewsResponse(
-          data: list
-              .map(
-                (item) => ReviewData.fromJson(Map<String, dynamic>.from(item)),
-              )
-              .toList(),
-        );
-      }
-
-      if (list is Map<String, dynamic>) {
-        final items = list['data'];
-        if (items is List) {
-          return ReviewsResponse(
-            data: items
-                .map(
-                  (item) =>
-                      ReviewData.fromJson(Map<String, dynamic>.from(item)),
-                )
-                .toList(),
-          );
-        }
-      }
-    }
-
-    return ReviewsResponse(data: const []);
+    return ReviewsResponse(
+      data: items
+          .map((item) => ReviewData.fromJson(Map<String, dynamic>.from(item)))
+          .toList(),
+    );
   }
 }

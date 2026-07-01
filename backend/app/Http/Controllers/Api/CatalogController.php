@@ -3,90 +3,110 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ProviderProfile;
-use App\Models\ServiceCategory;
 use App\Traits\ApiResponse;
+use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\JsonResponse;
 
-class CatalogController extends Controller
+class ChatbotController extends Controller
 {
     use ApiResponse;
 
-    public function getCategories()
+    public function sendMessage(Request $request): JsonResponse
     {
-        $categories = ServiceCategory::where('is_active', true)->get();
-        return response()->json(['data' => $categories], 200);
-    }
+        $request->validate([
+            'message' => 'required|string|max:2000',
+        ]);
 
-    public function getProviders()
-    {
-        $providers = ProviderProfile::where('is_verified', true)
-            ->where('is_active', true)
-            ->with(['services' => function ($query) {
-                $query->where('is_active', true);
-            }, 'user'])
-            ->latest()
-            ->get();
+        $user = $request->user();
+        $userMessage = strtolower(trim($request->input('message')));
 
-        return $this->successResponse(['providers' => $providers], 'ok', 200);
-    }
+        // Check if Gemini API key is configured
+        $apiKey = config('services.gemini.key');
 
-    public function getProvidersByCategory($categoryId)
-    {
-        $category = ServiceCategory::find($categoryId);
-
-        if (!$category) {
-            return $this->notFoundResponse('category not found');
+        if (empty($apiKey)) {
+            // Fallback: rule-based responses when AI service not configured
+            $reply = $this->getFallbackReply($userMessage, $user);
+            return $this->success(['reply' => $reply], 'OK', 200);
         }
 
-        $providers = ProviderProfile::whereHas('services', function ($query) use ($categoryId) {
-            $query->where('category_id', $categoryId)->where('is_active', true);
-        })
-            ->where('is_verified', true)
-            ->where('is_active', true)
-            ->with(['services' => function ($query) use ($categoryId) {
-                $query->where('category_id', $categoryId)->where('is_active', true);
-            }, 'user'])
-            ->get();
+        // Fetch last order to provide context
+        $lastOrder = Order::where('customer_id', $user->id)->latest('created_at')->first();
 
-        return $this->successResponse(['providers' => $providers], 'ok', 200);
-    }
+        $systemPrompt = "Kamu adalah asisten Customer Service berpengalaman untuk platform TukangDekat, aplikasi pemesanan jasa lokal di Kecamatan Bojongloa Kaler. Bantu user dengan ramah jika menemui kendala transaksi.";
 
-    public function getProviderDetail($providerId)
-    {
-        $provider = ProviderProfile::with(['services' => function ($query) {
-            $query->where('is_active', true);
-        }, 'user'])->find($providerId);
-
-        if (!$provider) {
-            return $this->notFoundResponse('provider not found');
+        if ($lastOrder) {
+            $systemPrompt .= sprintf(" Pengguna memiliki pesanan terakhir: kode=%s, status=%s.", $lastOrder->order_code ?? 'N/A', $lastOrder->status ?? 'N/A');
         }
 
-        return $this->successResponse(['provider' => $provider], 'ok', 200);
+        $model = config('services.gemini.model', 'gemini-pro');
+        $base = rtrim(config('services.gemini.endpoint', 'https://generativelanguage.googleapis.com/v1beta'), '/');
+        $url = sprintf('%s/models/%s:generateContent?key=%s', $base, $model, $apiKey);
+
+        $payload = [
+            'contents' => [
+                ['role' => 'user', 'parts' => [['text' => $systemPrompt . "\n\nUser: " . $request->input('message')]]],
+            ],
+            'generationConfig' => [
+                'temperature' => 0.2,
+                'maxOutputTokens' => 1024,
+            ],
+        ];
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->timeout(15)->post($url, $payload);
+
+            if ($response->failed()) {
+                $reply = $this->getFallbackReply($userMessage, $user);
+                return $this->success(['reply' => $reply], 'OK', 200);
+            }
+
+            $body = $response->json();
+
+            $reply = null;
+            if (isset($body['candidates'][0]['content']['parts'][0]['text'])) {
+                $reply = $body['candidates'][0]['content']['parts'][0]['text'];
+            } elseif (isset($body['candidates'][0]['content']['text'])) {
+                $reply = $body['candidates'][0]['content']['text'];
+            }
+
+            if (empty($reply)) {
+                $reply = $this->getFallbackReply($userMessage, $user);
+            }
+
+            return $this->success(['reply' => $reply], 'OK', 200);
+        } catch (\Exception $e) {
+            $reply = $this->getFallbackReply($userMessage, $user);
+            return $this->success(['reply' => $reply], 'OK', 200);
+        }
     }
 
-    public function searchProviders(Request $request)
+    private function getFallbackReply(string $message, $user): string
     {
-        $query = $request->query('q', '');
+        $lastOrder = Order::where('customer_id', $user->id)->latest('created_at')->first();
 
-        if (empty($query)) {
-            return $this->errorResponse('Query parameter q is required.', 400);
+        if (str_contains($message, 'status') || str_contains($message, 'pesanan') || str_contains($message, 'order')) {
+            if ($lastOrder) {
+                return "Pesanan terakhir Anda ({$lastOrder->order_code}) saat ini berstatus: {$lastOrder->status}. Silakan cek halaman 'Pesanan' untuk detail lebih lanjut.";
+            }
+            return "Anda belum memiliki pesanan. Silakan cari teknisi di halaman Beranda untuk membuat pesanan baru.";
         }
 
-        $providers = ProviderProfile::where('is_verified', true)
-            ->where('is_active', true)
-            ->where(function ($q) use ($query) {
-                $q->where('business_name', 'like', "%$query%")
-                    ->orWhere('area', 'like', "%$query%")
-                    ->orWhereHas('user', function ($userQ) use ($query) {
-                        $userQ->where('name', 'like', "%$query%");
-                    });
-            })
-            ->with(['services' => function ($query) {
-                $query->where('is_active', true);
-            }, 'user'])
-            ->get();
+        if (str_contains($message, 'bayar') || str_contains($message, 'payment') || str_contains($message, 'qris')) {
+            return "Pembayaran di TukangDekat menggunakan sistem DP 50% + Pelunasan 50%. Setelah order diterima teknisi, Anda bisa membayar DP melalui QRIS. Pelunasan dilakukan setelah pekerjaan selesai.";
+        }
 
-        return $this->successResponse(['providers' => $providers], 'ok', 200);
+        if (str_contains($message, 'batal') || str_contains($message, 'cancel')) {
+            return "Untuk membatalkan pesanan, silakan hubungi admin melalui halaman pesanan. Pembatalan hanya bisa dilakukan sebelum teknisi memulai pekerjaan.";
+        }
+
+        if (str_contains($message, 'halo') || str_contains($message, 'hai') || str_contains($message, 'hi') || str_contains($message, 'hello')) {
+            return "Halo! Saya asisten TukangDekat. Ada yang bisa saya bantu? Anda bisa bertanya tentang status pesanan, pembayaran, atau layanan kami.";
+        }
+
+        return "Terima kasih telah menghubungi TukangDekat! Saya bisa membantu Anda dengan:\n- Cek status pesanan\n- Informasi pembayaran\n- Cara memesan jasa\n- Pembatalan pesanan\n\nSilakan tanyakan sesuai kebutuhan Anda.";
     }
 }
