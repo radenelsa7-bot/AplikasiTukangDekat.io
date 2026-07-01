@@ -96,6 +96,7 @@ class CreateOrderRequest {
   final String address;
   final String? notes;
   final int? estimatedPrice;
+  final List<String>? attachmentUrls;
 
   CreateOrderRequest({
     required this.providerId,
@@ -105,6 +106,7 @@ class CreateOrderRequest {
     required this.address,
     this.notes,
     this.estimatedPrice,
+    this.attachmentUrls,
   });
 
   Map<String, dynamic> toJson() {
@@ -125,6 +127,9 @@ class CreateOrderRequest {
     }
     if (estimatedPrice != null) {
       data['estimated_price'] = estimatedPrice!;
+    }
+    if (attachmentUrls != null && attachmentUrls!.isNotEmpty) {
+      data['attachment_urls'] = attachmentUrls;
     }
 
     return data;

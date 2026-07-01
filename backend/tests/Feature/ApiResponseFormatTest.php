@@ -16,8 +16,8 @@ class ApiResponseFormatTest extends TestCase
             'name' => 'Test User',
             'email' => 'format-test@example.com',
             'phone' => '081234567890',
-            'password' => 'secret123',
-            'password_confirmation' => 'secret123',
+            'password' => 'Secret@123',
+            'password_confirmation' => 'Secret@123',
             'role' => 'CUSTOMER',
         ]);
 

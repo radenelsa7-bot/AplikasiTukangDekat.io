@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\CompleteOrderRequest;
 use App\Http\Requests\Order\CreateOrderRequest;
 use App\Http\Requests\Order\RespondToOrderRequest;
+use App\Models\OrderAttachment;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
@@ -59,6 +60,15 @@ class OrderController extends Controller
                     'status' => 'CREATED',
                 ]);
 
+                $attachmentUrls = array_values(array_filter($validated['attachment_urls'] ?? []));
+                foreach ($attachmentUrls as $url) {
+                    OrderAttachment::create([
+                        'order_id' => $order->id,
+                        'file_url' => $url,
+                        'file_type' => 'image',
+                    ]);
+                }
+
                 $dpAmount = intval($validated['estimated_price'] * 0.5);
                 Payment::create([
                     'order_id' => $order->id,
@@ -88,6 +98,7 @@ class OrderController extends Controller
                 'order_code' => $order->order_code,
                 'status' => $order->status,
                 'dp_amount' => $dpAmount,
+                'attachments_count' => $order->attachments()->count(),
             ], 'Order created', 201);
         } catch (ModelNotFoundException $e) {
             return $this->validationError(['provider_id' => ['Selected provider not found or not active']]);
@@ -104,7 +115,7 @@ class OrderController extends Controller
      */
     public function getOrder($orderId)
     {
-        $order = Order::with(['customer', 'provider', 'payments'])
+        $order = Order::with(['customer', 'provider', 'payments', 'attachments'])
             ->find($orderId);
 
         if (!$order) {
@@ -123,12 +134,12 @@ class OrderController extends Controller
 
         if ($user->role === 'CUSTOMER') {
             $orders = Order::where('customer_id', $user->id)
-                ->with(['provider', 'payments'])
+                ->with(['provider', 'payments', 'attachments'])
                 ->latest()
                 ->get();
         } elseif ($user->role === 'PROVIDER') {
             $orders = Order::where('provider_id', $user->id)
-                ->with(['customer', 'payments'])
+                ->with(['customer', 'payments', 'attachments'])
                 ->latest()
                 ->get();
         } else {

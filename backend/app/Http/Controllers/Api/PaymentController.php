@@ -119,6 +119,14 @@ class PaymentController extends Controller
                 $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
 
                 $order = $payment->order;
+                if (
+                    strtoupper((string) $payment->payment_type) === 'DP'
+                    && $order
+                    && $order->status === 'CREATED'
+                ) {
+                    $order->update(['status' => 'ACCEPTED']);
+                }
+
                 $eventName = match (strtoupper($payment->payment_type)) {
                     'DP' => 'dp_paid',
                     'FINAL' => 'final_paid',
