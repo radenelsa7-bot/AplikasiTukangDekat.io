@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
+import '../../config/api_config.dart';
 import '../../shared/widgets/site_footer.dart';
 import '../../shared/widgets/site_header.dart';
 import '../auth/auth_controller.dart';
@@ -138,7 +139,7 @@ class HomePage extends ConsumerWidget {
                     backgroundColor: Colors.white12,
                     backgroundImage: state.userProfilePhotoPath != null
                         ? NetworkImage(
-                            '${Uri.base.origin}/storage/${state.userProfilePhotoPath}',
+                            '${ApiConfig.baseUrl}/storage/${state.userProfilePhotoPath}',
                           )
                         : null,
                     child: state.userProfilePhotoPath == null

@@ -15,7 +15,7 @@ class RegisterRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => 'required|string|max:100',
             'email' => 'required|string|email|unique:users',
             'phone' => 'required|string|max:30',
@@ -30,6 +30,16 @@ class RegisterRequest extends FormRequest
             ],
             'role' => 'required|in:CUSTOMER,PROVIDER',
         ];
+
+        // Additional fields required for PROVIDER registration
+        if ($this->input('role') === 'PROVIDER') {
+            $rules['category_id'] = 'required|integer|exists:service_categories,id';
+            $rules['business_name'] = 'required|string|max:150';
+            $rules['service_name'] = 'nullable|string|max:100';
+            $rules['base_price'] = 'nullable|integer|min:0';
+        }
+
+        return $rules;
     }
 
     public function messages(): array

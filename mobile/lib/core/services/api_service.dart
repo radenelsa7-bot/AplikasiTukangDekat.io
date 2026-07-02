@@ -29,19 +29,30 @@ class ApiService {
     required String phone,
     required String password,
     required String role,
+    int? categoryId,
+    String? businessName,
+    String? serviceName,
+    int? basePrice,
   }) async {
     try {
-      final response = await dio.post(
-        '/api/auth/register',
-        data: {
-          'name': name,
-          'email': email,
-          'phone': phone,
-          'password': password,
-          'password_confirmation': password,
-          'role': role,
-        },
-      );
+      final data = <String, dynamic>{
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'password': password,
+        'password_confirmation': password,
+        'role': role,
+      };
+
+      // Add provider-specific fields
+      if (role == 'PROVIDER') {
+        if (categoryId != null) data['category_id'] = categoryId;
+        if (businessName != null) data['business_name'] = businessName;
+        if (serviceName != null) data['service_name'] = serviceName;
+        if (basePrice != null) data['base_price'] = basePrice;
+      }
+
+      final response = await dio.post('/api/auth/register', data: data);
       return AuthResponse.fromJson(response.data);
     } catch (e) {
       rethrow;

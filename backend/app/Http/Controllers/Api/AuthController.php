@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\ProviderProfile;
+use App\Models\ProviderService;
 use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -42,11 +43,24 @@ class AuthController extends Controller
             });
 
             if ($validated['role'] === 'PROVIDER') {
-                $this->dbAttempt(function () use ($user) {
-                    ProviderProfile::create([
+                $this->dbAttempt(function () use ($user, $validated) {
+                    $profile = ProviderProfile::create([
                         'user_id' => $user->id,
+                        'business_name' => $validated['business_name'] ?? $user->name,
                         'is_verified' => false,
                     ]);
+
+                    // Create initial service linked to selected category
+                    if (!empty($validated['category_id'])) {
+                        ProviderService::create([
+                            'provider_profile_id' => $profile->id,
+                            'category_id' => $validated['category_id'],
+                            'name' => $validated['service_name'] ?? 'Layanan ' . $user->name,
+                            'base_price' => $validated['base_price'] ?? 0,
+                            'price_unit' => 'per_job',
+                            'is_active' => true,
+                        ]);
+                    }
                 });
             }
 
