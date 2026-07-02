@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/models/category_model.dart';
+import '../../core/services/api_service.dart';
 import 'auth_controller.dart';
 import 'auth_state.dart';
 import 'login_page.dart';
@@ -18,7 +20,33 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _passConfirmCtrl = TextEditingController();
+  final _businessNameCtrl = TextEditingController();
   String _selectedRole = 'CUSTOMER';
+  int? _selectedCategoryId;
+  List<ServiceCategory> _categories = [];
+  bool _loadingCategories = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() => _loadingCategories = true);
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      final response = await apiService.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = response.data;
+          _loadingCategories = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingCategories = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -27,6 +55,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _phoneCtrl.dispose();
     _passCtrl.dispose();
     _passConfirmCtrl.dispose();
+    _businessNameCtrl.dispose();
     super.dispose();
   }
 
@@ -52,15 +81,23 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           phone: _phoneCtrl.text.trim(),
           password: _passCtrl.text,
           role: _selectedRole,
+          categoryId: _selectedRole == 'PROVIDER' ? _selectedCategoryId : null,
+          businessName: _selectedRole == 'PROVIDER'
+              ? _businessNameCtrl.text.trim()
+              : null,
         );
 
     if (!mounted) return;
 
     if (success) {
+      final message = _selectedRole == 'PROVIDER'
+          ? 'Registrasi berhasil! Akun Anda menunggu verifikasi admin sebelum dapat melayani pesanan.'
+          : 'Registrasi berhasil! Silakan login';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registrasi berhasil! Silakan login'),
+        SnackBar(
+          content: Text(message),
           backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
         ),
       );
       Navigator.of(
@@ -289,6 +326,27 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               const SizedBox(height: 14),
               _buildRoleDropdown(errorText: state.fieldErrors['role']),
+              if (_selectedRole == 'PROVIDER') ...[
+                const SizedBox(height: 14),
+                _buildTextField(
+                  controller: _businessNameCtrl,
+                  label: 'Nama Usaha',
+                  hint: 'Contoh: Jasa Listrik Pak Budi',
+                  icon: Icons.store_outlined,
+                  errorText: state.fieldErrors['business_name'],
+                  validator: (v) {
+                    if (_selectedRole == 'PROVIDER' &&
+                        (v ?? '').trim().isEmpty) {
+                      return 'Nama usaha wajib diisi';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 14),
+                _buildCategoryDropdown(
+                  errorText: state.fieldErrors['category_id'],
+                ),
+              ],
               const SizedBox(height: 14),
               _buildTextField(
                 controller: _passCtrl,
@@ -498,7 +556,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             border: Border.all(color: const Color(0xFFE8DCC8), width: 1),
           ),
           child: DropdownButtonFormField<String>(
-            initialValue: _selectedRole,
+            value: _selectedRole,
             decoration: InputDecoration(
               border: InputBorder.none,
               prefixIcon: const Icon(
@@ -520,6 +578,73 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               }
             },
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryDropdown({String? errorText}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Kategori Layanan',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF0F3460),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFE8DCC8), width: 1),
+          ),
+          child: _loadingCategories
+              ? const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              : DropdownButtonFormField<int>(
+                  value: _selectedCategoryId,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    prefixIcon: const Icon(
+                      Icons.category_outlined,
+                      color: Color(0xFFFF8C42),
+                      size: 20,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    errorText: errorText,
+                  ),
+                  isExpanded: true,
+                  hint: const Text('Pilih kategori layanan'),
+                  items: _categories
+                      .map(
+                        (cat) => DropdownMenuItem(
+                          value: cat.id,
+                          child: Text(cat.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() => _selectedCategoryId = value);
+                  },
+                  validator: (v) {
+                    if (_selectedRole == 'PROVIDER' && v == null) {
+                      return 'Kategori layanan wajib dipilih';
+                    }
+                    return null;
+                  },
+                ),
         ),
       ],
     );

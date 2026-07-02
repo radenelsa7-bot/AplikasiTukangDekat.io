@@ -1,232 +1,295 @@
-import 'dart:typed_data';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/services/api_service.dart';
-import '../../core/services/auth_storage_service.dart';
+import '../../app/theme/app_theme.dart';
+import '../../config/api_config.dart';
+import '../../shared/widgets/site_footer.dart';
+import '../../shared/widgets/site_header.dart';
 import '../auth/auth_controller.dart';
+import '../auth/login_page.dart';
+import '../admin/admin_verification_page.dart';
+import 'catalog_page.dart';
+import 'my_orders_page.dart';
+import 'edit_profile_dialog.dart';
 
-class EditProfileDialog extends ConsumerStatefulWidget {
-  const EditProfileDialog({super.key});
-
-  @override
-  ConsumerState<EditProfileDialog> createState() => _EditProfileDialogState();
-}
-
-class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
-  final _nameCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
-  XFile? _picked;
-  Uint8List? _pickedBytes;
-  bool _isSaving = false;
+class HomePage extends ConsumerWidget {
+  const HomePage({super.key});
 
   @override
-  void initState() {
-    super.initState();
-    final authState = ref.read(authControllerProvider);
-    _nameCtrl.text = authState.userFullName ?? '';
-    _phoneCtrl.text = authState.userPhoneNumber ?? '';
-  }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(authControllerProvider);
+    final isAdmin = state.userRole == 'ADMIN';
+    final tabs = [
+      const Tab(icon: Icon(Icons.home_rounded), text: 'Beranda'),
+      const Tab(icon: Icon(Icons.receipt_long_rounded), text: 'Pesanan'),
+      if (isAdmin)
+        const Tab(icon: Icon(Icons.admin_panel_settings), text: 'Admin'),
+      const Tab(icon: Icon(Icons.person_rounded), text: 'Akun'),
+    ];
+    final pages = [
+      const CatalogPage(),
+      const MyOrdersPage(),
+      if (isAdmin) const AdminVerificationPage(),
+      _buildAccountTab(context, ref, state),
+    ];
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-    if (file != null) {
-      final bytes = await file.readAsBytes();
-      if (!mounted) return;
-      setState(() {
-        _picked = file;
-        _pickedBytes = bytes;
-      });
-    }
-  }
-
-  Future<void> _deletePhoto() async {
-    setState(() => _isSaving = true);
-    try {
-      final success = await ref
-          .read(authControllerProvider.notifier)
-          .deleteProfilePhoto();
-      if (!mounted) return;
-      if (success) {
-        setState(() {
-          _picked = null;
-          _pickedBytes = null;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto profil berhasil dihapus')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal menghapus foto profil')),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menghapus foto profil')),
-      );
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
-  }
-
-  Future<void> _save() async {
-    setState(() => _isSaving = true);
-    try {
-      MultipartFile? mf;
-      if (_picked != null) {
-        if (_pickedBytes != null) {
-          mf = MultipartFile.fromBytes(_pickedBytes!, filename: _picked!.name);
-        } else {
-          // Fallback for platforms where path is available (mobile)
-          mf = await MultipartFile.fromFile(
-            _picked!.path,
-            filename: _picked!.name,
-          );
-        }
-      }
-      final api = ref.read(apiServiceProvider);
-      final result = await api.updateProfile(
-        fullName: _nameCtrl.text.isEmpty ? null : _nameCtrl.text,
-        phoneNumber: _phoneCtrl.text.isEmpty ? null : _phoneCtrl.text,
-        photoFile: mf,
-      );
-
-      // Update auth state and storage with new profile data
-      if (result['user'] is Map<String, dynamic>) {
-        final user = result['user'] as Map<String, dynamic>;
-        final fullName = user['full_name'] as String?;
-        final phoneNumber = user['phone_number'] as String?;
-        final profilePhotoPath = user['profile_photo_path'] as String?;
-
-        // Update storage
-        await ref
-            .read(authStorageProvider)
-            .saveUserData(
-              userId: user['id'] ?? 0,
-              userRole: user['role'] ?? 'CUSTOMER',
-              userEmail: user['email'] ?? '',
-              fullName: fullName,
-              phoneNumber: phoneNumber,
-              profilePhotoPath: profilePhotoPath,
-            );
-
-        // Update auth controller state
-        ref
-            .read(authControllerProvider.notifier)
-            .updateState(
-              (current) => current.copyWith(
-                userFullName: fullName,
-                userPhoneNumber: phoneNumber,
-                userProfilePhotoPath: profilePhotoPath,
+    return DefaultTabController(
+      length: tabs.length,
+      child: Scaffold(
+        backgroundColor: AppTheme.cream,
+        appBar: TukangDekatHeader(
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppTheme.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.handyman,
+                  size: 20,
+                  color: AppTheme.orange,
+                ),
               ),
-            );
-      }
-
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-    } on DioException catch (e) {
-      if (!mounted) return;
-      String message = 'Gagal menyimpan profil';
-      try {
-        final data = e.response?.data;
-        if (data is Map && data['message'] != null) {
-          message = data['message'].toString();
-        } else if (e.message != null) {
-          message = e.message!;
-        }
-      } catch (_) {}
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Gagal menyimpan profil')));
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _phoneCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final hasCurrentPhoto =
-        authState.userProfilePhotoPath != null ||
-        _picked != null ||
-        _pickedBytes != null;
-    final ImageProvider<Object>? backgroundImage = _pickedBytes != null
-        ? MemoryImage(_pickedBytes!)
-        : (authState.userProfilePhotoPath != null
-              ? NetworkImage(
-                  '${Uri.base.origin}/storage/${authState.userProfilePhotoPath}',
-                )
-              : null);
-
-    return AlertDialog(
-      title: const Text('Edit Profil'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GestureDetector(
-              onTap: _pickImage,
-              child: CircleAvatar(
-                radius: 36,
-                backgroundImage: backgroundImage,
-                child: backgroundImage == null
-                    ? const Icon(Icons.camera_alt)
-                    : null,
+              const SizedBox(width: 10),
+              const Text(
+                'TukangDekat',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
+            ],
+          ),
+          bottom: TabBar(
+            tabs: tabs,
+            indicatorColor: AppTheme.orange,
+            indicatorWeight: 3,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white60,
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: 'Nama'),
-            ),
-            TextField(
-              controller: _phoneCtrl,
-              decoration: const InputDecoration(labelText: 'No HP'),
-              keyboardType: TextInputType.phone,
+          ),
+          actions: [
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: IconButton(
+                tooltip: 'Logout',
+                onPressed: () async {
+                  await ref.read(authControllerProvider.notifier).logout();
+                  if (!context.mounted) return;
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (_) => false,
+                  );
+                },
+                icon: const Icon(Icons.logout_rounded, size: 20),
+              ),
             ),
           ],
         ),
+        body: TabBarView(children: pages),
+        bottomNavigationBar: const TukangDekatFooter(),
       ),
-      actions: [
-        if (hasCurrentPhoto)
-          TextButton(
-            onPressed: _isSaving ? null : _deletePhoto,
-            child: const Text('Hapus Foto'),
+    );
+  }
+
+  Widget _buildAccountTab(BuildContext context, WidgetRef ref, dynamic state) {
+    final displayName = state.userFullName?.isNotEmpty == true
+        ? state.userFullName
+        : state.userEmail ?? 'N/A';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          // Profile Header Card
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppTheme.navy, AppTheme.navyLight],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.navy.withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppTheme.orange, width: 2),
+                  ),
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: Colors.white12,
+                    backgroundImage: state.userProfilePhotoPath != null
+                        ? NetworkImage(
+                            '${ApiConfig.baseUrl}/storage/${state.userProfilePhotoPath}',
+                          )
+                        : null,
+                    child: state.userProfilePhotoPath == null
+                        ? const Icon(
+                            Icons.person,
+                            size: 36,
+                            color: Colors.white70,
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      if (state.userFullName?.isNotEmpty == true)
+                        Text(
+                          state.userEmail ?? '',
+                          style: const TextStyle(
+                            color: Colors.white60,
+                            fontSize: 13,
+                          ),
+                        ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.orange.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          state.userRole ?? 'N/A',
+                          style: const TextStyle(
+                            color: AppTheme.orange,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        TextButton(
-          onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Batal'),
+          const SizedBox(height: 20),
+          // Action Cards
+          Material(
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppTheme.grey200),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                _buildMenuTile(
+                  icon: Icons.edit_rounded,
+                  iconColor: AppTheme.info,
+                  title: 'Edit Profil',
+                  subtitle: 'Ubah nama, foto, dan nomor telepon',
+                  onTap: () async {
+                    final res = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => const EditProfileDialog(),
+                    );
+                    if (!context.mounted) return;
+                    if (res == true) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Profil berhasil diperbarui'),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                const Divider(height: 1, indent: 56),
+                _buildMenuTile(
+                  icon: Icons.chat_bubble_rounded,
+                  iconColor: AppTheme.success,
+                  title: 'Bantuan (Chatbot)',
+                  subtitle: 'Tanya seputar layanan dan pesanan',
+                  onTap: () => Navigator.of(context).pushNamed('/chatbot'),
+                ),
+                if (state.userPhoneNumber?.isNotEmpty == true) ...[
+                  const Divider(height: 1, indent: 56),
+                  _buildMenuTile(
+                    icon: Icons.phone_rounded,
+                    iconColor: AppTheme.warning,
+                    title: 'No. Telepon',
+                    subtitle: state.userPhoneNumber!,
+                    onTap: null,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: iconColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
         ),
-        ElevatedButton(
-          onPressed: _isSaving ? null : _save,
-          child: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Simpan'),
-        ),
-      ],
+        child: Icon(icon, color: iconColor, size: 22),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(fontSize: 12, color: AppTheme.grey600),
+      ),
+      trailing: onTap != null
+          ? const Icon(Icons.chevron_right, color: AppTheme.grey400)
+          : null,
+      onTap: onTap,
     );
   }
 }

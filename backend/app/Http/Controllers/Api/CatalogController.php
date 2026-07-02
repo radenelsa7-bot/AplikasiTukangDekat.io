@@ -3,110 +3,97 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ServiceCategory;
+use App\Models\ProviderProfile;
 use App\Traits\ApiResponse;
-use App\Models\Order;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\JsonResponse;
 
-class ChatbotController extends Controller
+class CatalogController extends Controller
 {
     use ApiResponse;
 
-    public function sendMessage(Request $request): JsonResponse
+    /**
+     * Get semua service categories
+     */
+    public function getCategories()
     {
-        $request->validate([
-            'message' => 'required|string|max:2000',
-        ]);
-
-        $user = $request->user();
-        $userMessage = strtolower(trim($request->input('message')));
-
-        // Check if Gemini API key is configured
-        $apiKey = config('services.gemini.key');
-
-        if (empty($apiKey)) {
-            // Fallback: rule-based responses when AI service not configured
-            $reply = $this->getFallbackReply($userMessage, $user);
-            return $this->success(['reply' => $reply], 'OK', 200);
-        }
-
-        // Fetch last order to provide context
-        $lastOrder = Order::where('customer_id', $user->id)->latest('created_at')->first();
-
-        $systemPrompt = "Kamu adalah asisten Customer Service berpengalaman untuk platform TukangDekat, aplikasi pemesanan jasa lokal di Kecamatan Bojongloa Kaler. Bantu user dengan ramah jika menemui kendala transaksi.";
-
-        if ($lastOrder) {
-            $systemPrompt .= sprintf(" Pengguna memiliki pesanan terakhir: kode=%s, status=%s.", $lastOrder->order_code ?? 'N/A', $lastOrder->status ?? 'N/A');
-        }
-
-        $model = config('services.gemini.model', 'gemini-pro');
-        $base = rtrim(config('services.gemini.endpoint', 'https://generativelanguage.googleapis.com/v1beta'), '/');
-        $url = sprintf('%s/models/%s:generateContent?key=%s', $base, $model, $apiKey);
-
-        $payload = [
-            'contents' => [
-                ['role' => 'user', 'parts' => [['text' => $systemPrompt . "\n\nUser: " . $request->input('message')]]],
-            ],
-            'generationConfig' => [
-                'temperature' => 0.2,
-                'maxOutputTokens' => 1024,
-            ],
-        ];
-
-        try {
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-            ])->timeout(15)->post($url, $payload);
-
-            if ($response->failed()) {
-                $reply = $this->getFallbackReply($userMessage, $user);
-                return $this->success(['reply' => $reply], 'OK', 200);
-            }
-
-            $body = $response->json();
-
-            $reply = null;
-            if (isset($body['candidates'][0]['content']['parts'][0]['text'])) {
-                $reply = $body['candidates'][0]['content']['parts'][0]['text'];
-            } elseif (isset($body['candidates'][0]['content']['text'])) {
-                $reply = $body['candidates'][0]['content']['text'];
-            }
-
-            if (empty($reply)) {
-                $reply = $this->getFallbackReply($userMessage, $user);
-            }
-
-            return $this->success(['reply' => $reply], 'OK', 200);
-        } catch (\Exception $e) {
-            $reply = $this->getFallbackReply($userMessage, $user);
-            return $this->success(['reply' => $reply], 'OK', 200);
-        }
+        $categories = ServiceCategory::where('is_active', true)->get();
+        return $this->success($categories, 'Categories retrieved');
     }
 
-    private function getFallbackReply(string $message, $user): string
+    /**
+     * Get all verified providers
+     */
+    public function getProviders(Request $request)
     {
-        $lastOrder = Order::where('customer_id', $user->id)->latest('created_at')->first();
+        $providers = ProviderProfile::where('is_verified', true)
+            ->with(['user', 'services.category'])
+            ->get();
 
-        if (str_contains($message, 'status') || str_contains($message, 'pesanan') || str_contains($message, 'order')) {
-            if ($lastOrder) {
-                return "Pesanan terakhir Anda ({$lastOrder->order_code}) saat ini berstatus: {$lastOrder->status}. Silakan cek halaman 'Pesanan' untuk detail lebih lanjut.";
-            }
-            return "Anda belum memiliki pesanan. Silakan cari teknisi di halaman Beranda untuk membuat pesanan baru.";
+        return $this->success($providers, 'Providers retrieved');
+    }
+
+    /**
+     * Get providers berdasarkan category
+     */
+    public function getProvidersByCategory($categoryId)
+    {
+        $category = ServiceCategory::find($categoryId);
+
+        if (!$category) {
+            return $this->notFound('Category not found');
         }
 
-        if (str_contains($message, 'bayar') || str_contains($message, 'payment') || str_contains($message, 'qris')) {
-            return "Pembayaran di TukangDekat menggunakan sistem DP 50% + Pelunasan 50%. Setelah order diterima teknisi, Anda bisa membayar DP melalui QRIS. Pelunasan dilakukan setelah pekerjaan selesai.";
+        $providers = ProviderProfile::whereHas('services', function ($query) use ($categoryId) {
+            $query->where('category_id', $categoryId)->where('is_active', true);
+        })
+            ->where('is_verified', true)
+            ->with(['services' => function ($query) use ($categoryId) {
+                $query->where('category_id', $categoryId)->where('is_active', true);
+            }])
+            ->get();
+
+        return $this->success($providers, 'Providers retrieved');
+    }
+
+    /**
+     * Get detail provider
+     */
+    public function getProviderDetail($providerId)
+    {
+        $provider = ProviderProfile::with(['services' => function ($query) {
+            $query->where('is_active', true);
+        }, 'user'])->find($providerId);
+
+        if (!$provider) {
+            return $this->notFound('Provider not found');
         }
 
-        if (str_contains($message, 'batal') || str_contains($message, 'cancel')) {
-            return "Untuk membatalkan pesanan, silakan hubungi admin melalui halaman pesanan. Pembatalan hanya bisa dilakukan sebelum teknisi memulai pekerjaan.";
+        return $this->success($provider, 'Provider detail retrieved');
+    }
+
+    /**
+     * Search providers (by name atau area)
+     */
+    public function searchProviders(Request $request)
+    {
+        $query = $request->query('q', '');
+
+        if (empty($query)) {
+            return $this->error('Query parameter q is required.', 400);
         }
 
-        if (str_contains($message, 'halo') || str_contains($message, 'hai') || str_contains($message, 'hi') || str_contains($message, 'hello')) {
-            return "Halo! Saya asisten TukangDekat. Ada yang bisa saya bantu? Anda bisa bertanya tentang status pesanan, pembayaran, atau layanan kami.";
-        }
+        $providers = ProviderProfile::where('is_verified', true)
+            ->where(function ($q) use ($query) {
+                $q->where('business_name', 'like', "%$query%")
+                    ->orWhere('area', 'like', "%$query%")
+                    ->orWhereHas('user', function ($userQ) use ($query) {
+                        $userQ->where('name', 'like', "%$query%");
+                    });
+            })
+            ->with('services')
+            ->get();
 
-        return "Terima kasih telah menghubungi TukangDekat! Saya bisa membantu Anda dengan:\n- Cek status pesanan\n- Informasi pembayaran\n- Cara memesan jasa\n- Pembatalan pesanan\n\nSilakan tanyakan sesuai kebutuhan Anda.";
+        return $this->success($providers, 'Providers found');
     }
 }

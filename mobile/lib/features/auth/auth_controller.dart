@@ -64,6 +64,10 @@ class AuthController extends StateNotifier<AuthState> {
     required String phone,
     required String password,
     required String role,
+    int? categoryId,
+    String? businessName,
+    String? serviceName,
+    int? basePrice,
   }) async {
     state = state.copyWith(
       isLoading: true,
@@ -78,6 +82,10 @@ class AuthController extends StateNotifier<AuthState> {
         phone: phone,
         password: password,
         role: role,
+        categoryId: categoryId,
+        businessName: businessName,
+        serviceName: serviceName,
+        basePrice: basePrice,
       );
 
       state = state.copyWith(isLoading: false, fieldErrors: {});

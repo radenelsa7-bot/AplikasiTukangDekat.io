@@ -255,7 +255,7 @@ class PaymentGatewayService
                 'first_name' => $payment->order?->customer?->name ?? 'Customer',
                 'email' => $payment->order?->customer?->email,
             ],
-            'enabled_payments' => ['qris'],
+            'enabled_payments' => ['gopay', 'shopeepay', 'other_qris', 'bca_va', 'bni_va', 'bri_va', 'permata_va', 'echannel'],
             'callbacks' => [
                 'finish' => url('/payment/finish'),
             ],
