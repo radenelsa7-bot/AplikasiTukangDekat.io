@@ -45,13 +45,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{orderId}/respond', [OrderController::class, 'respondToOrder'])->middleware(['throttle:10,1', 'role:provider']);
         Route::post('/{orderId}/start-work', [OrderController::class, 'startWork'])->middleware(['throttle:10,1', 'role:provider']);
         Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder'])->middleware(['throttle:10,1', 'role:provider']);
+        Route::post('/{orderId}/cancel', [OrderController::class, 'cancelOrder'])->middleware(['throttle:10,1', 'role:customer']);
         Route::post('/{orderId}/review', [ReviewController::class, 'createReview'])->middleware(['throttle:10,1', 'role:customer']);
     });
 
     Route::prefix('payments')->group(function () {
         Route::get('/order/{orderId}', [PaymentController::class, 'getPayments'])->middleware('throttle:30,1');
         Route::get('/{paymentId}', [PaymentController::class, 'getPaymentStatus'])->middleware('throttle:20,1');
-        Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS'])->middleware(['throttle:3,1', 'role:customer']);
+        Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS'])->middleware(['throttle:10,1', 'role:customer']);
+        Route::post('/{paymentId}/confirm', [PaymentController::class, 'confirmPayment'])->middleware(['throttle:10,1', 'role:customer']);
         Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware(['throttle:3,1', 'role:customer']);
     });
 
