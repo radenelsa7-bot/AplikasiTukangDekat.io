@@ -368,4 +368,76 @@ class OrderController extends Controller
             return $this->internalServerError('Failed to complete order');
         }
     }
+
+    /**
+     * Customer batalkan order
+     */
+    public function cancelOrder(Request $request, $orderId)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'CUSTOMER') {
+            return $this->forbidden('Only customers can cancel orders');
+        }
+
+        $order = Order::with('payments')->find($orderId);
+
+        if (!$order) {
+            return $this->notFound('Order not found');
+        }
+
+        if ($order->customer_id !== $user->id) {
+            return $this->forbidden('Unauthorized');
+        }
+
+        $cancellableStatuses = ['CREATED', 'ACCEPTED', 'IN_PROGRESS'];
+        if (!in_array($order->status, $cancellableStatuses)) {
+            return $this->conflict('Order tidak bisa dibatalkan pada status: ' . $order->status);
+        }
+
+        $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $result = DB::transaction(function () use ($order, $request, $user) {
+                $oldStatus = $order->status;
+                $order->update(['status' => 'CANCELLED']);
+
+                OrderStatusLog::create([
+                    'order_id' => $order->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => 'CANCELLED',
+                    'changed_by' => $user->id,
+                    'reason' => $request->input('reason', 'Dibatalkan oleh customer'),
+                ]);
+
+                // Refund DP if already paid
+                $refundedPayments = [];
+                $dpPayment = $order->payments()->where('payment_type', 'DP')->where('status', 'PAID')->first();
+                if ($dpPayment) {
+                    $dpPayment->update(
+                        $this->paymentFinanceService->applyRefundPolicy($dpPayment, $order, 'customer_cancelled')
+                    );
+                    $refundedPayments[] = $dpPayment;
+                }
+
+                return ['refund_count' => count($refundedPayments)];
+            });
+
+            app(N8nNotificationService::class)->dispatch('order_cancelled', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'customer_id' => $order->customer_id,
+                'provider_id' => $order->provider_id,
+                'reason' => $request->input('reason', 'Dibatalkan oleh customer'),
+                'refund_count' => $result['refund_count'],
+            ]);
+
+            return $this->success(['status' => 'CANCELLED'], 'Order berhasil dibatalkan');
+        } catch (\Throwable $e) {
+            Log::error('Cancel order error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return $this->internalServerError('Failed to cancel order');
+        }
+    }
 }

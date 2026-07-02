@@ -49,6 +49,25 @@ class PaymentController extends Controller
             return $this->notFoundResponse('payment not found');
         }
 
+        if ($payment->status === 'PAID') {
+            return $this->errorResponse('Payment already paid', 400);
+        }
+
+        // Return cached checkout_url if already generated (avoid duplicate Snap transactions)
+        if ($payment->checkout_url && $payment->status !== 'UNPAID') {
+            return $this->successResponse(['qris' => [
+                'provider' => $payment->provider ?? 'MIDTRANS',
+                'reference' => $payment->external_payment_id,
+                'payment_id' => $payment->id,
+                'amount' => $payment->amount,
+                'payment_type' => $payment->payment_type,
+                'qris_code' => $payment->qris_code,
+                'qris_image' => $payment->qris_image,
+                'checkout_url' => $payment->checkout_url,
+                'qris_hint' => $payment->checkout_url ? 'open_checkout_url' : 'show_qris_code',
+            ]], 'ok', 200);
+        }
+
         $qrisData = $this->paymentGatewayService->generateQrisPayload($payment);
 
         $payment->update([
@@ -61,6 +80,103 @@ class PaymentController extends Controller
         ]);
 
         return $this->successResponse(['qris' => $qrisData], 'ok', 200);
+    }
+
+    public function confirmPayment(Request $request, $paymentId)
+    {
+        $payment = Payment::with(['order.customer', 'order.provider'])->find($paymentId);
+
+        if (!$payment) {
+            return $this->notFoundResponse('payment not found');
+        }
+
+        if ($payment->status === 'PAID') {
+            return $this->successResponse(['payment' => $payment], 'Payment already confirmed', 200);
+        }
+
+        // Check Midtrans transaction status if using Midtrans
+        if ($this->paymentGatewayService->driver() === 'midtrans') {
+            $serverKey = (string) config('services.payments.midtrans_server_key', '');
+            $isProduction = (bool) config('services.payments.midtrans_is_production', false);
+
+            if ($serverKey !== '' && $payment->external_payment_id) {
+                $statusUrl = $isProduction
+                    ? 'https://api.midtrans.com/v2/' . $payment->external_payment_id . '/status'
+                    : 'https://api.sandbox.midtrans.com/v2/' . $payment->external_payment_id . '/status';
+
+                try {
+                    $response = \Illuminate\Support\Facades\Http::withBasicAuth($serverKey, '')
+                        ->acceptJson()
+                        ->timeout(15)
+                        ->get($statusUrl)
+                        ->json();
+
+                    $txStatus = $response['transaction_status'] ?? null;
+                    $mappedStatus = $this->paymentGatewayService->mapStatus($txStatus);
+
+                    if ($mappedStatus === 'PAID') {
+                        return $this->markPaymentAsPaid($payment);
+                    }
+
+                    return $this->successResponse([
+                        'payment' => $payment,
+                        'midtrans_status' => $txStatus,
+                    ], 'Payment belum terdeteksi di Midtrans. Status: ' . ($txStatus ?? 'unknown'), 200);
+                } catch (\Throwable $e) {
+                    // Midtrans status check failed, fall through to manual confirmation
+                }
+            }
+        }
+
+        // For simulation mode or if Midtrans check fails, mark as paid directly
+        return $this->markPaymentAsPaid($payment);
+    }
+
+    private function markPaymentAsPaid(Payment $payment)
+    {
+        DB::beginTransaction();
+        try {
+            $payment->update([
+                'status' => 'PAID',
+                'paid_at' => now(),
+                'provider' => $payment->provider ?: strtoupper($this->paymentGatewayService->driver()),
+            ]);
+
+            $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
+
+            $order = $payment->order;
+            $eventName = match (strtoupper($payment->payment_type)) {
+                'DP' => 'dp_paid',
+                'FINAL' => 'final_paid',
+                default => 'payment_' . strtolower($payment->payment_type) . '_paid',
+            };
+
+            app(N8nNotificationService::class)->dispatch($eventName, [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'payment_id' => $payment->id,
+                'payment_type' => $payment->payment_type,
+                'amount' => $payment->amount,
+            ]);
+
+            if ($payment->payment_type === 'FINAL') {
+                $oldStatus = $order->status;
+                $order->update(['status' => 'CLOSED']);
+                OrderStatusLog::create([
+                    'order_id' => $order->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => 'CLOSED',
+                    'changed_by' => Auth::id(),
+                    'reason' => 'Payment confirmed by user',
+                ]);
+            }
+
+            DB::commit();
+            return $this->successResponse(['payment' => $payment->fresh()], 'Payment confirmed', 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to confirm payment', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function webhookPaymentCallback(Request $request)
@@ -117,7 +233,45 @@ class PaymentController extends Controller
             ]);
 
             if ($newStatus === 'PAID') {
-                $this->applyPaidSideEffects($payment, null, 'Final payment received via webhook');
+                $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
+
+                $order = $payment->order;
+                $eventName = match (strtoupper($payment->payment_type)) {
+                    'DP' => 'dp_paid',
+                    'FINAL' => 'final_paid',
+                    default => 'payment_' . strtolower($payment->payment_type) . '_paid',
+                };
+
+                app(N8nNotificationService::class)->dispatch(
+                    $eventName,
+                    [
+                        'order_id' => $order->id,
+                        'order_code' => $order->order_code,
+                        'payment_id' => $payment->id,
+                        'payment_type' => $payment->payment_type,
+                        'amount' => $payment->amount,
+                        'order_status' => $order->status,
+                        'customer_name' => $order->customer?->name,
+                        'customer_email' => $order->customer?->email,
+                        'customer_phone' => $order->customer?->phone,
+                        'provider_name' => $order->provider?->name,
+                        'provider_email' => $order->provider?->email,
+                        'provider_phone' => $order->provider?->phone,
+                    ]
+                );
+            }
+
+            if ($payment->payment_type === 'FINAL') {
+                $order = $payment->order;
+                $oldStatus = $order->status;
+                $order->update(['status' => 'CLOSED']);
+                OrderStatusLog::create([
+                    'order_id' => $order->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => 'CLOSED',
+                    'changed_by' => null,
+                    'reason' => 'Final payment received via webhook',
+                ]);
             }
 
             DB::commit();
@@ -125,108 +279,6 @@ class PaymentController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json(['message' => 'processing error', 'error' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Simulate a successful payment (for local/testing use, e.g. the
-     * "Sudah Bayar (Simulasi)" button). Unlike the public gateway webhook,
-     * this endpoint is authenticated and authorized against the order owner,
-     * so it does not require a gateway signature.
-     */
-    public function simulatePayment(Request $request, $paymentId)
-    {
-        $payment = Payment::with(['order.customer', 'order.provider'])->find($paymentId);
-
-        if (!$payment) {
-            return $this->notFoundResponse('payment not found');
-        }
-
-        if (!$payment->order) {
-            return $this->errorResponse('order not found for this payment', 404);
-        }
-
-        if ($response = $this->authorizePaymentAccessByOrder($payment->order)) {
-            return $response;
-        }
-
-        if ($payment->status === 'PAID') {
-            return $this->successResponse(['payment' => $payment], 'payment already paid', 200);
-        }
-
-        DB::beginTransaction();
-        try {
-            $payment->update([
-                'status' => 'PAID',
-                'provider' => $payment->provider ?: strtoupper((string) config('services.payments.driver', 'simulation')),
-                'paid_at' => now(),
-            ]);
-
-            $this->applyPaidSideEffects($payment, Auth::id(), 'Final payment confirmed via simulation');
-
-            DB::commit();
-
-            return $this->successResponse(['payment' => $payment->fresh()], 'payment processed', 200);
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return response()->json(['message' => 'processing error', 'error' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Apply the side effects that must run once a payment becomes PAID:
-     * settlement snapshot, notification dispatch, and (for FINAL payments)
-     * closing the order. Shared by the webhook and the simulation endpoint.
-     */
-    private function applyPaidSideEffects(Payment $payment, ?int $changedBy, string $finalReason): void
-    {
-        $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
-
-        $order = $payment->order;
-        $eventName = match (strtoupper($payment->payment_type)) {
-            'DP' => 'dp_paid',
-            'FINAL' => 'final_paid',
-            default => 'payment_' . strtolower($payment->payment_type) . '_paid',
-        };
-
-        app(N8nNotificationService::class)->dispatch(
-            $eventName,
-            [
-                'order_id' => $order->id,
-                'order_code' => $order->order_code,
-                'payment_id' => $payment->id,
-                'payment_type' => $payment->payment_type,
-                'amount' => $payment->amount,
-                'order_status' => $order->status,
-                'customer_name' => $order->customer?->name,
-                'customer_email' => $order->customer?->email,
-                'customer_phone' => $order->customer?->phone,
-                'provider_name' => $order->provider?->name,
-                'provider_email' => $order->provider?->email,
-                'provider_phone' => $order->provider?->phone,
-            ]
-        );
-
-        if ($payment->payment_type === 'FINAL') {
-            $oldStatus = $order->status;
-            $order->update(['status' => 'CLOSED']);
-            OrderStatusLog::create([
-                'order_id' => $order->id,
-                'old_status' => $oldStatus,
-                'new_status' => 'CLOSED',
-                'changed_by' => $changedBy,
-                'reason' => $finalReason,
-            ]);
-        } elseif ($payment->payment_type === 'DP' && $order->status === 'CREATED') {
-            $oldStatus = $order->status;
-            $order->update(['status' => 'ACCEPTED']);
-            OrderStatusLog::create([
-                'order_id' => $order->id,
-                'old_status' => $oldStatus,
-                'new_status' => 'ACCEPTED',
-                'changed_by' => $changedBy,
-                'reason' => 'Down payment received',
-            ]);
         }
     }
 

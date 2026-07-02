@@ -79,6 +79,8 @@ class OrderDetailPage extends ConsumerWidget {
                 if (order.payments.isNotEmpty) const SizedBox(height: 16),
                 _buildProviderActions(context, ref, order),
                 const SizedBox(height: 16),
+                _buildCustomerActions(context, ref, order),
+                const SizedBox(height: 16),
                 _buildReviewSection(context, ref, order),
                 const SizedBox(height: 24),
               ],
@@ -754,6 +756,185 @@ class OrderDetailPage extends ConsumerWidget {
     );
   }
 
+  Widget _buildCustomerActions(
+    BuildContext context,
+    WidgetRef ref,
+    OrderData order,
+  ) {
+    final authState = ref.watch(authControllerProvider);
+    final actionState = ref.watch(orderActionControllerProvider);
+
+    if (authState.userRole != 'CUSTOMER') return const SizedBox.shrink();
+
+    final cancellable = [
+      'CREATED',
+      'ACCEPTED',
+      'IN_PROGRESS',
+    ].contains(order.status);
+    if (!cancellable) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.grey200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.settings_outlined,
+                size: 18,
+                color: AppTheme.navy,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Tindakan',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.cancel_outlined, size: 18),
+              label: const Text('Batalkan Pesanan'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.danger,
+                side: const BorderSide(color: AppTheme.danger),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: actionState.isLoading
+                  ? null
+                  : () => _showCancelDialog(context, ref, order),
+            ),
+          ),
+          if (actionState.isLoading)
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: AppTheme.orange,
+                  strokeWidth: 2,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelDialog(BuildContext context, WidgetRef ref, OrderData order) {
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Batalkan Pesanan',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Apakah Anda yakin ingin membatalkan pesanan ini?',
+              style: TextStyle(fontSize: 13, color: AppTheme.grey600),
+            ),
+            if (order.status == 'IN_PROGRESS') ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber,
+                      size: 16,
+                      color: AppTheme.warning,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Pekerjaan sedang berjalan. Pembatalan mungkin dikenakan biaya.',
+                        style: TextStyle(fontSize: 12, color: AppTheme.warning),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'Alasan pembatalan (opsional)',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tidak'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.danger,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              final reason = reasonController.text.trim().isEmpty
+                  ? null
+                  : reasonController.text.trim();
+              final success = await ref
+                  .read(orderActionControllerProvider.notifier)
+                  .cancelOrder(order.id, reason: reason);
+              if (context.mounted) {
+                Navigator.pop(ctx);
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pesanan berhasil dibatalkan'),
+                    ),
+                  );
+                  ref.refresh(orderDetailProvider(order.id));
+                } else {
+                  final errorMsg = ref
+                      .read(orderActionControllerProvider)
+                      .errorMessage;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMsg ?? 'Gagal membatalkan pesanan'),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Ya, Batalkan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showFinalPriceDialog(
     BuildContext context,
     WidgetRef ref,
@@ -1138,30 +1319,47 @@ class OrderDetailPage extends ConsumerWidget {
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Tutup'),
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.success,
+                foregroundColor: Colors.white,
+              ),
               onPressed: () async {
                 try {
-                  await ref
+                  final result = await ref
                       .read(apiServiceProvider)
-                      .simulatePaymentCallback(paymentId);
+                      .confirmPayment(paymentId);
                   ref.refresh(orderDetailProvider(orderId));
                   if (context.mounted) {
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Pembayaran berhasil (simulasi)'),
-                      ),
-                    );
+                    final midtransStatus = result['midtrans_status'];
+                    if (midtransStatus != null &&
+                        midtransStatus != 'settlement' &&
+                        midtransStatus != 'capture') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Status pembayaran: $midtransStatus. Silakan selesaikan pembayaran di Midtrans.',
+                          ),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Pembayaran berhasil dikonfirmasi!'),
+                        ),
+                      );
+                    }
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal konfirmasi: $e')),
+                    );
                   }
                 }
               },
-              child: const Text('Sudah Bayar (Simulasi)'),
+              child: const Text('Sudah Dibayar'),
             ),
           ],
         );

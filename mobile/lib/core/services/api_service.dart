@@ -283,6 +283,17 @@ class ApiService {
     }
   }
 
+  Future<void> cancelOrder({required int orderId, String? reason}) async {
+    try {
+      await dio.post(
+        '/api/orders/$orderId/cancel',
+        data: {'reason': reason ?? 'Dibatalkan oleh customer'},
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // ===== PAYMENT ENDPOINTS =====
 
   Future<Map<String, dynamic>> generateQRIS(int paymentId) async {
@@ -305,16 +316,10 @@ class ApiService {
     }
   }
 
-  Future<void> simulatePaymentCallback(int paymentId) async {
+  Future<Map<String, dynamic>> confirmPayment(int paymentId) async {
     try {
-      await dio.post(
-        '/api/webhooks/payment',
-        data: {
-          'payment_id': paymentId,
-          'transaction_id': 'SIM-$paymentId',
-          'status': 'success',
-        },
-      );
+      final response = await dio.post('/api/payments/$paymentId/confirm');
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
     } catch (e) {
       rethrow;
     }
