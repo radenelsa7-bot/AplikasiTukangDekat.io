@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             ProviderSeeder::class,
             CustomerSeeder::class,
             AdminSeeder::class,
+            TreasurerSeeder::class,
         ]);
     }
 }

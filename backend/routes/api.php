@@ -53,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{paymentId}', [PaymentController::class, 'getPaymentStatus'])->middleware('throttle:20,1');
         Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS'])->middleware(['throttle:3,1', 'role:customer']);
         Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware(['throttle:3,1', 'role:customer']);
+        Route::post('/{paymentId}/simulate-paid', [PaymentController::class, 'simulatePayment'])->middleware(['throttle:10,1', 'role:customer']);
     });
 
     Route::get('/reviews/{orderId}', [ReviewController::class, 'getOrderReview'])->middleware('throttle:30,1');

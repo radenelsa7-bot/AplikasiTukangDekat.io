@@ -314,18 +314,14 @@ class ApiService {
     }
   }
 
-  /// Simulate payment gateway callback (for testing)
-  /// In production, payment gateway will call /api/webhooks/payment
+  /// Simulate a successful payment (for testing).
+  ///
+  /// Uses the authenticated, order-scoped endpoint so it works without a
+  /// payment gateway signature. In production the real gateway calls
+  /// /api/webhooks/payment instead.
   Future<void> simulatePaymentCallback(int paymentId) async {
     try {
-      await dio.post(
-        '/api/webhooks/payment',
-        data: {
-          'payment_id': paymentId,
-          'transaction_id': 'SIM-$paymentId',
-          'status': 'success',
-        },
-      );
+      await dio.post('/api/payments/$paymentId/simulate-paid');
     } catch (e) {
       rethrow;
     }

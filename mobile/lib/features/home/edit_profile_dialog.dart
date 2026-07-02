@@ -1,295 +1,151 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
-import '../../config/api_config.dart';
-import '../../shared/widgets/site_footer.dart';
-import '../../shared/widgets/site_header.dart';
-import '../auth/auth_controller.dart';
-import '../auth/login_page.dart';
-import '../admin/admin_verification_page.dart';
-import 'catalog_page.dart';
-import 'my_orders_page.dart';
-import 'edit_profile_dialog.dart';
+import '../../features/auth/auth_controller.dart';
+import '../../shared/widgets/app_text_field.dart';
 
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+class EditProfileDialog extends ConsumerStatefulWidget {
+  const EditProfileDialog({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(authControllerProvider);
-    final isAdmin = state.userRole == 'ADMIN';
-    final tabs = [
-      const Tab(icon: Icon(Icons.home_rounded), text: 'Beranda'),
-      const Tab(icon: Icon(Icons.receipt_long_rounded), text: 'Pesanan'),
-      if (isAdmin)
-        const Tab(icon: Icon(Icons.admin_panel_settings), text: 'Admin'),
-      const Tab(icon: Icon(Icons.person_rounded), text: 'Akun'),
-    ];
-    final pages = [
-      const CatalogPage(),
-      const MyOrdersPage(),
-      if (isAdmin) const AdminVerificationPage(),
-      _buildAccountTab(context, ref, state),
-    ];
+  ConsumerState<EditProfileDialog> createState() => _EditProfileDialogState();
+}
 
-    return DefaultTabController(
-      length: tabs.length,
-      child: Scaffold(
-        backgroundColor: AppTheme.cream,
-        appBar: TukangDekatHeader(
-          title: Row(
+class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final authState = ref.read(authControllerProvider);
+    _nameController = TextEditingController(text: authState.userFullName ?? '');
+    _phoneController = TextEditingController(text: authState.userPhoneNumber ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final fullName = _nameController.text.trim();
+    final phoneNumber = _phoneController.text.trim();
+
+    final success = await ref.read(authControllerProvider.notifier).updateProfile(
+          fullName: fullName.isEmpty ? null : fullName,
+          phoneNumber: phoneNumber.isEmpty ? null : phoneNumber,
+        );
+
+    if (!context.mounted) return;
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (success) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+
+    final errorMessage = ref.read(authControllerProvider).errorMessage ??
+        'Gagal memperbarui profil';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(errorMessage),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authControllerProvider);
+
+    return AlertDialog(
+      title: const Text('Edit Profil'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppTheme.orange.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.handyman,
-                  size: 20,
-                  color: AppTheme.orange,
-                ),
+              AppTextField(
+                controller: _nameController,
+                label: 'Nama Lengkap',
+                hintText: 'Masukkan nama lengkap',
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nama tidak boleh kosong';
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(width: 10),
-              const Text(
-                'TukangDekat',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              const SizedBox(height: 12),
+              AppTextField(
+                controller: _phoneController,
+                label: 'No. Telepon',
+                hintText: 'Masukkan nomor telepon',
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nomor telepon tidak boleh kosong';
+                  }
+                  return null;
+                },
               ),
+              if (authState.userEmail != null) ...[
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Email: ${authState.userEmail}',
+                    style: TextStyle(
+                      color: AppTheme.grey600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-          bottom: TabBar(
-            tabs: tabs,
-            indicatorColor: AppTheme.orange,
-            indicatorWeight: 3,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white60,
-            labelStyle: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-          ),
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: IconButton(
-                tooltip: 'Logout',
-                onPressed: () async {
-                  await ref.read(authControllerProvider.notifier).logout();
-                  if (!context.mounted) return;
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                    (_) => false,
-                  );
-                },
-                icon: const Icon(Icons.logout_rounded, size: 20),
-              ),
-            ),
-          ],
         ),
-        body: TabBarView(children: pages),
-        bottomNavigationBar: const TukangDekatFooter(),
       ),
-    );
-  }
-
-  Widget _buildAccountTab(BuildContext context, WidgetRef ref, dynamic state) {
-    final displayName = state.userFullName?.isNotEmpty == true
-        ? state.userFullName
-        : state.userEmail ?? 'N/A';
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
-          // Profile Header Card
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppTheme.navy, AppTheme.navyLight],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.navy.withOpacity(0.3),
-                  blurRadius: 15,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppTheme.orange, width: 2),
-                  ),
-                  child: CircleAvatar(
-                    radius: 36,
-                    backgroundColor: Colors.white12,
-                    backgroundImage: state.userProfilePhotoPath != null
-                        ? NetworkImage(
-                            '${ApiConfig.baseUrl}/storage/${state.userProfilePhotoPath}',
-                          )
-                        : null,
-                    child: state.userProfilePhotoPath == null
-                        ? const Icon(
-                            Icons.person,
-                            size: 36,
-                            color: Colors.white70,
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      if (state.userFullName?.isNotEmpty == true)
-                        Text(
-                          state.userEmail ?? '',
-                          style: const TextStyle(
-                            color: Colors.white60,
-                            fontSize: 13,
-                          ),
-                        ),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.orange.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          state.userRole ?? 'N/A',
-                          style: const TextStyle(
-                            color: AppTheme.orange,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Action Cards
-          Material(
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: AppTheme.grey200),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: [
-                _buildMenuTile(
-                  icon: Icons.edit_rounded,
-                  iconColor: AppTheme.info,
-                  title: 'Edit Profil',
-                  subtitle: 'Ubah nama, foto, dan nomor telepon',
-                  onTap: () async {
-                    final res = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => const EditProfileDialog(),
-                    );
-                    if (!context.mounted) return;
-                    if (res == true) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Profil berhasil diperbarui'),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-                const Divider(height: 1, indent: 56),
-                _buildMenuTile(
-                  icon: Icons.chat_bubble_rounded,
-                  iconColor: AppTheme.success,
-                  title: 'Bantuan (Chatbot)',
-                  subtitle: 'Tanya seputar layanan dan pesanan',
-                  onTap: () => Navigator.of(context).pushNamed('/chatbot'),
-                ),
-                if (state.userPhoneNumber?.isNotEmpty == true) ...[
-                  const Divider(height: 1, indent: 56),
-                  _buildMenuTile(
-                    icon: Icons.phone_rounded,
-                    iconColor: AppTheme.warning,
-                    title: 'No. Telepon',
-                    subtitle: state.userPhoneNumber!,
-                    onTap: null,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuTile({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    VoidCallback? onTap,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(false),
+          child: const Text('Batal'),
         ),
-        child: Icon(icon, color: iconColor, size: 22),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(fontSize: 12, color: AppTheme.grey600),
-      ),
-      trailing: onTap != null
-          ? const Icon(Icons.chevron_right, color: AppTheme.grey400)
-          : null,
-      onTap: onTap,
+        ElevatedButton(
+          onPressed: _isSubmitting ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.orange,
+          ),
+          child: _isSubmitting
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Simpan'),
+        ),
+      ],
     );
   }
 }

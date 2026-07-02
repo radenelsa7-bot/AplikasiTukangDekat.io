@@ -185,6 +185,49 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
+  Future<bool> updateProfile({String? fullName, String? phoneNumber}) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final apiService = _ref.read(apiServiceProvider);
+      final result = await apiService.updateProfile(
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+      );
+
+      final updatedFullName =
+          result['full_name'] as String? ?? state.userFullName;
+      final updatedPhoneNumber =
+          result['phone_number'] as String? ?? state.userPhoneNumber;
+      final updatedProfilePhotoPath =
+          result['profile_photo_path'] as String? ?? state.userProfilePhotoPath;
+
+      await _ref
+          .read(authStorageProvider)
+          .saveUserData(
+            userId: state.userId ?? 0,
+            userRole: state.userRole ?? 'CUSTOMER',
+            userEmail: state.userEmail ?? '',
+            fullName: updatedFullName,
+            phoneNumber: updatedPhoneNumber,
+            profilePhotoPath: updatedProfilePhotoPath,
+          );
+
+      state = state.copyWith(
+        isLoading: false,
+        userFullName: updatedFullName,
+        userPhoneNumber: updatedPhoneNumber,
+        userProfilePhotoPath: updatedProfilePhotoPath,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to update profile: $e',
+      );
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     state = state.copyWith(isLoading: true);
     try {
