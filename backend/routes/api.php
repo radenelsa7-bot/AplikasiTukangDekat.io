@@ -53,21 +53,46 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{paymentId}', [PaymentController::class, 'getPaymentStatus'])->middleware('throttle:20,1');
         Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS'])->middleware(['throttle:3,1', 'role:customer']);
         Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware(['throttle:3,1', 'role:customer']);
-        Route::post('/{paymentId}/simulate-paid', [PaymentController::class, 'simulatePayment'])->middleware(['throttle:10,1', 'role:customer']);
     });
 
     Route::get('/reviews/{orderId}', [ReviewController::class, 'getOrderReview'])->middleware('throttle:30,1');
 
     Route::post('/chatbot/send', [ChatbotController::class, 'sendMessage'])->middleware('throttle:10,1');
 
+    // Admin routes (includes all treasurer/bendahara functionality)
     Route::prefix('admin')->middleware('role:admin')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->middleware('throttle:30,1');
+
+        // Provider management
+        Route::get('/providers', [AdminController::class, 'getAllProviders'])->middleware('throttle:30,1');
         Route::get('/providers/pending', [AdminController::class, 'getPendingProviders'])->middleware('throttle:30,1');
         Route::patch('/providers/{providerId}/verification', [AdminController::class, 'updateVerification'])->middleware('throttle:20,1');
         Route::post('/providers/{providerId}/verify', [AdminController::class, 'updateVerification'])->middleware('throttle:20,1');
         Route::post('/providers/{providerId}/disable', [AdminController::class, 'disableProvider'])->middleware('throttle:10,1');
         Route::post('/providers/{providerId}/enable', [AdminController::class, 'enableProvider'])->middleware('throttle:10,1');
+
+        // Category management
+        Route::get('/categories', [AdminController::class, 'getCategories'])->middleware('throttle:30,1');
+        Route::post('/categories', [AdminController::class, 'createCategory'])->middleware('throttle:10,1');
+        Route::put('/categories/{categoryId}', [AdminController::class, 'updateCategory'])->middleware('throttle:10,1');
+        Route::delete('/categories/{categoryId}', [AdminController::class, 'deleteCategory'])->middleware('throttle:10,1');
+
+        // User management
+        Route::get('/users', [AdminController::class, 'getUsers'])->middleware('throttle:30,1');
+        Route::patch('/users/{userId}/status', [AdminController::class, 'updateUserStatus'])->middleware('throttle:10,1');
+
+        // Order monitoring
+        Route::get('/orders', [AdminController::class, 'getAllOrders'])->middleware('throttle:30,1');
+        Route::get('/orders/{orderId}', [AdminController::class, 'getOrderDetail'])->middleware('throttle:30,1');
+
+        // Payment/Transaction monitoring (treasurer functionality merged into admin)
+        Route::get('/payments', [AdminController::class, 'getAllPayments'])->middleware('throttle:30,1');
+        Route::get('/payments/report', [TreasurerController::class, 'paymentReport'])->middleware('throttle:20,1');
+        Route::get('/reports/summary', [TreasurerController::class, 'summaryReport'])->middleware('throttle:20,1');
     });
 
+    // Backward compatibility: treasurer routes still work for ADMIN role
     Route::prefix('treasurer')->middleware('role:treasurer')->group(function () {
         Route::get('/payments/report', [TreasurerController::class, 'paymentReport'])->middleware('throttle:20,1');
         Route::get('/transactions', [TreasurerController::class, 'paymentReport'])->middleware('throttle:20,1');

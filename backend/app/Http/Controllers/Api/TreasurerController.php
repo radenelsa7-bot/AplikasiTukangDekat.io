@@ -23,9 +23,9 @@ class TreasurerController extends Controller
             Log::warning('No user found in TreasurerController.ensureTreasurer');
         }
 
-        if (!$user || $user->role !== 'TREASURER') {
+        if (!$user || !in_array($user->role, ['ADMIN', 'TREASURER'])) {
             Log::warning('Unauthorized treasurer access attempt', ['user' => $user ? $user->id : null]);
-            return $this->forbiddenResponse('only treasurer can access this resource');
+            return $this->forbiddenResponse('only admin can access this resource');
         }
 
         return null;
@@ -35,8 +35,8 @@ class TreasurerController extends Controller
     {
         // Route uses role.treasurer; defensive check only
         $user = Auth::user() ?? Auth::guard('web')->user();
-        if (!$user || $user->role !== 'TREASURER') {
-            return $this->forbidden('Only treasurer can access this resource');
+        if (!$user || !in_array($user->role, ['ADMIN', 'TREASURER'])) {
+            return $this->forbidden('Only admin can access this resource');
         }
 
         $validated = $request->validated();
@@ -361,8 +361,8 @@ class TreasurerController extends Controller
     public function summaryReport(Request $request)
     {
         $user = Auth::user() ?? Auth::guard('web')->user();
-        if (!$user || $user->role !== 'TREASURER') {
-            return $this->forbidden('Only treasurer can access this resource');
+        if (!$user || !in_array($user->role, ['ADMIN', 'TREASURER'])) {
+            return $this->forbidden('Only admin can access this resource');
         }
 
         $request->validate([
