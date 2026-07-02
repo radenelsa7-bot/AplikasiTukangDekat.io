@@ -138,21 +138,44 @@ class _UserCardState extends ConsumerState<_UserCard> {
   }
 
   Future<void> _updateStatus(String newStatus) async {
-    setState(() => _isLoading = true);
+    if (!mounted) return;
+    
     try {
+      setState(() => _isLoading = true);
+      
+      final userId = widget.user['id'];
+      if (userId == null) throw 'User ID tidak ditemukan';
+      
       await ref.read(apiServiceProvider).updateUserStatus(
-        userId: widget.user['id'],
+        userId: userId,
         status: newStatus,
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Status diubah ke $newStatus'), backgroundColor: AppTheme.success),
-        );
-      }
-      widget.onStatusChanged();
+      
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Status diubah ke $newStatus'),
+          backgroundColor: AppTheme.success,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      
+      // Delay refresh callback to avoid widget disposal issues
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          widget.onStatusChanged();
+        }
+      });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e'), backgroundColor: AppTheme.danger));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengubah status: ${e.toString()}'),
+            backgroundColor: AppTheme.danger,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

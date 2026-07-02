@@ -590,7 +590,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, st) => Center(child: Text('Error: $err')),
       data: (providers) {
-        if (providers.isEmpty) {
+        // Safety filter: hanya tampilkan provider dengan user status ACTIVE
+        final activeProviders =
+            providers.where((p) => p.userStatus == 'ACTIVE').toList();
+
+        if (activeProviders.isEmpty) {
           return _buildEmptyState(
             context,
             'Tidak ada provider di kategori ini',
@@ -605,9 +609,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: providers.length,
+              itemCount: activeProviders.length,
               itemBuilder: (context, index) {
-                final provider = providers[index];
+                final provider = activeProviders[index];
                 return _buildProviderCard(context, provider, categoryId);
               },
             ),
@@ -626,7 +630,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, st) => Center(child: Text('Error: $err')),
       data: (providers) {
-        if (providers.isEmpty) {
+        // Safety filter: hanya tampilkan provider dengan user status ACTIVE
+        final activeProviders =
+            providers.where((p) => p.userStatus == 'ACTIVE').toList();
+
+        if (activeProviders.isEmpty) {
           return _buildEmptyState(context, 'Tidak ada hasil pencarian');
         }
 
@@ -635,15 +643,15 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           children: [
             _buildSectionLabel(
               context,
-              'Hasil Pencarian (${providers.length})',
+              'Hasil Pencarian (${activeProviders.length})',
             ),
             const SizedBox(height: 14),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: providers.length,
+              itemCount: activeProviders.length,
               itemBuilder: (context, index) {
-                final provider = providers[index];
+                final provider = activeProviders[index];
                 return _buildProviderCard(context, provider, 0);
               },
             ),

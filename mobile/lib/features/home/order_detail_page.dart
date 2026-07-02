@@ -417,11 +417,8 @@ class OrderDetailPage extends ConsumerWidget {
                   if (!isPaid &&
                       (payment.status == 'UNPAID' ||
                           payment.status == 'PENDING') &&
-                      ![
-                        'CANCELLED',
-                        'CLOSED',
-                        'COMPLETED',
-                      ].contains(order.status)) ...[
+                      ['ACCEPTED', 'IN_PROGRESS', 'COMPLETED']
+                          .contains(order.status)) ...[
                     const SizedBox(height: 12),
                     Builder(
                       builder: (ctx) {

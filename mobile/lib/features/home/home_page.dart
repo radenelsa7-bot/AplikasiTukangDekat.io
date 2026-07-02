@@ -143,7 +143,7 @@ class HomePage extends ConsumerWidget {
                             '${ApiConfig.baseUrl}/api/storage/${state.userProfilePhotoPath}',
                           )
                         : null,
-                    onBackgroundImageError: (_, __) {},
+                    onBackgroundImageError: state.userProfilePhotoPath != null ? (_, __) {} : null,
                     child: state.userProfilePhotoPath == null
                         ? const Icon(
                             Icons.person,
