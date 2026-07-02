@@ -37,7 +37,7 @@ class OrderDetailPage extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppTheme.danger.withOpacity(0.1),
+                    color: AppTheme.danger.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -99,19 +99,19 @@ class OrderDetailPage extends ConsumerWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [statusColor.withOpacity(0.1), statusColor.withOpacity(0.05)],
+          colors: [statusColor.withValues(alpha: 0.1), statusColor.withValues(alpha: 0.05)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withOpacity(0.2)),
+        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
+              color: statusColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(statusIcon, color: statusColor, size: 28),
@@ -135,7 +135,7 @@ class OrderDetailPage extends ConsumerWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
+                    color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -347,9 +347,9 @@ class OrderDetailPage extends ConsumerWidget {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.05),
+                color: statusColor.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: statusColor.withOpacity(0.2)),
+                border: Border.all(color: statusColor.withValues(alpha: 0.2)),
               ),
               child: Column(
                 children: [
@@ -361,7 +361,7 @@ class OrderDetailPage extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.15),
+                              color: statusColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -479,8 +479,9 @@ class OrderDetailPage extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
 
     if (authState.userRole != 'CUSTOMER') return const SizedBox.shrink();
-    if (order.status != 'COMPLETED' && order.status != 'CLOSED')
+    if (order.status != 'COMPLETED' && order.status != 'CLOSED') {
       return const SizedBox.shrink();
+    }
 
     final reviewAsync = ref.watch(orderReviewProvider(order.id));
 
@@ -1038,7 +1039,7 @@ class OrderDetailPage extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.success.withOpacity(0.1),
+                  color: AppTheme.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.qr_code_2, color: AppTheme.success),
@@ -1062,7 +1063,7 @@ class OrderDetailPage extends ConsumerWidget {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.orange.withOpacity(0.1),
+                      color: AppTheme.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

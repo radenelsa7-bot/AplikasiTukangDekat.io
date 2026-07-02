@@ -90,7 +90,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppTheme.success.withOpacity(0.2),
+                color: AppTheme.success.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -159,7 +159,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -228,7 +228,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -266,7 +266,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.orange.withOpacity(0.3),
+                    color: AppTheme.orange.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
