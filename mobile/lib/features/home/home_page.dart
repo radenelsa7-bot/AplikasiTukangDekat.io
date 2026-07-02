@@ -6,7 +6,7 @@ import '../../shared/widgets/site_footer.dart';
 import '../../shared/widgets/site_header.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_page.dart';
-import '../admin/admin_verification_page.dart';
+import '../admin/admin_dashboard_page.dart';
 import 'catalog_page.dart';
 import 'my_orders_page.dart';
 import 'edit_profile_dialog.dart';
@@ -17,18 +17,20 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(authControllerProvider);
-    final isAdmin = state.userRole == 'ADMIN';
+
+    // Admin gets full dashboard
+    if (state.userRole == 'ADMIN') {
+      return const AdminDashboardPage();
+    }
+
     final tabs = [
       const Tab(icon: Icon(Icons.home_rounded), text: 'Beranda'),
       const Tab(icon: Icon(Icons.receipt_long_rounded), text: 'Pesanan'),
-      if (isAdmin)
-        const Tab(icon: Icon(Icons.admin_panel_settings), text: 'Admin'),
       const Tab(icon: Icon(Icons.person_rounded), text: 'Akun'),
     ];
     final pages = [
       const CatalogPage(),
       const MyOrdersPage(),
-      if (isAdmin) const AdminVerificationPage(),
       _buildAccountTab(context, ref, state),
     ];
 
@@ -108,7 +110,6 @@ class HomePage extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
-          // Profile Header Card
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -201,7 +202,6 @@ class HomePage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Action Cards
           Material(
             color: Colors.white,
             shape: RoundedRectangleBorder(

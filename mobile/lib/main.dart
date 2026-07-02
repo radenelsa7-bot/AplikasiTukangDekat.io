@@ -5,7 +5,7 @@ import 'app/theme/app_theme.dart';
 import 'landing/landing_screen.dart';
 import 'features/chat/chatbot_screen.dart';
 import 'features/auth/session_login_page.dart';
-import 'features/treasurer/treasurer_report_page.dart';
+import 'features/admin/admin_dashboard_page.dart';
 import 'core/http/dio_provider.dart' as dio_provider;
 
 Future<void> main() async {
@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (_) => const SessionLoginPage(),
         '/session-login': (_) => const SessionLoginPage(),
-        '/treasurer-report': (_) => const TreasurerReportPage(),
+        '/admin': (_) => const AdminDashboardPage(),
         '/chatbot': (_) => const ChatbotScreen(),
       },
     );
