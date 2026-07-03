@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
@@ -417,11 +418,7 @@ class OrderDetailPage extends ConsumerWidget {
                   if (!isPaid &&
                       (payment.status == 'UNPAID' ||
                           payment.status == 'PENDING') &&
-                      ![
-                        'CANCELLED',
-                        'CLOSED',
-                        'COMPLETED',
-                      ].contains(order.status)) ...[
+                      !['CANCELLED', 'CLOSED'].contains(order.status)) ...[
                     const SizedBox(height: 12),
                     Builder(
                       builder: (ctx) {
@@ -493,8 +490,42 @@ class OrderDetailPage extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
 
     if (authState.userRole != 'CUSTOMER') return const SizedBox.shrink();
-    if (order.status != 'COMPLETED' && order.status != 'CLOSED')
-      return const SizedBox.shrink();
+    if (order.status == 'COMPLETED') {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.grey200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Row(
+              children: [
+                Icon(
+                  Icons.rate_review_outlined,
+                  size: 18,
+                  color: AppTheme.navy,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Beri Ulasan',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Order sudah selesai dan menunggu pelunasan final. Setelah pelunasan, order akan ditutup dan Anda dapat memberikan ulasan.',
+              style: TextStyle(fontSize: 13, color: AppTheme.grey600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (order.status != 'CLOSED') return const SizedBox.shrink();
 
     final reviewAsync = ref.watch(orderReviewProvider(order.id));
 
@@ -588,7 +619,17 @@ class OrderDetailPage extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => _showReviewDialog(context, ref, order.id),
+                  onPressed: order.status == 'CLOSED'
+                      ? () => _showReviewDialog(context, ref, order.id)
+                      : () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Order harus selesai untuk memberi ulasan',
+                              ),
+                            ),
+                          );
+                        },
                   icon: const Icon(Icons.edit, size: 18),
                   label: const Text('Tulis Ulasan'),
                 ),
@@ -1210,14 +1251,18 @@ class OrderDetailPage extends ConsumerWidget {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) {
+        // Auto-open checkout URL on Web platform after dialog appears
         if (qrisHint == 'open_checkout_url' &&
             checkoutUrl != null &&
-            checkoutUrl.isNotEmpty) {
+            checkoutUrl.isNotEmpty &&
+            kIsWeb) {
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             final uri = Uri.tryParse(checkoutUrl);
             if (uri != null) {
-              await launchUrl(uri, mode: LaunchMode.inAppWebView);
+              // Use externalApplication on Web to prevent blank screen
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
             }
           });
         }
@@ -1311,7 +1356,11 @@ class OrderDetailPage extends ConsumerWidget {
                       onPressed: () async {
                         final uri = Uri.tryParse(checkoutUrl);
                         if (uri != null) {
-                          await launchUrl(uri, mode: LaunchMode.inAppWebView);
+                          // Use externalApplication for Web, inAppWebView for mobile
+                          final launchMode = kIsWeb
+                              ? LaunchMode.externalApplication
+                              : LaunchMode.inAppWebView;
+                          await launchUrl(uri, mode: launchMode);
                         }
                       },
                     ),
@@ -1327,10 +1376,11 @@ class OrderDetailPage extends ConsumerWidget {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
-            ),
+            if (!kIsWeb)
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Tutup'),
+              ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.success,

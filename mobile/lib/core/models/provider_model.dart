@@ -1,5 +1,7 @@
 class ProviderService {
   final int id;
+  final int? categoryId;
+  final String? categoryName;
   final String name;
   final int basePrice;
   final String priceUnit;
@@ -7,6 +9,8 @@ class ProviderService {
 
   ProviderService({
     required this.id,
+    this.categoryId,
+    this.categoryName,
     required this.name,
     required this.basePrice,
     required this.priceUnit,
@@ -14,8 +18,11 @@ class ProviderService {
   });
 
   factory ProviderService.fromJson(Map<String, dynamic> json) {
+    final category = json['category'];
     return ProviderService(
       id: json['id'] ?? 0,
+      categoryId: json['category_id'],
+      categoryName: category is Map<String, dynamic> ? category['name']?.toString() : null,
       name: json['name'] ?? '',
       basePrice: json['base_price'] ?? 0,
       priceUnit: json['price_unit'] ?? '',

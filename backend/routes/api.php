@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\N8nIntegrationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ProviderServiceController;
 use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\TreasurerController;
@@ -102,7 +103,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('provider')->middleware('role:provider')->group(function () {
+        Route::get('/profile', [ProfileController::class, 'getProviderProfile'])->middleware('throttle:10,1');
         Route::put('/profile', [ProfileController::class, 'updateProviderProfile'])->middleware('throttle:10,1');
+        Route::post('/services', [ProviderServiceController::class, 'store'])->middleware('throttle:10,1');
+        Route::patch('/services/{id}', [ProviderServiceController::class, 'update'])->middleware('throttle:10,1');
     });
 });
 

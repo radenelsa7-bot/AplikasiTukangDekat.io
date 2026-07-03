@@ -1,7 +1,24 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:js/js.dart';
+import 'package:js/js_util.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
+
+// Use web-only code with kIsWeb check to avoid import errors on mobile
+// dart:html is available on web via Flutter's web SDK
+
+// JavaScript interop functions for web download
+@JS('window')
+external Object get window;
+
+@JS('eval')
+external void jsEval(String code);
 
 class AdminReportsPage extends ConsumerStatefulWidget {
   const AdminReportsPage({super.key});
@@ -24,7 +41,10 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
   }
 
   Future<void> _loadReport() async {
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final api = ref.read(apiServiceProvider);
       final data = await api.getAdminReportSummary(
@@ -32,9 +52,19 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
         startDate: _dateRange?.start.toIso8601String().substring(0, 10),
         endDate: _dateRange?.end.toIso8601String().substring(0, 10),
       );
-      if (mounted) setState(() { _reportData = data; _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _reportData = data;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -42,30 +72,130 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
     setState(() => _isLoading = true);
     try {
       final api = ref.read(apiServiceProvider);
-      final params = <String, dynamic>{
-        'export': format,
-      };
+      final params = <String, dynamic>{'export': format};
       if (_dateRange != null) {
         params['start_date'] = _dateRange!.start.toIso8601String().substring(0, 10);
         params['end_date'] = _dateRange!.end.toIso8601String().substring(0, 10);
       }
-      await api.getAdminPaymentReport(queryParameters: params);
+
+      // Always download bytes (works for both web and mobile)
+      final bytes = await api.getAdminPaymentReport(queryParameters: params);
+
+      if (kIsWeb) {
+        // For web: use data URL to trigger download
+        await _downloadFileWeb(bytes, format);
+      } else {
+        // For mobile: save to device
+        await _downloadFileMobile(bytes, format);
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Export $format berhasil. File akan terdownload.'),
+            content: Text('Gagal export: $e'),
+            backgroundColor: AppTheme.danger,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Download file on web using data URL
+  Future<void> _downloadFileWeb(List<int> bytes, String format) async {
+    try {
+      // Convert bytes to base64
+      final base64Bytes = base64Encode(bytes);
+
+      // Determine MIME type
+      final mimeType = format == 'xls' ? 'application/vnd.ms-excel' : 'text/csv';
+
+      // Create data URL
+      final dataUrl = 'data:$mimeType;base64,$base64Bytes';
+
+      // Create filename
+      final filename =
+          'treasurer_payments_${DateTime.now().toIso8601String().replaceAll(RegExp(r"[:.-]"), '_')}.$format';
+
+      // Execute JavaScript to download
+      _executeDownloadScript(dataUrl, filename);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download $format dimulai...'),
             backgroundColor: AppTheme.success,
           ),
         );
       }
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Download file on mobile
+  Future<void> _downloadFileMobile(List<int> bytes, String format) async {
+    try {
+      final folder = await getApplicationDocumentsDirectory();
+      final extension = format == 'xls' ? 'xls' : 'csv';
+      final filename =
+          'treasurer_payments_${DateTime.now().toIso8601String().replaceAll(RegExp(r"[:.-]"), '_')}.$extension';
+      final file = File('${folder.path}/$filename');
+      await file.writeAsBytes(bytes);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal export: $e'), backgroundColor: AppTheme.danger),
+          SnackBar(
+            content: Text('Export $format berhasil. File disimpan di: ${file.path}'),
+            backgroundColor: AppTheme.success,
+          ),
         );
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Execute JavaScript to download file from data URL
+  /// This uses the `js` package to call JavaScript from Dart
+  void _executeDownloadScript(String dataUrl, String filename) {
+    if (!kIsWeb) return;
+
+    try {
+      // Use eval to execute JavaScript
+      jsEval("""
+        (function() {
+          const link = document.createElement('a');
+          link.href = '$dataUrl';
+          link.download = '$filename';
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        })();
+      """);
+    } catch (e) {
+      debugPrint('Error executing download: $e');
+    }
+  }
+
+  /// Fallback download method using different approach
+  void _downloadViaBlobUrl(String dataUrl, String filename) {
+    if (!kIsWeb) return;
+
+    try {
+      // Try alternative using window object
+      jsEval("""
+        var link = document.createElement('a');
+        link.href = '$dataUrl';
+        link.download = '$filename';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      """);
+    } catch (_) {
+      debugPrint('Download attempted with data URL');
     }
   }
 
@@ -76,26 +206,46 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Laporan Keuangan', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text(
+            'Laporan Keuangan',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 4),
-          const Text('Ringkasan transaksi per periode (fungsi bendahara)', style: TextStyle(fontSize: 13, color: AppTheme.grey600)),
+          const Text(
+            'Ringkasan transaksi per periode (fungsi bendahara)',
+            style: TextStyle(fontSize: 13, color: AppTheme.grey600),
+          ),
           const SizedBox(height: 16),
           _buildFilters(),
           const SizedBox(height: 16),
           _buildExportButtons(),
           const SizedBox(height: 20),
-          if (_isLoading) const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator())),
+          if (_isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(),
+              ),
+            ),
           if (_error != null)
             Card(
-              color: AppTheme.danger.withOpacity(0.05),
+              color: AppTheme.danger.withValues(alpha: 0.05),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     const Icon(Icons.error_outline, color: AppTheme.danger),
                     const SizedBox(width: 12),
-                    Expanded(child: Text(_error!, style: const TextStyle(color: AppTheme.danger))),
-                    TextButton(onPressed: _loadReport, child: const Text('Coba Lagi')),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: AppTheme.danger),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _loadReport,
+                      child: const Text('Coba Lagi'),
+                    ),
                   ],
                 ),
               ),
@@ -116,7 +266,10 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
           runSpacing: 12,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Text('Kelompokkan:', style: TextStyle(fontWeight: FontWeight.w500)),
+            const Text(
+              'Kelompokkan:',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
             SegmentedButton<String>(
               selected: {_groupBy},
               segments: const [
@@ -129,8 +282,16 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
                 _loadReport();
               },
               style: ButtonStyle(
-                foregroundColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Colors.white : AppTheme.navy),
-                backgroundColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppTheme.orange : Colors.transparent),
+                foregroundColor: WidgetStateProperty.resolveWith(
+                  (s) => s.contains(WidgetState.selected)
+                      ? Colors.white
+                      : AppTheme.navy,
+                ),
+                backgroundColor: WidgetStateProperty.resolveWith(
+                  (s) => s.contains(WidgetState.selected)
+                      ? AppTheme.orange
+                      : Colors.transparent,
+                ),
               ),
             ),
             OutlinedButton.icon(
@@ -191,14 +352,19 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
 
   Widget _buildReportTable() {
     final report = List<Map<String, dynamic>>.from(
-      (_reportData?['report'] as List?)?.map((e) => Map<String, dynamic>.from(e)) ?? [],
+      (_reportData?['report'] as List?)?.map(
+            (e) => Map<String, dynamic>.from(e),
+          ) ??
+          [],
     );
 
     if (report.isEmpty) {
       return const Card(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: Center(child: Text('Belum ada data transaksi untuk periode ini')),
+          child: Center(
+            child: Text('Belum ada data transaksi untuk periode ini'),
+          ),
         ),
       );
     }
@@ -209,8 +375,10 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
     for (final r in report) {
       totalDp += double.tryParse(r['total_dp']?.toString() ?? '0') ?? 0;
       totalFinal += double.tryParse(r['total_final']?.toString() ?? '0') ?? 0;
-      totalRevenue += double.tryParse(r['total_revenue']?.toString() ?? '0') ?? 0;
-      totalCount += int.tryParse(r['transaction_count']?.toString() ?? '0') ?? 0;
+      totalRevenue +=
+          double.tryParse(r['total_revenue']?.toString() ?? '0') ?? 0;
+      totalCount +=
+          int.tryParse(r['transaction_count']?.toString() ?? '0') ?? 0;
     }
 
     return Column(
@@ -224,10 +392,26 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                _buildTotalItem('Total DP', _formatCurrency(totalDp), AppTheme.info),
-                _buildTotalItem('Total Pelunasan', _formatCurrency(totalFinal), AppTheme.warning),
-                _buildTotalItem('Total Pendapatan', _formatCurrency(totalRevenue), AppTheme.success),
-                _buildTotalItem('Transaksi', totalCount.toString(), AppTheme.orange),
+                _buildTotalItem(
+                  'Total DP',
+                  _formatCurrency(totalDp),
+                  AppTheme.info,
+                ),
+                _buildTotalItem(
+                  'Total Pelunasan',
+                  _formatCurrency(totalFinal),
+                  AppTheme.warning,
+                ),
+                _buildTotalItem(
+                  'Total Pendapatan',
+                  _formatCurrency(totalRevenue),
+                  AppTheme.success,
+                ),
+                _buildTotalItem(
+                  'Transaksi',
+                  totalCount.toString(),
+                  AppTheme.orange,
+                ),
               ],
             ),
           ),
@@ -240,19 +424,77 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
             child: DataTable(
               headingRowColor: WidgetStateProperty.all(AppTheme.grey100),
               columns: const [
-                DataColumn(label: Text('Periode', style: TextStyle(fontWeight: FontWeight.w600))),
-                DataColumn(label: Text('DP', style: TextStyle(fontWeight: FontWeight.w600)), numeric: true),
-                DataColumn(label: Text('Pelunasan', style: TextStyle(fontWeight: FontWeight.w600)), numeric: true),
-                DataColumn(label: Text('Total', style: TextStyle(fontWeight: FontWeight.w600)), numeric: true),
-                DataColumn(label: Text('Jumlah', style: TextStyle(fontWeight: FontWeight.w600)), numeric: true),
+                DataColumn(
+                  label: Text(
+                    'Periode',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'DP',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  numeric: true,
+                ),
+                DataColumn(
+                  label: Text(
+                    'Pelunasan',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  numeric: true,
+                ),
+                DataColumn(
+                  label: Text(
+                    'Total',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  numeric: true,
+                ),
+                DataColumn(
+                  label: Text(
+                    'Jumlah',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  numeric: true,
+                ),
               ],
-              rows: report.map((r) => DataRow(cells: [
-                DataCell(Text(r['period'] ?? '', style: const TextStyle(fontWeight: FontWeight.w500))),
-                DataCell(Text(_formatCurrency(r['total_dp']), style: const TextStyle(color: AppTheme.info))),
-                DataCell(Text(_formatCurrency(r['total_final']), style: const TextStyle(color: AppTheme.warning))),
-                DataCell(Text(_formatCurrency(r['total_revenue']), style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.success))),
-                DataCell(Text('${r['transaction_count'] ?? 0}')),
-              ])).toList(),
+              rows: report
+                  .map(
+                    (r) => DataRow(
+                      cells: [
+                        DataCell(
+                          Text(
+                            r['period'] ?? '',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            _formatCurrency(r['total_dp']),
+                            style: const TextStyle(color: AppTheme.info),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            _formatCurrency(r['total_final']),
+                            style: const TextStyle(color: AppTheme.warning),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            _formatCurrency(r['total_revenue']),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.success,
+                            ),
+                          ),
+                        ),
+                        DataCell(Text('${r['transaction_count'] ?? 0}')),
+                      ],
+                    ),
+                  )
+                  .toList(),
             ),
           ),
         ),
@@ -264,9 +506,19 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
     return Expanded(
       child: Column(
         children: [
-          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white60, fontSize: 11),
+          ),
         ],
       ),
     );
