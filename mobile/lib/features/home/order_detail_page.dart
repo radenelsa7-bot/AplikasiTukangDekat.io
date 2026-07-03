@@ -343,7 +343,10 @@ class OrderDetailPage extends ConsumerWidget {
           ...order.payments.map((payment) {
             final isPaid =
                 payment.status == 'PAID' || payment.status == 'COMPLETED';
-            final statusColor = isPaid ? AppTheme.success : AppTheme.warning;
+            final isCancelled = order.status == 'CANCELLED';
+            final statusColor = isPaid
+                ? AppTheme.success
+                : (isCancelled ? AppTheme.danger : AppTheme.warning);
 
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -387,7 +390,11 @@ class OrderDetailPage extends ConsumerWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                isPaid ? 'Lunas' : 'Belum Dibayar',
+                                isPaid
+                                    ? 'Lunas'
+                                    : (isCancelled
+                                          ? 'Dibatalkan'
+                                          : 'Belum Dibayar'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: statusColor,
@@ -409,7 +416,12 @@ class OrderDetailPage extends ConsumerWidget {
                   ),
                   if (!isPaid &&
                       (payment.status == 'UNPAID' ||
-                          payment.status == 'PENDING')) ...[
+                          payment.status == 'PENDING') &&
+                      ![
+                        'CANCELLED',
+                        'CLOSED',
+                        'COMPLETED',
+                      ].contains(order.status)) ...[
                     const SizedBox(height: 12),
                     Builder(
                       builder: (ctx) {

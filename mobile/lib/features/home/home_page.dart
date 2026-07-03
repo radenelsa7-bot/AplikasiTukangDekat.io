@@ -140,9 +140,10 @@ class HomePage extends ConsumerWidget {
                     backgroundColor: Colors.white12,
                     backgroundImage: state.userProfilePhotoPath != null
                         ? NetworkImage(
-                            '${ApiConfig.baseUrl}/storage/${state.userProfilePhotoPath}',
+                            '${ApiConfig.baseUrl}/api/storage/${state.userProfilePhotoPath}',
                           )
                         : null,
+                    onBackgroundImageError: (_, __) {},
                     child: state.userProfilePhotoPath == null
                         ? const Icon(
                             Icons.person,

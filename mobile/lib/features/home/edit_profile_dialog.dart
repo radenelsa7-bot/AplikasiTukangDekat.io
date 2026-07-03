@@ -194,7 +194,7 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
         ? MemoryImage(_pickedBytes!)
         : (authState.userProfilePhotoPath != null
               ? NetworkImage(
-                  '${ApiConfig.baseUrl}/storage/${authState.userProfilePhotoPath}',
+                  '${ApiConfig.baseUrl}/api/storage/${authState.userProfilePhotoPath}',
                 )
               : null);
 

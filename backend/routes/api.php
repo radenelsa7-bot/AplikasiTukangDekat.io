@@ -106,6 +106,16 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
+// Serve storage files through Laravel so CORS middleware applies
+Route::get('/storage/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    if (!file_exists($fullPath)) {
+        abort(404);
+    }
+    $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+    return response()->file($fullPath, ['Content-Type' => $mime]);
+})->where('path', '.*')->middleware('throttle:120,1');
+
 Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback'])->middleware('throttle:30,1');
 
 Route::get('/health', function () {
