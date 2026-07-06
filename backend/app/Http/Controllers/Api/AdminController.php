@@ -146,7 +146,10 @@ class AdminController extends Controller
 
         $profile = ProviderProfile::where('user_id', $providerId)->first();
         if ($profile) {
-            $profile->update(['is_verified' => false]);
+            $profile->update([
+                'is_verified' => false,
+                'is_active' => false,
+            ]);
         }
 
         app(N8nNotificationService::class)->dispatch('provider_disabled', [
@@ -170,6 +173,14 @@ class AdminController extends Controller
         }
 
         $provider->update(['status' => 'ACTIVE']);
+
+        $profile = ProviderProfile::where('user_id', $providerId)->first();
+        if ($profile) {
+            $profile->update([
+                'is_verified' => true,
+                'is_active' => true,
+            ]);
+        }
 
         app(N8nNotificationService::class)->dispatch('provider_enabled', [
             'provider_id' => $providerId,
@@ -289,6 +300,23 @@ class AdminController extends Controller
         }
 
         $user->update(['status' => $validated['status']]);
+
+        if ($user->role === 'PROVIDER') {
+            $profile = ProviderProfile::where('user_id', $user->id)->first();
+            if ($profile) {
+                if ($validated['status'] === 'ACTIVE') {
+                    $profile->update([
+                        'is_verified' => true,
+                        'is_active' => true,
+                    ]);
+                } else {
+                    $profile->update([
+                        'is_verified' => false,
+                        'is_active' => false,
+                    ]);
+                }
+            }
+        }
 
         return $this->success([
             'id' => $user->id,

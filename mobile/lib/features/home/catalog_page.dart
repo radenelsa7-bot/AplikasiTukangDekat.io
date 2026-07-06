@@ -58,13 +58,67 @@ class CatalogPage extends ConsumerStatefulWidget {
   ConsumerState<CatalogPage> createState() => _CatalogPageState();
 }
 
-class _CatalogPageState extends ConsumerState<CatalogPage> {
+class _CatalogPageState extends ConsumerState<CatalogPage>
+    with WidgetsBindingObserver {
   final _searchCtrl = TextEditingController();
+  TabController? _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   @override
   void dispose() {
+    _tabController?.removeListener(_handleTabChange);
+    WidgetsBinding.instance.removeObserver(this);
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final controller = DefaultTabController.of(context);
+    if (_tabController != controller) {
+      _tabController?.removeListener(_handleTabChange);
+      _tabController = controller;
+      _tabController?.addListener(_handleTabChange);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshCatalogData();
+    }
+  }
+
+  void _handleTabChange() {
+    if (_tabController?.index == 0 && !_tabController!.indexIsChanging) {
+      _refreshCatalogData();
+    }
+  }
+
+  void _refreshCatalogData() {
+    final selectedCategory = ref.read(selectedCategoryProvider);
+    final searchQuery = ref.read(searchQueryProvider);
+
+    ref.invalidate(categoriesProvider);
+
+    if (searchQuery.isNotEmpty) {
+      ref.invalidate(searchProvidersProvider(searchQuery));
+    } else if (selectedCategory != null) {
+      ref.invalidate(providersByCategoryProvider(selectedCategory));
+    } else {
+      final categoriesAsync = ref.read(categoriesProvider);
+      categoriesAsync.whenData((categories) {
+        if (categories.isNotEmpty) {
+          ref.invalidate(providersByCategoryProvider(categories.first.id));
+        }
+      });
+    }
   }
 
   @override
@@ -459,6 +513,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
               return GestureDetector(
                 onTap: () {
+                  // Clear any active search query when selecting a category
+                  ref.read(searchQueryProvider.notifier).state = '';
                   ref.read(selectedCategoryProvider.notifier).state = isSelected
                       ? null
                       : category.id;
