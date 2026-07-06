@@ -513,6 +513,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
 
               return GestureDetector(
                 onTap: () {
+                  // Clear any active search query when selecting a category
+                  ref.read(searchQueryProvider.notifier).state = '';
                   ref.read(selectedCategoryProvider.notifier).state = isSelected
                       ? null
                       : category.id;
