@@ -73,6 +73,9 @@ class OrderDetailPage extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildInfoCard(context, order),
                 const SizedBox(height: 16),
+                if (order.attachments.isNotEmpty)
+                  _buildAttachmentsCard(context, order),
+                if (order.attachments.isNotEmpty) const SizedBox(height: 16),
                 _buildPricingCard(context, order),
                 const SizedBox(height: 16),
                 if (order.payments.isNotEmpty)
@@ -222,6 +225,73 @@ class OrderDetailPage extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachmentsCard(BuildContext context, OrderData order) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.grey200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.image_outlined, size: 18, color: AppTheme.navy),
+              const SizedBox(width: 8),
+              Text(
+                'Foto Pesanan',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 100,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: order.attachments.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final att = order.attachments[index];
+                final url = att.publicUrl ?? att.fileUrl ?? '';
+                if (url.isEmpty) return const SizedBox.shrink();
+                return GestureDetector(
+                  onTap: () async {
+                    if (await canLaunch(url)) {
+                      await launch(url);
+                    }
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      url,
+                      width: 120,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 120,
+                        height: 100,
+                        color: AppTheme.grey100,
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: AppTheme.grey600,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -702,7 +772,7 @@ class OrderDetailPage extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Order diterima!')),
                           );
-                          ref.refresh(orderDetailProvider(order.id));
+                          ref.invalidate(orderDetailProvider(order.id));
                         }
                       },
               ),
@@ -731,7 +801,7 @@ class OrderDetailPage extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Order ditolak')),
                           );
-                          ref.refresh(orderDetailProvider(order.id));
+                          ref.invalidate(orderDetailProvider(order.id));
                         }
                       },
               ),
@@ -760,7 +830,7 @@ class OrderDetailPage extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Pekerjaan dimulai')),
                           );
-                          ref.refresh(orderDetailProvider(order.id));
+                          ref.invalidate(orderDetailProvider(order.id));
                         } else if (!success && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -968,7 +1038,7 @@ class OrderDetailPage extends ConsumerWidget {
                       content: Text('Pesanan berhasil dibatalkan'),
                     ),
                   );
-                  ref.refresh(orderDetailProvider(order.id));
+                  ref.invalidate(orderDetailProvider(order.id));
                 } else {
                   final errorMsg = ref
                       .read(orderActionControllerProvider)
@@ -1049,7 +1119,7 @@ class OrderDetailPage extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Pekerjaan selesai!')),
                   );
-                  ref.refresh(orderDetailProvider(order.id));
+                  ref.invalidate(orderDetailProvider(order.id));
                 }
               }
             },
@@ -1136,7 +1206,7 @@ class OrderDetailPage extends ConsumerWidget {
                                 ? null
                                 : commentController.text.trim(),
                           );
-                      ref.refresh(orderReviewProvider(orderId));
+                      ref.invalidate(orderReviewProvider(orderId));
                       if (context.mounted) {
                         Navigator.pop(dialogContext);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -1391,7 +1461,7 @@ class OrderDetailPage extends ConsumerWidget {
                   final result = await ref
                       .read(apiServiceProvider)
                       .confirmPayment(paymentId);
-                  ref.refresh(orderDetailProvider(orderId));
+                  ref.invalidate(orderDetailProvider(orderId));
                   if (context.mounted) {
                     Navigator.pop(ctx);
                     final midtransStatus = result['midtrans_status'];

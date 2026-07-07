@@ -8,6 +8,8 @@ use App\Http\Requests\Order\CreateOrderRequest;
 use App\Http\Requests\Order\RespondToOrderRequest;
 use App\Models\Order;
 use App\Models\OrderStatusLog;
+use App\Models\OrderAttachment;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\N8nNotificationService;
@@ -18,6 +20,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -46,7 +50,7 @@ class OrderController extends Controller
                 ->where('role', 'PROVIDER')
                 ->firstOrFail();
 
-            $result = DB::transaction(function () use ($validated, $user) {
+            $result = DB::transaction(function () use ($validated, $user, $request) {
                 $order = Order::create([
                     'order_code' => Order::generateCode(),
                     'customer_id' => $user->id,
@@ -75,6 +79,67 @@ class OrderController extends Controller
                     'changed_by' => $user->id,
                 ]);
 
+                // Process attachment data URLs (if any were provided)
+                if (!empty($validated['attachment_urls']) && is_array($validated['attachment_urls'])) {
+                    foreach ($validated['attachment_urls'] as $attachment) {
+                        try {
+                            if (is_string($attachment) && str_starts_with($attachment, 'data:')) {
+                                // Data URL: data:<mime>;base64,<data>
+                                if (preg_match('/^data:(image\/(png|jpeg));base64,(.*)$/', $attachment, $matches)) {
+                                    $mime = $matches[1];
+                                    $ext = $matches[2] === 'png' ? 'png' : 'jpg';
+                                    $b64 = $matches[3];
+                                    $data = base64_decode($b64);
+                                    $fileName = sprintf('%s_%s.%s', $order->id, uniqid(), $ext);
+                                    $path = 'orders/' . $fileName;
+                                    Storage::disk('public')->put($path, $data);
+                                    OrderAttachment::create([
+                                        'order_id' => $order->id,
+                                        'file_url' => $path,
+                                        'file_type' => $mime,
+                                    ]);
+                                }
+                            } elseif (is_string($attachment) && filter_var($attachment, FILTER_VALIDATE_URL)) {
+                                // External URL - save as-is
+                                OrderAttachment::create([
+                                    'order_id' => $order->id,
+                                    'file_url' => $attachment,
+                                    'file_type' => 'external',
+                                ]);
+                            } elseif (is_string($attachment) && !empty($attachment)) {
+                                // Assume it's a previously uploaded storage path like 'orders/xyz.jpg'
+                                OrderAttachment::create([
+                                    'order_id' => $order->id,
+                                    'file_url' => $attachment,
+                                    'file_type' => 'uploaded',
+                                ]);
+                            }
+                        } catch (\Throwable $e) {
+                            // continue on attachment save error but log it
+                            Log::warning('Failed to save order attachment: ' . $e->getMessage());
+                        }
+                    }
+                }
+
+                // If files were uploaded in the same request, store them
+                if ($request->hasFile('files')) {
+                    foreach ($request->file('files') as $file) {
+                        try {
+                            /** @var UploadedFile $file */
+                            $ext = $file->getClientOriginalExtension() ?: 'jpg';
+                            $fileName = sprintf('%s_%s.%s', $order->id, uniqid(), $ext);
+                            $path = $file->storeAs('orders', $fileName, 'public');
+                            OrderAttachment::create([
+                                'order_id' => $order->id,
+                                'file_url' => $path,
+                                'file_type' => $file->getClientMimeType() ?? 'image/jpeg',
+                            ]);
+                        } catch (\Throwable $e) {
+                            Log::warning('Failed to store uploaded file: ' . $e->getMessage());
+                        }
+                    }
+                }
+
                 return ['order' => $order, 'dpAmount' => $dpAmount];
             });
 
@@ -91,7 +156,7 @@ class OrderController extends Controller
                 'status' => $order->status,
             ]);
 
-            $order->load('payments');
+            $order->load(['payments', 'attachments', 'customer', 'provider']);
             return $this->success($order, 'Order created', 201);
         } catch (ModelNotFoundException $e) {
             return $this->validationError(['provider_id' => ['Selected provider not found or not active']]);
@@ -115,6 +180,7 @@ class OrderController extends Controller
             return $this->notFound('Order not found');
         }
 
+        $order->load('attachments');
         return $this->success($order, 'Order retrieved');
     }
 
@@ -127,12 +193,12 @@ class OrderController extends Controller
 
         if ($user->role === 'CUSTOMER') {
             $orders = Order::where('customer_id', $user->id)
-                ->with(['provider', 'payments'])
+                ->with(['provider', 'payments', 'attachments'])
                 ->latest()
                 ->get();
         } elseif ($user->role === 'PROVIDER') {
             $orders = Order::where('provider_id', $user->id)
-                ->with(['customer', 'payments'])
+                ->with(['customer', 'payments', 'attachments'])
                 ->latest()
                 ->get();
         } else {
@@ -140,6 +206,35 @@ class OrderController extends Controller
         }
 
         return $this->success($orders, 'Orders retrieved');
+    }
+
+    /**
+     * Upload attachments (multipart) and return stored paths.
+     */
+    public function uploadAttachments(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) return $this->forbidden('Unauthorized');
+
+        $request->validate([
+            'files' => 'required|array|max:10',
+            'files.*' => 'required|file|mimes:jpeg,jpg,png|max:5120', // max 5MB per file
+        ]);
+
+        $stored = [];
+        foreach ($request->file('files') as $file) {
+            try {
+                /** @var UploadedFile $file */
+                $ext = $file->getClientOriginalExtension();
+                $fileName = sprintf('%s_%s.%s', $user->id, uniqid(), $ext);
+                $path = $file->storeAs('orders', $fileName, 'public');
+                $stored[] = $path;
+            } catch (\Throwable $e) {
+                Log::warning('Attachment upload failed: ' . $e->getMessage());
+            }
+        }
+
+        return $this->success(['file_urls' => $stored, 'public_urls' => array_map(fn($p) => url('/storage/' . $p), $stored)], 'Files uploaded');
     }
 
     /**

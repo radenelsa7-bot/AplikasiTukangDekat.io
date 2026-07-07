@@ -315,6 +315,42 @@ class MyOrdersPage extends ConsumerWidget {
                     ],
                   ),
                 ),
+                if (order.attachments != null &&
+                    order.attachments.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 100,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.only(left: 2, right: 2),
+                      itemCount: order.attachments.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, i) {
+                        final att = order.attachments[i];
+                        final url = att.publicUrl ?? att.fileUrl ?? '';
+                        if (url.isEmpty) return const SizedBox.shrink();
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            url,
+                            width: 120,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 120,
+                              height: 100,
+                              color: AppTheme.grey100,
+                              child: const Icon(
+                                Icons.broken_image,
+                                color: AppTheme.grey600,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

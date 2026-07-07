@@ -181,6 +181,42 @@ class ApiService {
     }
   }
 
+  Future<List<String>> uploadOrderAttachments(List<MultipartFile> files) async {
+    try {
+      final form = FormData();
+      for (var f in files) {
+        form.files.add(MapEntry('files[]', f));
+      }
+      final response = await dio.post('/api/orders/attachments', data: form);
+      final data = response.data['data'];
+      if (data != null && data['file_urls'] != null) {
+        return List<String>.from(data['file_urls']);
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<OrderData> createOrderWithFiles(
+    Map<String, dynamic> fields,
+    List<MultipartFile> files,
+  ) async {
+    try {
+      final form = FormData();
+      fields.forEach((k, v) {
+        if (v != null) form.fields.add(MapEntry(k, v.toString()));
+      });
+      for (var f in files) {
+        form.files.add(MapEntry('files[]', f));
+      }
+      final response = await dio.post('/api/orders', data: form);
+      return OrderData.fromJson(response.data['data']);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<OrdersResponse> getMyOrders() async {
     try {
       final response = await dio.get('/api/orders/my-orders');
@@ -271,14 +307,17 @@ class ApiService {
     bool isActive = true,
   }) async {
     try {
-      final response = await dio.post('/api/provider/services', data: {
-        'category_id': categoryId,
-        'name': name,
-        'description': description,
-        'base_price': basePrice,
-        'price_unit': priceUnit,
-        'is_active': isActive,
-      });
+      final response = await dio.post(
+        '/api/provider/services',
+        data: {
+          'category_id': categoryId,
+          'name': name,
+          'description': description,
+          'base_price': basePrice,
+          'price_unit': priceUnit,
+          'is_active': isActive,
+        },
+      );
       return response.data['data']['service_id'];
     } catch (e) {
       rethrow;
@@ -303,7 +342,10 @@ class ApiService {
       if (priceUnit != null) data['price_unit'] = priceUnit;
       if (isActive != null) data['is_active'] = isActive;
 
-      final response = await dio.patch('/api/provider/services/$serviceId', data: data);
+      final response = await dio.patch(
+        '/api/provider/services/$serviceId',
+        data: data,
+      );
       return Map<String, dynamic>.from(response.data['data'] ?? {});
     } catch (e) {
       rethrow;
