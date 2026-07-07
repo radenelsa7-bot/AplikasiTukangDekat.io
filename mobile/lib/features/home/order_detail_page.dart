@@ -14,14 +14,28 @@ import '../../shared/widgets/site_footer.dart';
 import '../../shared/widgets/site_header.dart';
 import 'order_providers.dart';
 
-class OrderDetailPage extends ConsumerWidget {
+class OrderDetailPage extends ConsumerStatefulWidget {
   final int orderId;
+  final bool autoOpenQris;
+  final int? autoPaymentId;
 
-  const OrderDetailPage({super.key, required this.orderId});
+  const OrderDetailPage({
+    super.key,
+    required this.orderId,
+    this.autoOpenQris = false,
+    this.autoPaymentId,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final orderAsync = ref.watch(orderDetailProvider(orderId));
+  ConsumerState<OrderDetailPage> createState() => _OrderDetailPageState();
+}
+
+class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
+  bool _autoOpened = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final orderAsync = ref.watch(orderDetailProvider(widget.orderId));
 
     return Scaffold(
       appBar: const TukangDekatHeader(title: Text('Detail Order')),
@@ -64,6 +78,48 @@ class OrderDetailPage extends ConsumerWidget {
           ),
         ),
         data: (order) {
+          // Auto-open QRIS dialog if requested via navigation flags (only once)
+          if (widget.autoOpenQris && !_autoOpened) {
+            _autoOpened = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              try {
+                final api = ref.read(apiServiceProvider);
+                if (widget.autoPaymentId != null) {
+                  final q = await api.generateQRIS(widget.autoPaymentId!);
+                  if (context.mounted) {
+                    _showQrisDialog(
+                      context,
+                      ref,
+                      q,
+                      order.id,
+                      widget.autoPaymentId!,
+                    );
+                  }
+                  return;
+                }
+
+                // If no payment id, try to find unpaid payment on order
+                PaymentData? unpaid;
+                if (order.payments.isNotEmpty) {
+                  unpaid = order.payments.firstWhere(
+                    (p) => p.status == 'UNPAID' || p.status == 'PENDING',
+                    orElse: () => order.payments.first,
+                  );
+                } else {
+                  unpaid = null;
+                }
+                if (unpaid != null) {
+                  final q = await api.generateQRIS(unpaid.id);
+                  if (context.mounted) {
+                    _showQrisDialog(context, ref, q, order.id, unpaid.id);
+                  }
+                }
+              } catch (_) {
+                // ignore errors silently
+              }
+            });
+          }
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(

@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/auth_response.dart';
@@ -271,14 +272,17 @@ class ApiService {
     bool isActive = true,
   }) async {
     try {
-      final response = await dio.post('/api/provider/services', data: {
-        'category_id': categoryId,
-        'name': name,
-        'description': description,
-        'base_price': basePrice,
-        'price_unit': priceUnit,
-        'is_active': isActive,
-      });
+      final response = await dio.post(
+        '/api/provider/services',
+        data: {
+          'category_id': categoryId,
+          'name': name,
+          'description': description,
+          'base_price': basePrice,
+          'price_unit': priceUnit,
+          'is_active': isActive,
+        },
+      );
       return response.data['data']['service_id'];
     } catch (e) {
       rethrow;
@@ -303,14 +307,17 @@ class ApiService {
       if (priceUnit != null) data['price_unit'] = priceUnit;
       if (isActive != null) data['is_active'] = isActive;
 
-      final response = await dio.patch('/api/provider/services/$serviceId', data: data);
+      final response = await dio.patch(
+        '/api/provider/services/$serviceId',
+        data: data,
+      );
       return Map<String, dynamic>.from(response.data['data'] ?? {});
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<String> sendChatbotMessage(String message) async {
+  Future<Map<String, dynamic>> sendChatbotMessage(String message) async {
     try {
       final response = await dio.post(
         '/api/chatbot/send',
@@ -320,9 +327,21 @@ class ApiService {
       if (data is Map &&
           data['data'] != null &&
           data['data']['reply'] != null) {
-        return data['data']['reply'].toString();
+        final replyRaw = data['data']['reply'].toString();
+        try {
+          if (replyRaw.startsWith('{') || replyRaw.startsWith('[')) {
+            final decoded = jsonDecode(replyRaw);
+            if (decoded is Map<String, dynamic>) {
+              return decoded;
+            }
+          }
+        } catch (_) {
+          // ignore JSON decode errors, fallbacks below
+        }
+
+        return {'reply': replyRaw, 'actions': []};
       }
-      return data.toString();
+      return {'reply': data.toString(), 'actions': []};
     } catch (e) {
       rethrow;
     }
