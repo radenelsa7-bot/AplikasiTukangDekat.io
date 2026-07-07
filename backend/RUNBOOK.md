@@ -82,7 +82,10 @@ XENDIT_BASE_URL=https://api.xendit.co
 ```bash
 php artisan migrate --force
 php artisan db:seed --class=AdminSeeder --force
+php artisan db:seed --class=TreasurerSeeder --force
 ```
+
+> Seeder `TreasurerSeeder` membuat user bendahara default. Ubah email dan password menggunakan env `TREASURER_SEED_EMAIL`, `TREASURER_SEED_PHONE`, dan `TREASURER_SEED_PASSWORD`.
 
 4) Cache & optimize
 

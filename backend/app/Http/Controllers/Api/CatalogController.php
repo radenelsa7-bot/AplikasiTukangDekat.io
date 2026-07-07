@@ -18,7 +18,21 @@ class CatalogController extends Controller
     public function getCategories()
     {
         $categories = ServiceCategory::where('is_active', true)->get();
-        return response()->json(['data' => $categories], 200);
+        return $this->success($categories, 'Categories retrieved');
+    }
+
+    /**
+     * Get all verified providers
+     */
+    public function getProviders(Request $request)
+    {
+        $providers = ProviderProfile::where('is_verified', true)
+            ->where('is_active', true)
+            ->whereHas('user', fn($query) => $query->where('status', 'ACTIVE'))
+            ->with(['user', 'services.category'])
+            ->get();
+
+        return $this->success($providers, 'Providers retrieved');
     }
 
     /**
@@ -29,19 +43,21 @@ class CatalogController extends Controller
         $category = ServiceCategory::find($categoryId);
 
         if (!$category) {
-            return $this->notFoundResponse('category not found');
+            return $this->notFound('Category not found');
         }
 
         $providers = ProviderProfile::whereHas('services', function ($query) use ($categoryId) {
             $query->where('category_id', $categoryId)->where('is_active', true);
         })
-        ->where('is_verified', true)
-        ->with(['services' => function ($query) use ($categoryId) {
-            $query->where('category_id', $categoryId)->where('is_active', true);
-        }])
-        ->get();
+            ->where('is_verified', true)
+            ->where('is_active', true)
+            ->whereHas('user', fn($query) => $query->where('status', 'ACTIVE'))
+            ->with(['services' => function ($query) use ($categoryId) {
+                $query->where('category_id', $categoryId)->where('is_active', true);
+            }])
+            ->get();
 
-        return $this->successResponse(['providers' => $providers], 'ok', 200);
+        return $this->success($providers, 'Providers retrieved');
     }
 
     /**
@@ -51,13 +67,17 @@ class CatalogController extends Controller
     {
         $provider = ProviderProfile::with(['services' => function ($query) {
             $query->where('is_active', true);
-        }, 'user'])->find($providerId);
+        }, 'user'])
+            ->where('is_verified', true)
+            ->where('is_active', true)
+            ->whereHas('user', fn($query) => $query->where('status', 'ACTIVE'))
+            ->find($providerId);
 
         if (!$provider) {
-            return $this->notFoundResponse('provider not found');
+            return $this->notFound('Provider not found');
         }
 
-        return $this->successResponse(['provider' => $provider], 'ok', 200);
+        return $this->success($provider, 'Provider detail retrieved');
     }
 
     /**
@@ -68,10 +88,12 @@ class CatalogController extends Controller
         $query = $request->query('q', '');
 
         if (empty($query)) {
-            return $this->errorResponse('Query parameter q is required.', 400);
+            return $this->error('Query parameter q is required.', 400);
         }
 
         $providers = ProviderProfile::where('is_verified', true)
+            ->where('is_active', true)
+            ->whereHas('user', fn($query) => $query->where('status', 'ACTIVE'))
             ->where(function ($q) use ($query) {
                 $q->where('business_name', 'like', "%$query%")
                     ->orWhere('area', 'like', "%$query%")
@@ -82,6 +104,6 @@ class CatalogController extends Controller
             ->with('services')
             ->get();
 
-        return $this->successResponse(['providers' => $providers], 'ok', 200);
+        return $this->success($providers, 'Providers found');
     }
 }

@@ -11,40 +11,30 @@ use Carbon\Carbon;
 
 class ProcessProviderPayouts extends Command
 {
-  protected $signature = 'payouts:process {--dry-run}';
+  protected $signature = 'payouts:process {--dry-run=0}';
   protected $description = 'Aggregate provider payouts for PAID payments and create payout records';
 
   public function handle()
   {
     $this->info('Starting provider payouts process...');
 
-    // Find paid payments with provider_payout > 0 and not yet processed
-    $query = Payment::join('orders', 'payments.order_id', '=', 'orders.id')
-      ->where('payments.status', 'PAID')
-      ->where('payments.provider_payout', '>', 0)
-      ->select('payments.*', 'orders.provider_id as order_provider_id');
+    // Find paid payments with provider_payout > 0 and eligible for processing.
+    $payments = Payment::with('order')
+      ->where('status', 'PAID')
+      ->where('provider_payout', '>', 0)
+      ->get()
+      ->filter(function ($payment) {
+        if (!$payment->order || !$payment->order->provider_id) {
+          return false;
+        }
 
-    if (Schema::hasColumn('payments', 'provider_payout_processed')) {
-      $query->where(function ($q) {
-        $q->whereNull('payments.provider_payout_processed')
-          ->orWhere('payments.provider_payout_processed', false);
-      });
-    }
+        if (!Schema::hasColumn('payments', 'provider_payout_processed')) {
+          return true;
+        }
 
-    try {
-      $payments = $query->get();
-    } catch (\Illuminate\Database\QueryException $e) {
-      if (str_contains($e->getMessage(), 'no such column: payments.provider_payout_processed')) {
-        $this->warn('provider_payout_processed column missing; retrying without the processed filter.');
-        $payments = Payment::join('orders', 'payments.order_id', '=', 'orders.id')
-          ->where('payments.status', 'PAID')
-          ->where('payments.provider_payout', '>', 0)
-          ->select('payments.*', 'orders.provider_id as order_provider_id')
-          ->get();
-      } else {
-        throw $e;
-      }
-    }
+        return (int) ($payment->provider_payout_processed ?? 0) === 0;
+      })
+      ->values();
 
     $this->info('Found ' . $payments->count() . ' eligible payments for payout processing.');
 
@@ -53,8 +43,11 @@ class ProcessProviderPayouts extends Command
       return 0;
     }
 
-    // Group by provider_id from the joined order data
-    $grouped = $payments->groupBy('order_provider_id');
+    // Group by provider_id from related order
+    $grouped = $payments->groupBy(function ($payment) {
+      return $payment->order->provider_id;
+    });
+    $isDryRun = filter_var($this->option('dry-run'), FILTER_VALIDATE_BOOLEAN);
 
     DB::beginTransaction();
     try {
@@ -64,7 +57,7 @@ class ProcessProviderPayouts extends Command
 
         $this->info("Creating payout for provider {$providerId} amount {$sum}");
 
-        if (!$this->option('dry-run')) {
+        if (!$isDryRun) {
           $payout = ProviderPayout::create([
             'provider_id' => $providerId,
             'amount' => $sum,
@@ -73,12 +66,17 @@ class ProcessProviderPayouts extends Command
           ]);
 
           // mark payments processed
-          $updateData = ['provider_paid_at' => Carbon::now()];
+          $updateData = [];
+          if (Schema::hasColumn('payments', 'provider_paid_at')) {
+            $updateData['provider_paid_at'] = Carbon::now();
+          }
           if (Schema::hasColumn('payments', 'provider_payout_processed')) {
             $updateData['provider_payout_processed'] = true;
           }
 
-          Payment::whereIn('id', $paymentIds)->update($updateData);
+          if (!empty($updateData)) {
+            Payment::whereIn('id', $paymentIds)->update($updateData);
+          }
         }
       }
 

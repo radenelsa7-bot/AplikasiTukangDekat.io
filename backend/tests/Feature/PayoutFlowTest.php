@@ -59,7 +59,7 @@ class PayoutFlowTest extends TestCase
       'updated_at' => now(),
     ]);
 
-    Artisan::call('payouts:process');
+    Artisan::call('payouts:process', ['--dry-run' => 0]);
 
     $this->assertDatabaseCount('provider_payouts', 1);
 

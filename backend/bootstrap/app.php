@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // 0. Ensure CORS middleware is applied globally
+        $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+
         // 1. Mengatasi error proxy dengan metode bawaan Laravel modern
         $middleware->trustProxies(at: '*');
 

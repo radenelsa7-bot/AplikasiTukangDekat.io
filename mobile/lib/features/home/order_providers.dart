@@ -69,17 +69,26 @@ class CreateOrderController extends StateNotifier<CreateOrderState> {
   final Ref _ref;
 
   Future<bool> createOrder(CreateOrderRequest request) async {
-    state = state.copyWith(isLoading: true, errorMessage: null, fieldErrors: {});
+    state = state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      fieldErrors: {},
+    );
     try {
       final apiService = _ref.read(apiServiceProvider);
       final order = await apiService.createOrder(request);
-      state = state.copyWith(isLoading: false, createdOrder: order, fieldErrors: {});
+      state = state.copyWith(
+        isLoading: false,
+        createdOrder: order,
+        fieldErrors: {},
+      );
       // Refresh myOrdersProvider to show newly created order
       _ref.refresh(myOrdersProvider); // ignore: unused_result
       return true;
     } on DioException catch (e) {
       final responseData = e.response?.data;
-      if (e.response?.statusCode == 422 && responseData is Map<String, dynamic>) {
+      if (e.response?.statusCode == 422 &&
+          responseData is Map<String, dynamic>) {
         final fieldErrors = <String, String?>{};
         final errors = responseData['errors'];
         if (errors is Map<String, dynamic>) {
@@ -176,8 +185,20 @@ class OrderActionController extends StateNotifier<OrderActionState> {
       // Refresh orders after starting work
       _ref.refresh(myOrdersProvider); // ignore: unused_result
       return true;
+    } on DioException catch (e) {
+      String errorMsg = 'Gagal memulai pekerjaan';
+      if (e.response?.statusCode == 422) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic> && data['message'] != null) {
+          errorMsg = data['message'].toString();
+        } else {
+          errorMsg = 'DP harus dibayar terlebih dahulu sebelum memulai pekerjaan';
+        }
+      }
+      state = state.copyWith(isLoading: false, errorMessage: errorMsg);
+      return false;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed: $e');
+      state = state.copyWith(isLoading: false, errorMessage: 'Gagal: $e');
       return false;
     }
   }
@@ -193,6 +214,28 @@ class OrderActionController extends StateNotifier<OrderActionState> {
       return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: 'Failed: $e');
+      return false;
+    }
+  }
+
+  Future<bool> cancelOrder(int orderId, {String? reason}) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final apiService = _ref.read(apiServiceProvider);
+      await apiService.cancelOrder(orderId: orderId, reason: reason);
+      state = state.copyWith(isLoading: false, success: true);
+      _ref.refresh(myOrdersProvider); // ignore: unused_result
+      return true;
+    } on DioException catch (e) {
+      String errorMsg = 'Gagal membatalkan pesanan';
+      final data = e.response?.data;
+      if (data is Map<String, dynamic> && data['message'] != null) {
+        errorMsg = data['message'].toString();
+      }
+      state = state.copyWith(isLoading: false, errorMessage: errorMsg);
+      return false;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: 'Gagal: $e');
       return false;
     }
   }

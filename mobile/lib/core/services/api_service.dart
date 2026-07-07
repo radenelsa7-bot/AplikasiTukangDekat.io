@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/auth_response.dart';
@@ -12,7 +13,6 @@ class ApiService {
 
   ApiService({required this.dio});
 
-  // Setter untuk token
   void setToken(String token) {
     dio.options.headers['Authorization'] = 'Bearer $token';
   }
@@ -29,19 +29,29 @@ class ApiService {
     required String phone,
     required String password,
     required String role,
+    int? categoryId,
+    String? businessName,
+    String? serviceName,
+    int? basePrice,
   }) async {
     try {
-      final response = await dio.post(
-        '/api/auth/register',
-        data: {
-          'name': name,
-          'email': email,
-          'phone': phone,
-          'password': password,
-          'password_confirmation': password,
-          'role': role,
-        },
-      );
+      final data = <String, dynamic>{
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'password': password,
+        'password_confirmation': password,
+        'role': role,
+      };
+
+      if (role == 'PROVIDER') {
+        if (categoryId != null) data['category_id'] = categoryId;
+        if (businessName != null) data['business_name'] = businessName;
+        if (serviceName != null) data['service_name'] = serviceName;
+        if (basePrice != null) data['base_price'] = basePrice;
+      }
+
+      final response = await dio.post('/api/auth/register', data: data);
       return AuthResponse.fromJson(response.data);
     } catch (e) {
       rethrow;
@@ -78,8 +88,6 @@ class ApiService {
 
   // ===== SESSION-BASED AUTH (SPA) =====
 
-  /// Session login (SPA style). Backend will set session cookie.
-  /// Returns raw response data (usually user object) on success.
   Future<Map<String, dynamic>> sessionLogin({
     required String email,
     required String password,
@@ -103,7 +111,6 @@ class ApiService {
     }
   }
 
-  /// Get current authenticated session user (requires session cookie).
   Future<Map<String, dynamic>?> getUserSession() async {
     try {
       final response = await dio.get('/api/user-session');
@@ -139,7 +146,13 @@ class ApiService {
   Future<ProviderProfile> getProviderDetail(int providerId) async {
     try {
       final response = await dio.get('/api/catalog/providers/$providerId');
-      return ProviderProfile.fromJson(response.data['data']);
+      final data = response.data['data'];
+      if (data is Map<String, dynamic> && data.containsKey('provider')) {
+        return ProviderProfile.fromJson(
+          Map<String, dynamic>.from(data['provider']),
+        );
+      }
+      return ProviderProfile.fromJson(Map<String, dynamic>.from(data));
     } catch (e) {
       rethrow;
     }
@@ -186,7 +199,6 @@ class ApiService {
     }
   }
 
-  /// Update user profile including optional profile photo
   Future<Map<String, dynamic>> updateProfile({
     String? fullName,
     String? phoneNumber,
@@ -195,9 +207,15 @@ class ApiService {
   }) async {
     try {
       final form = FormData();
-      if (fullName != null) form.fields.add(MapEntry('full_name', fullName));
-      if (phoneNumber != null) form.fields.add(MapEntry('phone_number', phoneNumber));
-      if (photoFile != null) form.files.add(MapEntry('profile_photo', photoFile));
+      if (fullName != null) {
+        form.fields.add(MapEntry('full_name', fullName));
+      }
+      if (phoneNumber != null) {
+        form.fields.add(MapEntry('phone_number', phoneNumber));
+      }
+      if (photoFile != null) {
+        form.files.add(MapEntry('profile_photo', photoFile));
+      }
 
       final response = await dio.post('/api/profile/update', data: form);
       return Map<String, dynamic>.from(response.data['data'] ?? {});
@@ -206,7 +224,6 @@ class ApiService {
     }
   }
 
-  /// Delete current profile photo
   Future<Map<String, dynamic>> deleteProfilePhoto() async {
     try {
       final response = await dio.delete('/api/profile/photo');
@@ -216,12 +233,93 @@ class ApiService {
     }
   }
 
-  /// Send message to chatbot endpoint
+  Future<Map<String, dynamic>> getProviderProfile() async {
+    try {
+      final response = await dio.get('/api/provider/profile');
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateProviderProfile({
+    String? businessName,
+    String? description,
+    String? area,
+    String? address,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (businessName != null) data['business_name'] = businessName;
+      if (description != null) data['description'] = description;
+      if (area != null) data['area'] = area;
+      if (address != null) data['address'] = address;
+
+      final response = await dio.put('/api/provider/profile', data: data);
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<int> createProviderService({
+    required int categoryId,
+    required String name,
+    String? description,
+    required int basePrice,
+    String? priceUnit,
+    bool isActive = true,
+  }) async {
+    try {
+      final response = await dio.post('/api/provider/services', data: {
+        'category_id': categoryId,
+        'name': name,
+        'description': description,
+        'base_price': basePrice,
+        'price_unit': priceUnit,
+        'is_active': isActive,
+      });
+      return response.data['data']['service_id'];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateProviderService({
+    required int serviceId,
+    int? categoryId,
+    String? name,
+    String? description,
+    int? basePrice,
+    String? priceUnit,
+    bool? isActive,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (categoryId != null) data['category_id'] = categoryId;
+      if (name != null) data['name'] = name;
+      if (description != null) data['description'] = description;
+      if (basePrice != null) data['base_price'] = basePrice;
+      if (priceUnit != null) data['price_unit'] = priceUnit;
+      if (isActive != null) data['is_active'] = isActive;
+
+      final response = await dio.patch('/api/provider/services/$serviceId', data: data);
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<String> sendChatbotMessage(String message) async {
     try {
-      final response = await dio.post('/api/chatbot/send', data: {'message': message});
+      final response = await dio.post(
+        '/api/chatbot/send',
+        data: {'message': message},
+      );
       final data = response.data;
-      if (data is Map && data['data'] != null && data['data']['reply'] != null) {
+      if (data is Map &&
+          data['data'] != null &&
+          data['data']['reply'] != null) {
         return data['data']['reply'].toString();
       }
       return data.toString();
@@ -263,13 +361,29 @@ class ApiService {
     }
   }
 
+  Future<void> cancelOrder({required int orderId, String? reason}) async {
+    try {
+      await dio.post(
+        '/api/orders/$orderId/cancel',
+        data: {'reason': reason ?? 'Dibatalkan oleh customer'},
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // ===== PAYMENT ENDPOINTS =====
 
-  /// Generate QRIS for a payment. Returns QRIS payload from backend.
   Future<Map<String, dynamic>> generateQRIS(int paymentId) async {
     try {
       final response = await dio.post('/api/payments/$paymentId/generate-qris');
-      final data = Map<String, dynamic>.from(response.data['data'] ?? {});
+      final rawData = response.data['data'];
+      Map<String, dynamic> data;
+      if (rawData is Map<String, dynamic> && rawData.containsKey('qris')) {
+        data = Map<String, dynamic>.from(rawData['qris']);
+      } else {
+        data = Map<String, dynamic>.from(rawData ?? {});
+      }
       final checkoutUrl = data['checkout_url'];
       if (checkoutUrl != null) {
         data['checkout_url'] = checkoutUrl.toString();
@@ -280,18 +394,10 @@ class ApiService {
     }
   }
 
-  /// Simulate payment gateway callback (for testing)
-  /// In production, payment gateway will call /webhooks/payment
-  Future<void> simulatePaymentCallback(int paymentId) async {
+  Future<Map<String, dynamic>> confirmPayment(int paymentId) async {
     try {
-      await dio.post(
-        '/webhooks/payment',
-        data: {
-          'payment_id': paymentId,
-          'transaction_id': 'SIM-$paymentId',
-          'status': 'success',
-        },
-      );
+      final response = await dio.post('/api/payments/$paymentId/confirm');
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
     } catch (e) {
       rethrow;
     }
@@ -300,7 +406,11 @@ class ApiService {
   Future<PaymentData> getPaymentStatus(int paymentId) async {
     try {
       final response = await dio.get('/api/payments/$paymentId');
-      return PaymentData.fromJson(response.data['data']);
+      final data = response.data['data'];
+      if (data is Map<String, dynamic> && data.containsKey('payment')) {
+        return PaymentData.fromJson(Map<String, dynamic>.from(data['payment']));
+      }
+      return PaymentData.fromJson(Map<String, dynamic>.from(data));
     } catch (e) {
       rethrow;
     }
@@ -315,9 +425,22 @@ class ApiService {
   }) async {
     try {
       await dio.post(
-        '/api/reviews/order/$orderId',
+        '/api/orders/$orderId/review',
         data: {'rating': rating, 'comment': comment},
       );
+    } on DioException catch (e) {
+      // Better error messages for common review errors
+      if (e.response?.statusCode == 409) {
+        final errorMsg = e.response?.data?['message'] ?? '';
+        if (errorMsg.contains('already been submitted')) {
+          throw Exception('Anda sudah memberikan ulasan untuk order ini');
+        } else if (errorMsg.contains('closed orders')) {
+          throw Exception(
+            'Ulasan hanya dapat diberikan untuk order yang sudah selesai',
+          );
+        }
+      }
+      rethrow;
     } catch (e) {
       rethrow;
     }
@@ -325,7 +448,9 @@ class ApiService {
 
   Future<ReviewsResponse> getProviderReviews(int providerId) async {
     try {
-      final response = await dio.get('/api/reviews/provider/$providerId');
+      final response = await dio.get(
+        '/api/catalog/providers/$providerId/reviews',
+      );
       return ReviewsResponse.fromJson(response.data);
     } catch (e) {
       rethrow;
@@ -334,7 +459,7 @@ class ApiService {
 
   Future<ReviewData?> getOrderReview(int orderId) async {
     try {
-      final response = await dio.get('/api/reviews/order/$orderId');
+      final response = await dio.get('/api/reviews/$orderId');
       return ReviewData.fromJson(
         Map<String, dynamic>.from(response.data['data']),
       );
@@ -345,9 +470,32 @@ class ApiService {
 
   // ===== ADMIN ENDPOINTS =====
 
+  Future<Map<String, dynamic>> getAdminDashboard() async {
+    try {
+      final response = await dio.get('/api/admin/dashboard');
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<ProvidersResponse> getPendingProviders() async {
     try {
       final response = await dio.get('/api/admin/providers/pending');
+      return ProvidersResponse.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<ProvidersResponse> getAllProviders({bool? isVerified}) async {
+    try {
+      final params = <String, dynamic>{};
+      if (isVerified != null) params['is_verified'] = isVerified;
+      final response = await dio.get(
+        '/api/admin/providers',
+        queryParameters: params,
+      );
       return ProvidersResponse.fromJson(response.data);
     } catch (e) {
       rethrow;
@@ -368,10 +516,214 @@ class ApiService {
     }
   }
 
-  // ===== TREASURER & MONITORING =====
+  Future<void> disableProvider(int providerId, {String? reason}) async {
+    try {
+      await dio.post(
+        '/api/admin/providers/$providerId/disable',
+        data: {'reason': reason},
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
 
-  /// Get treasurer payments report. Requires user with TREASURER role.
-  /// Optional `queryParameters` may contain `start_date`, `end_date`, `status`, `per_page`, `export`, etc.
+  Future<void> enableProvider(int providerId) async {
+    try {
+      await dio.post('/api/admin/providers/$providerId/enable');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Admin: Category CRUD
+  Future<List<ServiceCategory>> getAdminCategories() async {
+    try {
+      final response = await dio.get('/api/admin/categories');
+      final data = response.data['data'];
+      if (data is List) {
+        return data
+            .map(
+              (item) =>
+                  ServiceCategory.fromJson(Map<String, dynamic>.from(item)),
+            )
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<ServiceCategory> createCategory({
+    required String name,
+    String? description,
+    bool isActive = true,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/api/admin/categories',
+        data: {
+          'name': name,
+          'description': description ?? '',
+          'is_active': isActive,
+        },
+      );
+      return ServiceCategory.fromJson(
+        Map<String, dynamic>.from(response.data['data']),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<ServiceCategory> updateCategory({
+    required int categoryId,
+    String? name,
+    String? description,
+    bool? isActive,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (name != null) data['name'] = name;
+      if (description != null) data['description'] = description;
+      if (isActive != null) data['is_active'] = isActive;
+      final response = await dio.put(
+        '/api/admin/categories/$categoryId',
+        data: data,
+      );
+      return ServiceCategory.fromJson(
+        Map<String, dynamic>.from(response.data['data']),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteCategory(int categoryId) async {
+    try {
+      await dio.delete('/api/admin/categories/$categoryId');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Admin: User management
+  Future<List<Map<String, dynamic>>> getAdminUsers({
+    String? role,
+    String? status,
+    String? search,
+  }) async {
+    try {
+      final params = <String, dynamic>{};
+      if (role != null) params['role'] = role;
+      if (status != null) params['status'] = status;
+      if (search != null) params['search'] = search;
+      final response = await dio.get(
+        '/api/admin/users',
+        queryParameters: params,
+      );
+      final data = response.data['data'];
+      if (data is List) {
+        return data.map((item) => Map<String, dynamic>.from(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateUserStatus({
+    required int userId,
+    required String status,
+  }) async {
+    try {
+      await dio.patch(
+        '/api/admin/users/$userId/status',
+        data: {'status': status},
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Admin: Order monitoring
+  Future<List<Map<String, dynamic>>> getAdminOrders({String? status}) async {
+    try {
+      final params = <String, dynamic>{};
+      if (status != null) params['status'] = status;
+      final response = await dio.get(
+        '/api/admin/orders',
+        queryParameters: params,
+      );
+      final data = response.data['data'];
+      if (data is List) {
+        return data.map((item) => Map<String, dynamic>.from(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Admin: Payment monitoring
+  Future<Map<String, dynamic>> getAdminPayments({
+    String? status,
+    String? paymentType,
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final params = <String, dynamic>{};
+      if (status != null) params['status'] = status;
+      if (paymentType != null) params['payment_type'] = paymentType;
+      if (startDate != null) params['start_date'] = startDate;
+      if (endDate != null) params['end_date'] = endDate;
+      final response = await dio.get(
+        '/api/admin/payments',
+        queryParameters: params,
+      );
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Admin: Reports (treasurer summary merged)
+  Future<Map<String, dynamic>> getAdminReportSummary({
+    String? startDate,
+    String? endDate,
+    String groupBy = 'day',
+  }) async {
+    try {
+      final params = <String, dynamic>{'group_by': groupBy};
+      if (startDate != null) params['start_date'] = startDate;
+      if (endDate != null) params['end_date'] = endDate;
+      final response = await dio.get(
+        '/api/admin/reports/summary',
+        queryParameters: params,
+      );
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Uint8List> getAdminPaymentReport({
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/api/admin/payments/report',
+        queryParameters: queryParameters,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return Uint8List.fromList(response.data as List<int>);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Legacy treasurer endpoint (backward compat)
   Future<Map<String, dynamic>> getTreasurerReport({
     Map<String, dynamic>? queryParameters,
   }) async {
@@ -386,7 +738,6 @@ class ApiService {
     }
   }
 
-  /// Fetch backend metrics (Prometheus/text or JSON as provided by backend).
   Future<dynamic> getMetrics() async {
     try {
       final response = await dio.get('/api/metrics');

@@ -45,7 +45,7 @@ class PaymentFactory extends Factory
     return $this->state(fn(array $attributes) => [
       'status' => 'PAID',
       'paid_at' => now(),
-    ];
+    ]);
   }
 
   /**

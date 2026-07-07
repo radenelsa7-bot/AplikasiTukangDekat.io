@@ -3,13 +3,14 @@
 namespace App\Http\Requests\Review;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class CreateReviewRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return $this->user()?->role === 'CUSTOMER';
-        return true;
     }
 
     public function rules(): array
@@ -28,8 +29,19 @@ class CreateReviewRequest extends FormRequest
             'rating.min' => 'Rating must be at least 1 star.',
             'rating.max' => 'Rating cannot exceed 5 stars.',
             'comment.max' => 'Comment cannot exceed 1000 characters.',
-            'rating' => 'required|integer|between:1,5',
-            'comment' => 'nullable|string',
         ];
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        $response = response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'error_code' => 'VALIDATION_ERROR',
+            'status_code' => 422,
+            'errors' => $validator->errors(),
+        ], 422);
+
+        throw new HttpResponseException($response);
     }
 }
