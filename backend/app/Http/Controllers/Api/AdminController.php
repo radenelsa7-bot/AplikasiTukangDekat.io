@@ -146,7 +146,10 @@ class AdminController extends Controller
 
         $profile = ProviderProfile::where('user_id', $providerId)->first();
         if ($profile) {
-            $profile->update(['is_verified' => false]);
+            $profile->update([
+                'is_verified' => false,
+                'is_active' => false,
+            ]);
         }
 
         app(N8nNotificationService::class)->dispatch('provider_disabled', [
@@ -170,6 +173,14 @@ class AdminController extends Controller
         }
 
         $provider->update(['status' => 'ACTIVE']);
+
+        $profile = ProviderProfile::where('user_id', $providerId)->first();
+        if ($profile) {
+            $profile->update([
+                'is_verified' => true,
+                'is_active' => true,
+            ]);
+        }
 
         app(N8nNotificationService::class)->dispatch('provider_enabled', [
             'provider_id' => $providerId,
@@ -289,7 +300,7 @@ class AdminController extends Controller
                 return $this->error('Cannot modify admin account status', 403);
             }
 
-            $user->update(['status' => $validated['status']]);
+        $user->update(['status' => $validated['status']]);
 
             return $this->success([
                 'id' => $user->id,

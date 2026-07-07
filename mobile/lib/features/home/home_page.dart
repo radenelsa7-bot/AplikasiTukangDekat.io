@@ -7,6 +7,7 @@ import '../auth/login_page.dart';
 import '../admin/admin_dashboard_page.dart';
 import 'catalog_page.dart';
 import 'my_orders_page.dart';
+import 'provider_services_page.dart';
 import 'edit_profile_dialog.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -97,14 +98,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                   child: CircleAvatar(
                     radius: 36,
                     backgroundColor: Colors.white12,
-                    backgroundImage: state.userProfilePhotoPath != null
+                    backgroundImage: state.userProfilePhotoPath != null && state.userProfilePhotoPath!.isNotEmpty
                         ? NetworkImage(
                             '${ApiConfig.baseUrl}/api/storage/${state.userProfilePhotoPath}',
                           )
                         : null,
-                    onBackgroundImageError: state.userProfilePhotoPath != null
-                        ? (_, __) {}
-                        : null,
+                    onBackgroundImageError: (_, __) {},
                     child: state.userProfilePhotoPath == null
                         ? const Icon(
                             Icons.person,
@@ -197,6 +196,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                     }
                   },
                 ),
+                if (state.userRole == 'PROVIDER') ...[
+                  const Divider(height: 1, indent: 56),
+                  _buildMenuTile(
+                    icon: Icons.build_rounded,
+                    iconColor: AppTheme.orange,
+                    title: 'Kelola Layanan',
+                    subtitle: 'Tambah dan edit informasi layanan Anda',
+                    onTap: () async {
+                      if (!context.mounted) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ProviderServicesPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const Divider(height: 1, indent: 56),
                 _buildMenuTile(
                   icon: Icons.chat_bubble_rounded,

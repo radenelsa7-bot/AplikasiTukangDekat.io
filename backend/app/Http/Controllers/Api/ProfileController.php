@@ -100,7 +100,27 @@ class ProfileController extends Controller
         $profile->update($request->only(['business_name', 'description', 'area', 'address']));
 
         return $this->success([
-            'profile' => $profile->fresh(),
+            'profile' => $profile->fresh(['services.category']),
         ], 'Provider profile updated successfully', 200);
+    }
+
+    public function getProviderProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'PROVIDER') {
+            return $this->forbidden('Only providers can access this resource');
+        }
+
+        $profile = ProviderProfile::with(['services.category'])
+            ->firstOrCreate([
+                'user_id' => $user->id,
+            ], [
+                'is_verified' => false,
+            ]);
+
+        return $this->success([
+            'profile' => $profile->fresh(['services.category']),
+        ], 'Provider profile retrieved successfully', 200);
     }
 }

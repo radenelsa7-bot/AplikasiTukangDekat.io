@@ -6,18 +6,22 @@ class AuthResponse {
   AuthResponse({required this.message, this.token, this.user});
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
-    final data = json['data'];
-    final flattenedData = data is Map<String, dynamic>
-        ? data
-        : <String, dynamic>{};
+    // Extract data object - the actual response data
+    final data = json['data'] as Map<String, dynamic>?;
+    
+    if (data == null) {
+      return AuthResponse(
+        message: json['message'] ?? 'Unknown error',
+        token: null,
+        user: null,
+      );
+    }
 
     return AuthResponse(
-      message: json['message'] ?? flattenedData['message'] ?? '',
-      token: json['token'] ?? flattenedData['token'],
-      user: (json['user'] is Map<String, dynamic>)
-          ? UserData.fromJson(json['user'] as Map<String, dynamic>)
-          : (flattenedData['user'] is Map<String, dynamic>)
-          ? UserData.fromJson(flattenedData['user'] as Map<String, dynamic>)
+      message: json['message'] ?? data['message'] ?? '',
+      token: data['token'],
+      user: (data['user'] is Map<String, dynamic>)
+          ? UserData.fromJson(data['user'] as Map<String, dynamic>)
           : null,
     );
   }
