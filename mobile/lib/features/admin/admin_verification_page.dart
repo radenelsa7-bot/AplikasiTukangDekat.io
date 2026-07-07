@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../shared/widgets/site_footer.dart';
-import '../../shared/widgets/site_header.dart';
 import 'admin_providers.dart';
 
 class AdminVerificationPage extends ConsumerWidget {
@@ -14,16 +12,6 @@ class AdminVerificationPage extends ConsumerWidget {
     final actionState = ref.watch(adminVerificationControllerProvider);
 
     return Scaffold(
-      appBar: TukangDekatHeader(
-        title: const Text('Verifikasi Provider'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: () => ref.refresh(pendingProvidersProvider),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
       body: providersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, st) => Center(child: Text('Error: $err')),
@@ -160,7 +148,6 @@ class AdminVerificationPage extends ConsumerWidget {
           );
         },
       ),
-      bottomNavigationBar: const TukangDekatFooter(),
     );
   }
 }

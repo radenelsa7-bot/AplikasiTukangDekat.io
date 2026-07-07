@@ -12,7 +12,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Load environment variables from .env file
-  await dotenv.load();
+  try {
+    await dotenv.load();
+  } catch (e) {
+    debugPrint(
+      '[main] dotenv.load() failed: $e (will use --dart-define or defaults)',
+    );
+  }
 
   // Enable persistent cookies (creates storage dir). If you prefer in-memory,
   // comment out the next line.

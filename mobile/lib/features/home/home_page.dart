@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../config/api_config.dart';
-import '../../shared/widgets/site_footer.dart';
-import '../../shared/widgets/site_header.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_page.dart';
 import '../admin/admin_dashboard_page.dart';
@@ -12,11 +10,27 @@ import 'my_orders_page.dart';
 import 'provider_services_page.dart';
 import 'edit_profile_dialog.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  int _selectedIndex = 0;
+
+  static const List<BottomNavigationBarItem> _bottomItems = [
+    BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Beranda'),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.receipt_long_rounded),
+      label: 'Pesanan',
+    ),
+    BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Akun'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
 
     // Admin gets full dashboard
@@ -24,78 +38,23 @@ class HomePage extends ConsumerWidget {
       return const AdminDashboardPage();
     }
 
-    final tabs = [
-      const Tab(icon: Icon(Icons.home_rounded), text: 'Beranda'),
-      const Tab(icon: Icon(Icons.receipt_long_rounded), text: 'Pesanan'),
-      const Tab(icon: Icon(Icons.person_rounded), text: 'Akun'),
-    ];
     final pages = [
       const CatalogPage(),
       const MyOrdersPage(),
       _buildAccountTab(context, ref, state),
     ];
 
-    return DefaultTabController(
-      length: tabs.length,
-      child: Scaffold(
-        backgroundColor: AppTheme.cream,
-        appBar: TukangDekatHeader(
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppTheme.orange.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.handyman,
-                  size: 20,
-                  color: AppTheme.orange,
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                'TukangDekat',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ],
-          ),
-          bottom: TabBar(
-            tabs: tabs,
-            indicatorColor: AppTheme.orange,
-            indicatorWeight: 3,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white60,
-            labelStyle: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-          ),
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: IconButton(
-                tooltip: 'Logout',
-                onPressed: () async {
-                  await ref.read(authControllerProvider.notifier).logout();
-                  if (!context.mounted) return;
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                    (_) => false,
-                  );
-                },
-                icon: const Icon(Icons.logout_rounded, size: 20),
-              ),
-            ),
-          ],
-        ),
-        body: TabBarView(children: pages),
-        bottomNavigationBar: const TukangDekatFooter(),
+    return Scaffold(
+      backgroundColor: AppTheme.cream,
+      body: pages[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        items: _bottomItems,
+        selectedItemColor: AppTheme.orange,
+        unselectedItemColor: AppTheme.grey600,
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
@@ -144,7 +103,8 @@ class HomePage extends ConsumerWidget {
                             '${ApiConfig.baseUrl}/api/storage/${state.userProfilePhotoPath}',
                           )
                         : null,
-                    child: state.userProfilePhotoPath == null || state.userProfilePhotoPath!.isEmpty
+                    onBackgroundImageError: (_, __) {},
+                    child: state.userProfilePhotoPath == null
                         ? const Icon(
                             Icons.person,
                             size: 36,

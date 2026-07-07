@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
-import '../../shared/widgets/site_footer.dart';
 import '../../core/models/order_model.dart';
 import '../../core/models/provider_model.dart';
 import '../auth/auth_controller.dart';
@@ -119,10 +118,10 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       attachmentUrls: _attachmentUrlsCtrl.text.trim().isEmpty
           ? null
           : _attachmentUrlsCtrl.text
-            .split('\n')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList(),
+                .split('\n')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList(),
     );
 
     final success = await ref
@@ -178,190 +177,198 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Buat Order')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Detail Order',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 24),
-
-              // Pilih Layanan
-              Text(
-                'Pilih Layanan',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              if (widget.services.isNotEmpty)
-                DropdownButton<ProviderService>(
-                  isExpanded: true,
-                  value: _selectedService,
-                  items: widget.services.map((service) {
-                    return DropdownMenuItem(
-                      value: service,
-                      child: Text(
-                        '${service.name} - Rp${service.basePrice}/${service.priceUnit}',
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (ProviderService? newService) {
-                    setState(() => _selectedService = newService);
-                  },
-                )
-              else
-                const Text('Tidak ada layanan tersedia'),
-              const SizedBox(height: 24),
-
-              // Alamat
-              AppTextField(
-                controller: _addressCtrl,
-                label: 'Alamat Lokasi',
-                maxLines: 3,
-                prefixIcon: const Icon(Icons.location_on),
-                errorText: state.fieldErrors['address'],
-                validator: (v) {
-                  if ((v ?? '').trim().isEmpty) return 'Alamat wajib diisi';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Catatan
-              AppTextField(
-                controller: _notesCtrl,
-                label: 'Catatan Tambahan (opsional)',
-                maxLines: 3,
-                prefixIcon: const Icon(Icons.note),
-                errorText: state.fieldErrors['notes'],
-              ),
-              const SizedBox(height: 16),
-
-              AppTextField(
-                controller: _attachmentUrlsCtrl,
-                label: 'URL Foto Kerusakan (opsional, 1 URL per baris)',
-                maxLines: 3,
-                prefixIcon: const Icon(Icons.image_outlined),
-                errorText: state.fieldErrors['attachment_urls.0'],
-              ),
-              const SizedBox(height: 16),
-
-              // Tanggal
-              Text('Tanggal Pekerjaan'),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => _selectDate(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today),
-                      const SizedBox(width: 12),
-                      Text(
-                        _selectedDate != null
-                            ? DateFormat('dd MMM yyyy').format(_selectedDate!)
-                            : 'Pilih tanggal',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Jam
-              Text('Jam Pekerjaan'),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => _selectTime(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.access_time),
-                      const SizedBox(width: 12),
-                      Text(
-                        _selectedTime != null
-                            ? _selectedTime!.format(context)
-                            : 'Pilih jam',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Info
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  border: Border.all(color: Colors.blue.shade200),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Informasi Pembayaran',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Text(
+                      'Detail Order',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Pilih Layanan
+                    Text(
+                      'Pilih Layanan',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    const Text('• Akan ada 2 tahap pembayaran'),
-                    const Text('• DP 50% saat order diterima'),
-                    const Text('• Sisa 50% saat pekerjaan selesai'),
+                    if (widget.services.isNotEmpty)
+                      DropdownButton<ProviderService>(
+                        isExpanded: true,
+                        value: _selectedService,
+                        items: widget.services.map((service) {
+                          return DropdownMenuItem(
+                            value: service,
+                            child: Text(
+                              '${service.name} - Rp${service.basePrice}/${service.priceUnit}',
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (ProviderService? newService) {
+                          setState(() => _selectedService = newService);
+                        },
+                      )
+                    else
+                      const Text('Tidak ada layanan tersedia'),
+                    const SizedBox(height: 24),
+
+                    // Alamat
+                    AppTextField(
+                      controller: _addressCtrl,
+                      label: 'Alamat Lokasi',
+                      maxLines: 3,
+                      prefixIcon: const Icon(Icons.location_on),
+                      errorText: state.fieldErrors['address'],
+                      validator: (v) {
+                        if ((v ?? '').trim().isEmpty)
+                          return 'Alamat wajib diisi';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Catatan
+                    AppTextField(
+                      controller: _notesCtrl,
+                      label: 'Catatan Tambahan (opsional)',
+                      maxLines: 3,
+                      prefixIcon: const Icon(Icons.note),
+                      errorText: state.fieldErrors['notes'],
+                    ),
+                    const SizedBox(height: 16),
+
+                    AppTextField(
+                      controller: _attachmentUrlsCtrl,
+                      label: 'URL Foto Kerusakan (opsional, 1 URL per baris)',
+                      maxLines: 3,
+                      prefixIcon: const Icon(Icons.image_outlined),
+                      errorText: state.fieldErrors['attachment_urls.0'],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Tanggal
+                    Text('Tanggal Pekerjaan'),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _selectDate(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today),
+                            const SizedBox(width: 12),
+                            Text(
+                              _selectedDate != null
+                                  ? DateFormat(
+                                      'dd MMM yyyy',
+                                    ).format(_selectedDate!)
+                                  : 'Pilih tanggal',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Jam
+                    Text('Jam Pekerjaan'),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _selectTime(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.access_time),
+                            const SizedBox(width: 12),
+                            Text(
+                              _selectedTime != null
+                                  ? _selectedTime!.format(context)
+                                  : 'Pilih jam',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Info
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        border: Border.all(color: Colors.blue.shade200),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Informasi Pembayaran',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text('• Akan ada 2 tahap pembayaran'),
+                          const Text('• DP 50% saat order diterima'),
+                          const Text('• Sisa 50% saat pekerjaan selesai'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // CTA
+                    SizedBox(
+                      width: double.infinity,
+                      child: AppButton(
+                        label: 'Buat Order',
+                        isLoading: state.isLoading,
+                        onPressed: _createOrder,
+                      ),
+                    ),
+
+                    if (state.errorMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          border: Border.all(color: Colors.red.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          state.errorMessage!,
+                          style: TextStyle(color: Colors.red.shade700),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // CTA
-              SizedBox(
-                width: double.infinity,
-                child: AppButton(
-                  label: 'Buat Order',
-                  isLoading: state.isLoading,
-                  onPressed: _createOrder,
-                ),
-              ),
-
-              if (state.errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    border: Border.all(color: Colors.red.shade200),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    state.errorMessage!,
-                    style: TextStyle(color: Colors.red.shade700),
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
+        ],
       ),
-      bottomNavigationBar: const TukangDekatFooter(),
     );
   }
 }

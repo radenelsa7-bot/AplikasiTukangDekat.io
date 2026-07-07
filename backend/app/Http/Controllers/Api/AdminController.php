@@ -286,43 +286,39 @@ class AdminController extends Controller
 
     public function updateUserStatus(Request $request, $userId)
     {
-        $validated = $request->validate([
-            'status' => 'required|in:ACTIVE,INACTIVE,SUSPENDED',
-        ]);
+        try {
+            $validated = $request->validate([
+                'status' => 'required|in:ACTIVE,INACTIVE,SUSPENDED',
+            ]);
 
-        $user = User::find($userId);
-        if (!$user) {
-            return $this->notFound('User not found');
-        }
+            $user = User::find($userId);
+            if (!$user) {
+                return $this->notFound('User not found');
+            }
 
-        if ($user->role === 'ADMIN') {
-            return $this->error('Cannot modify admin account status', 403);
-        }
+            if ($user->role === 'ADMIN') {
+                return $this->error('Cannot modify admin account status', 403);
+            }
 
         $user->update(['status' => $validated['status']]);
 
-        if ($user->role === 'PROVIDER') {
-            $profile = ProviderProfile::where('user_id', $user->id)->first();
-            if ($profile) {
-                if ($validated['status'] === 'ACTIVE') {
-                    $profile->update([
-                        'is_verified' => true,
-                        'is_active' => true,
-                    ]);
-                } else {
-                    $profile->update([
-                        'is_verified' => false,
-                        'is_active' => false,
-                    ]);
-                }
-            }
-        }
+            return $this->success([
+                'id' => $user->id,
+                'name' => $user->name,
+                'status' => $user->status,
+            ], 'User status updated');
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            return $this->validationError($ve->errors());
+        } catch (\Exception $e) {
+            // Log the exception for server-side debugging and return a safe error
+            \Log::error('updateUserStatus failed', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-        return $this->success([
-            'id' => $user->id,
-            'name' => $user->name,
-            'status' => $user->status,
-        ], 'User status updated');
+            return $this->error('Failed to update user status', 500, 'UPDATE_STATUS_FAILED', $e->getMessage());
+        }
     }
 
     // ===== ORDER MONITORING =====
