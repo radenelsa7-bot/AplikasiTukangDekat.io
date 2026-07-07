@@ -10,8 +10,6 @@ import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 import '../../core/models/order_model.dart';
 import '../auth/auth_controller.dart';
-import '../../shared/widgets/site_footer.dart';
-import '../../shared/widgets/site_header.dart';
 import 'order_providers.dart';
 
 class OrderDetailPage extends ConsumerWidget {
@@ -24,7 +22,6 @@ class OrderDetailPage extends ConsumerWidget {
     final orderAsync = ref.watch(orderDetailProvider(orderId));
 
     return Scaffold(
-      appBar: const TukangDekatHeader(title: Text('Detail Order')),
       body: orderAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppTheme.orange),
@@ -89,7 +86,6 @@ class OrderDetailPage extends ConsumerWidget {
           );
         },
       ),
-      bottomNavigationBar: const TukangDekatFooter(),
     );
   }
 
@@ -418,7 +414,11 @@ class OrderDetailPage extends ConsumerWidget {
                   if (!isPaid &&
                       (payment.status == 'UNPAID' ||
                           payment.status == 'PENDING') &&
-                      !['CANCELLED', 'CLOSED'].contains(order.status)) ...[
+                      ![
+                        'CANCELLED',
+                        'CLOSED',
+                        'COMPLETED',
+                      ].contains(order.status)) ...[
                     const SizedBox(height: 12),
                     Builder(
                       builder: (ctx) {

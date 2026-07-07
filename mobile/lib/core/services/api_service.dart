@@ -578,21 +578,21 @@ class ApiService {
 
   Future<ServiceCategory> updateCategory({
     required int categoryId,
-    String? name,
+    required String name,
     String? description,
-    bool? isActive,
+    bool isActive = true,
   }) async {
     try {
-      final data = <String, dynamic>{};
-      if (name != null) data['name'] = name;
-      if (description != null) data['description'] = description;
-      if (isActive != null) data['is_active'] = isActive;
       final response = await dio.put(
         '/api/admin/categories/$categoryId',
-        data: data,
+        data: {
+          'name': name,
+          'description': description ?? '',
+          'is_active': isActive,
+        },
       );
       return ServiceCategory.fromJson(
-        Map<String, dynamic>.from(response.data['data']),
+        Map<String, dynamic>.from(response.data['data'] ?? {}),
       );
     } catch (e) {
       rethrow;
@@ -717,7 +717,7 @@ class ApiService {
         queryParameters: queryParameters,
         options: Options(responseType: ResponseType.bytes),
       );
-      return Uint8List.fromList(response.data as List<int>);
+      return Map<String, dynamic>.from(response.data);
     } catch (e) {
       rethrow;
     }

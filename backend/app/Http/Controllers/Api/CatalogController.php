@@ -27,8 +27,6 @@ class CatalogController extends Controller
     public function getProviders(Request $request)
     {
         $providers = ProviderProfile::where('is_verified', true)
-            ->where('is_active', true)
-            ->whereHas('user', fn($query) => $query->where('status', 'ACTIVE'))
             ->with(['user', 'services.category'])
             ->get();
 
@@ -50,8 +48,6 @@ class CatalogController extends Controller
             $query->where('category_id', $categoryId)->where('is_active', true);
         })
             ->where('is_verified', true)
-            ->where('is_active', true)
-            ->whereHas('user', fn($query) => $query->where('status', 'ACTIVE'))
             ->with(['services' => function ($query) use ($categoryId) {
                 $query->where('category_id', $categoryId)->where('is_active', true);
             }])
@@ -67,11 +63,7 @@ class CatalogController extends Controller
     {
         $provider = ProviderProfile::with(['services' => function ($query) {
             $query->where('is_active', true);
-        }, 'user'])
-            ->where('is_verified', true)
-            ->where('is_active', true)
-            ->whereHas('user', fn($query) => $query->where('status', 'ACTIVE'))
-            ->find($providerId);
+        }, 'user'])->find($providerId);
 
         if (!$provider) {
             return $this->notFound('Provider not found');
@@ -92,8 +84,6 @@ class CatalogController extends Controller
         }
 
         $providers = ProviderProfile::where('is_verified', true)
-            ->where('is_active', true)
-            ->whereHas('user', fn($query) => $query->where('status', 'ACTIVE'))
             ->where(function ($q) use ($query) {
                 $q->where('business_name', 'like', "%$query%")
                     ->orWhere('area', 'like', "%$query%")

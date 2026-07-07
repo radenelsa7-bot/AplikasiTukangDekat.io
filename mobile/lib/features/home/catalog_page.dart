@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../app/theme/app_theme.dart';
 import '../../shared/widgets/app_text_field.dart';
 import 'catalog_providers.dart';
 import 'provider_detail_page.dart';
@@ -125,7 +126,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
   Widget build(BuildContext context) {
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final searchQuery = ref.watch(searchQueryProvider);
-    final cs = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -154,7 +154,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                 controller: _searchCtrl,
                 label: 'Cari teknisi atau layanan',
                 hintText: 'Contoh: listrik, plumbing, AC',
-                prefixIcon: Icon(Icons.search_rounded, color: cs.primary),
+                prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.orange),
                 onChanged: (value) {
                   ref.read(searchQueryProvider.notifier).state = value;
                 },
@@ -224,19 +224,18 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
 
   // ─── Hero Banner ──────────────────────────────────────────────────────────
   Widget _buildHeroBanner(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [cs.primary, const Color(0xFF1A3A6B)],
+          colors: [AppTheme.navy, AppTheme.navyLight],
         ),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: cs.primary.withValues(alpha: 0.30),
+            color: AppTheme.navy.withValues(alpha: 0.30),
             blurRadius: 28,
             offset: const Offset(0, 10),
           ),
@@ -317,11 +316,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: cs.secondary,
+                        color: AppTheme.orange,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: cs.secondary.withValues(alpha: 0.40),
+                            color: AppTheme.orange.withValues(alpha: 0.40),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -414,15 +413,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.08),
+                color: AppTheme.orange.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 action,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
+                style: const TextStyle(
+                  color: AppTheme.orange,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -619,7 +616,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
           width: 4,
           height: 20,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
+            color: AppTheme.orange,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -646,7 +643,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, st) => Center(child: Text('Error: $err')),
       data: (providers) {
-        if (providers.isEmpty) {
+        // Safety filter: hanya tampilkan provider dengan user status ACTIVE
+        final activeProviders =
+            providers.where((p) => p.userStatus == 'ACTIVE').toList();
+
+        if (activeProviders.isEmpty) {
           return _buildEmptyState(
             context,
             'Tidak ada provider di kategori ini',
@@ -661,9 +662,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: providers.length,
+              itemCount: activeProviders.length,
               itemBuilder: (context, index) {
-                final provider = providers[index];
+                final provider = activeProviders[index];
                 return _buildProviderCard(context, provider, categoryId);
               },
             ),
@@ -682,7 +683,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, st) => Center(child: Text('Error: $err')),
       data: (providers) {
-        if (providers.isEmpty) {
+        // Safety filter: hanya tampilkan provider dengan user status ACTIVE
+        final activeProviders =
+            providers.where((p) => p.userStatus == 'ACTIVE').toList();
+
+        if (activeProviders.isEmpty) {
           return _buildEmptyState(context, 'Tidak ada hasil pencarian');
         }
 
@@ -691,15 +696,15 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
           children: [
             _buildSectionLabel(
               context,
-              'Hasil Pencarian (${providers.length})',
+              'Hasil Pencarian (${activeProviders.length})',
             ),
             const SizedBox(height: 14),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: providers.length,
+              itemCount: activeProviders.length,
               itemBuilder: (context, index) {
-                final provider = providers[index];
+                final provider = activeProviders[index];
                 return _buildProviderCard(context, provider, 0);
               },
             ),
@@ -733,7 +738,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
     dynamic provider,
     int categoryId,
   ) {
-    final cs = Theme.of(context).colorScheme;
     final rating = (provider.avgRating ?? 0.0) as double;
     final initials = (provider.businessName as String)
         .trim()
@@ -778,10 +782,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [cs.primary, cs.primary.withBlue(200)],
+                      colors: [AppTheme.navy, AppTheme.navyLight],
                     ),
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -879,12 +883,12 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.08),
+                    color: AppTheme.orange.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.arrow_forward_ios_rounded,
-                    color: cs.primary,
+                    color: AppTheme.orange,
                     size: 15,
                   ),
                 ),

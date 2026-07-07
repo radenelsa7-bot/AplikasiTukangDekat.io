@@ -1,4 +1,5 @@
 {
   "cmake.ignoreCMakeListsMissing": true,
-  "geminicodeassist.outlines.automaticOutlineGeneration": true
+  "geminicodeassist.outlines.automaticOutlineGeneration": true,
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

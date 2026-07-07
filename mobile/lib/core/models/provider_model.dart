@@ -45,6 +45,7 @@ class ProviderProfile {
   final bool isVerified;
   final double avgRating;
   final List<ProviderService> services;
+  final String userStatus; // User account status: ACTIVE, SUSPENDED, INACTIVE
 
   ProviderProfile({
     required this.id,
@@ -57,10 +58,13 @@ class ProviderProfile {
     required this.isVerified,
     required this.avgRating,
     required this.services,
+    this.userStatus = 'ACTIVE',
   });
 
   factory ProviderProfile.fromJson(Map<String, dynamic> json) {
     final user = json['user'];
+    final userStatus =
+        (user is Map<String, dynamic> ? user['status'] : null) ?? 'ACTIVE';
 
     return ProviderProfile(
       id: json['id'] ?? 0,
@@ -77,6 +81,7 @@ class ProviderProfile {
               ?.map((item) => ProviderService.fromJson(item))
               .toList() ??
           [],
+      userStatus: userStatus,
     );
   }
 }
