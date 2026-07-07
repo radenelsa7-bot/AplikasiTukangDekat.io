@@ -10,7 +10,10 @@ class WilayahKota extends Model
 {
     use HasFactory;
 
+    protected $table = 'wilayah_kota';
+
     protected $fillable = ['name'];
+
 
     public function kecamatan(): HasMany
     {

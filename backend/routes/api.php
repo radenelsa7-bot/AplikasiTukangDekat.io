@@ -144,9 +144,12 @@ Route::get('/health', function () {
 });
 Route::post('/integrations/n8n/events', [N8nIntegrationController::class, 'dispatchEvent'])->middleware('throttle:30,1');
 Route::get(config('monitoring.metrics_path', '/metrics'), [MetricsController::class, 'show']);
+// Session-based user endpoints (web)
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
 Route::get('/user-session', function (Request $request) {
     return $request->user() ?: response()->json(['error' => 'Not authenticated'], 401);
 })->middleware('auth:sanctum');
+
