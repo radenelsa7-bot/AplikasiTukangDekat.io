@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/auth_response.dart';
@@ -352,7 +353,7 @@ class ApiService {
     }
   }
 
-  Future<String> sendChatbotMessage(String message) async {
+  Future<Map<String, dynamic>> sendChatbotMessage(String message) async {
     try {
       final response = await dio.post(
         '/api/chatbot/send',
@@ -362,9 +363,21 @@ class ApiService {
       if (data is Map &&
           data['data'] != null &&
           data['data']['reply'] != null) {
-        return data['data']['reply'].toString();
+        final replyRaw = data['data']['reply'].toString();
+        try {
+          if (replyRaw.startsWith('{') || replyRaw.startsWith('[')) {
+            final decoded = jsonDecode(replyRaw);
+            if (decoded is Map<String, dynamic>) {
+              return decoded;
+            }
+          }
+        } catch (_) {
+          // ignore JSON decode errors, fallbacks below
+        }
+
+        return {'reply': replyRaw, 'actions': []};
       }
-      return data.toString();
+      return {'reply': data.toString(), 'actions': []};
     } catch (e) {
       rethrow;
     }
@@ -620,21 +633,21 @@ class ApiService {
 
   Future<ServiceCategory> updateCategory({
     required int categoryId,
-    String? name,
+    required String name,
     String? description,
-    bool? isActive,
+    bool isActive = true,
   }) async {
     try {
-      final data = <String, dynamic>{};
-      if (name != null) data['name'] = name;
-      if (description != null) data['description'] = description;
-      if (isActive != null) data['is_active'] = isActive;
       final response = await dio.put(
         '/api/admin/categories/$categoryId',
-        data: data,
+        data: {
+          'name': name,
+          'description': description ?? '',
+          'is_active': isActive,
+        },
       );
       return ServiceCategory.fromJson(
-        Map<String, dynamic>.from(response.data['data']),
+        Map<String, dynamic>.from(response.data['data'] ?? {}),
       );
     } catch (e) {
       rethrow;
@@ -759,7 +772,7 @@ class ApiService {
         queryParameters: queryParameters,
         options: Options(responseType: ResponseType.bytes),
       );
-      return Uint8List.fromList(response.data as List<int>);
+      return Map<String, dynamic>.from(response.data);
     } catch (e) {
       rethrow;
     }

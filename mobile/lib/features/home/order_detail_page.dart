@@ -10,21 +10,32 @@ import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 import '../../core/models/order_model.dart';
 import '../auth/auth_controller.dart';
-import '../../shared/widgets/site_footer.dart';
-import '../../shared/widgets/site_header.dart';
 import 'order_providers.dart';
 
-class OrderDetailPage extends ConsumerWidget {
+class OrderDetailPage extends ConsumerStatefulWidget {
   final int orderId;
+  final bool autoOpenQris;
+  final int? autoPaymentId;
 
-  const OrderDetailPage({super.key, required this.orderId});
+  const OrderDetailPage({
+    super.key,
+    required this.orderId,
+    this.autoOpenQris = false,
+    this.autoPaymentId,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final orderAsync = ref.watch(orderDetailProvider(orderId));
+  ConsumerState<OrderDetailPage> createState() => _OrderDetailPageState();
+}
+
+class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
+  bool _autoOpened = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final orderAsync = ref.watch(orderDetailProvider(widget.orderId));
 
     return Scaffold(
-      appBar: const TukangDekatHeader(title: Text('Detail Order')),
       body: orderAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppTheme.orange),
@@ -64,6 +75,48 @@ class OrderDetailPage extends ConsumerWidget {
           ),
         ),
         data: (order) {
+          // Auto-open QRIS dialog if requested via navigation flags (only once)
+          if (widget.autoOpenQris && !_autoOpened) {
+            _autoOpened = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              try {
+                final api = ref.read(apiServiceProvider);
+                if (widget.autoPaymentId != null) {
+                  final q = await api.generateQRIS(widget.autoPaymentId!);
+                  if (context.mounted) {
+                    _showQrisDialog(
+                      context,
+                      ref,
+                      q,
+                      order.id,
+                      widget.autoPaymentId!,
+                    );
+                  }
+                  return;
+                }
+
+                // If no payment id, try to find unpaid payment on order
+                PaymentData? unpaid;
+                if (order.payments.isNotEmpty) {
+                  unpaid = order.payments.firstWhere(
+                    (p) => p.status == 'UNPAID' || p.status == 'PENDING',
+                    orElse: () => order.payments.first,
+                  );
+                } else {
+                  unpaid = null;
+                }
+                if (unpaid != null) {
+                  final q = await api.generateQRIS(unpaid.id);
+                  if (context.mounted) {
+                    _showQrisDialog(context, ref, q, order.id, unpaid.id);
+                  }
+                }
+              } catch (_) {
+                // ignore errors silently
+              }
+            });
+          }
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -92,7 +145,6 @@ class OrderDetailPage extends ConsumerWidget {
           );
         },
       ),
-      bottomNavigationBar: const TukangDekatFooter(),
     );
   }
 
@@ -488,7 +540,11 @@ class OrderDetailPage extends ConsumerWidget {
                   if (!isPaid &&
                       (payment.status == 'UNPAID' ||
                           payment.status == 'PENDING') &&
-                      !['CANCELLED', 'CLOSED'].contains(order.status)) ...[
+                      ![
+                        'CANCELLED',
+                        'CLOSED',
+                        'COMPLETED',
+                      ].contains(order.status)) ...[
                     const SizedBox(height: 12),
                     Builder(
                       builder: (ctx) {
