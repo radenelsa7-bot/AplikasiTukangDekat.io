@@ -1,22 +1,32 @@
 class ProviderService {
   final int id;
+  final int? categoryId;
+  final String? categoryName;
   final String name;
+  final String? description;
   final int basePrice;
   final String priceUnit;
   final bool isActive;
 
   ProviderService({
     required this.id,
+    this.categoryId,
+    this.categoryName,
     required this.name,
+    this.description,
     required this.basePrice,
     required this.priceUnit,
     required this.isActive,
   });
 
   factory ProviderService.fromJson(Map<String, dynamic> json) {
+    final category = json['category'];
     return ProviderService(
       id: json['id'] ?? 0,
+      categoryId: json['category_id'],
+      categoryName: category is Map<String, dynamic> ? category['name']?.toString() : null,
       name: json['name'] ?? '',
+      description: json['description'],
       basePrice: json['base_price'] ?? 0,
       priceUnit: json['price_unit'] ?? '',
       isActive: json['is_active'] ?? false,
@@ -62,7 +72,8 @@ class ProviderProfile {
       address: json['address'],
       isVerified: json['is_verified'] ?? false,
       avgRating: double.tryParse(json['avg_rating'].toString()) ?? 0,
-      services: (json['services'] as List?)
+      services:
+          (json['services'] as List?)
               ?.map((item) => ProviderService.fromJson(item))
               .toList() ??
           [],
@@ -76,11 +87,26 @@ class ProvidersResponse {
   ProvidersResponse({required this.data});
 
   factory ProvidersResponse.fromJson(Map<String, dynamic> json) {
+    final rawData = json['data'];
+    List items;
+    if (rawData is List) {
+      items = rawData;
+    } else if (rawData is Map<String, dynamic>) {
+      final providers = rawData['providers'];
+      if (providers is List) {
+        items = providers;
+      } else {
+        items = [];
+      }
+    } else {
+      items = [];
+    }
     return ProvidersResponse(
-      data: (json['data'] as List?)
-              ?.map((item) => ProviderProfile.fromJson(item))
-              .toList() ??
-          [],
+      data: items
+          .map(
+            (item) => ProviderProfile.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
     );
   }
 }

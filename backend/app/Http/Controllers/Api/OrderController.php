@@ -7,6 +7,7 @@ use App\Http\Requests\Order\CompleteOrderRequest;
 use App\Http\Requests\Order\CreateOrderRequest;
 use App\Http\Requests\Order\RespondToOrderRequest;
 use App\Models\Order;
+use App\Models\OrderStatusLog;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\N8nNotificationService;
@@ -67,7 +68,14 @@ class OrderController extends Controller
                     'status' => 'UNPAID',
                 ]);
 
-            return ['order' => $order, 'dpAmount' => $dpAmount];
+                OrderStatusLog::create([
+                    'order_id' => $order->id,
+                    'old_status' => null,
+                    'new_status' => 'CREATED',
+                    'changed_by' => $user->id,
+                ]);
+
+                return ['order' => $order, 'dpAmount' => $dpAmount];
             });
 
             $order = $result['order'];
@@ -83,12 +91,8 @@ class OrderController extends Controller
                 'status' => $order->status,
             ]);
 
-            return $this->success([
-                'order_id' => $order->id,
-                'order_code' => $order->order_code,
-                'status' => $order->status,
-                'dp_amount' => $dpAmount,
-            ], 'Order created', 201);
+            $order->load('payments');
+            return $this->success($order, 'Order created', 201);
         } catch (ModelNotFoundException $e) {
             return $this->validationError(['provider_id' => ['Selected provider not found or not active']]);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -104,7 +108,7 @@ class OrderController extends Controller
      */
     public function getOrder($orderId)
     {
-        $order = Order::with(['customer', 'provider', 'payments'])
+        $order = Order::with(['customer', 'provider', 'payments', 'statusLogs'])
             ->find($orderId);
 
         if (!$order) {
@@ -166,9 +170,16 @@ class OrderController extends Controller
         $validated = $request->validated();
 
         try {
-            return DB::transaction(function () use ($order, $validated) {
+            return DB::transaction(function () use ($order, $validated, $user) {
                 if ($validated['action'] === 'accept') {
+                    $oldStatus = $order->status;
                     $order->update(['status' => 'ACCEPTED']);
+                    OrderStatusLog::create([
+                        'order_id' => $order->id,
+                        'old_status' => $oldStatus,
+                        'new_status' => 'ACCEPTED',
+                        'changed_by' => $user->id,
+                    ]);
 
                     app(N8nNotificationService::class)->dispatch('order_accepted', [
                         'order_id' => $order->id,
@@ -180,7 +191,15 @@ class OrderController extends Controller
                     return $this->success(['status' => $order->status], 'Order accepted');
                 }
 
+                $oldStatus = $order->status;
                 $order->update(['status' => 'CANCELLED']);
+                OrderStatusLog::create([
+                    'order_id' => $order->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => 'CANCELLED',
+                    'changed_by' => $user->id,
+                    'reason' => $validated['reason'] ?? 'Rejected by provider',
+                ]);
 
                 $refundPayments = $order->payments()
                     ->where('payment_type', 'DP')
@@ -241,8 +260,15 @@ class OrderController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($order) {
+            DB::transaction(function () use ($order, $user) {
+                $oldStatus = $order->status;
                 $order->update(['status' => 'IN_PROGRESS']);
+                OrderStatusLog::create([
+                    'order_id' => $order->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => 'IN_PROGRESS',
+                    'changed_by' => $user->id,
+                ]);
             });
 
             app(N8nNotificationService::class)->dispatch('work_started', [
@@ -292,10 +318,17 @@ class OrderController extends Controller
         }
 
         try {
-            $result = DB::transaction(function () use ($order, $validated) {
+            $result = DB::transaction(function () use ($order, $validated, $user) {
+                $oldStatus = $order->status;
                 $order->update([
                     'status' => 'COMPLETED',
                     'final_price' => $validated['final_price'],
+                ]);
+                OrderStatusLog::create([
+                    'order_id' => $order->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => 'COMPLETED',
+                    'changed_by' => $user->id,
                 ]);
 
                 $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
@@ -333,6 +366,78 @@ class OrderController extends Controller
         } catch (\Throwable $e) {
             Log::error('Complete order error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return $this->internalServerError('Failed to complete order');
+        }
+    }
+
+    /**
+     * Customer batalkan order
+     */
+    public function cancelOrder(Request $request, $orderId)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'CUSTOMER') {
+            return $this->forbidden('Only customers can cancel orders');
+        }
+
+        $order = Order::with('payments')->find($orderId);
+
+        if (!$order) {
+            return $this->notFound('Order not found');
+        }
+
+        if ($order->customer_id !== $user->id) {
+            return $this->forbidden('Unauthorized');
+        }
+
+        $cancellableStatuses = ['CREATED', 'ACCEPTED', 'IN_PROGRESS'];
+        if (!in_array($order->status, $cancellableStatuses)) {
+            return $this->conflict('Order tidak bisa dibatalkan pada status: ' . $order->status);
+        }
+
+        $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $result = DB::transaction(function () use ($order, $request, $user) {
+                $oldStatus = $order->status;
+                $order->update(['status' => 'CANCELLED']);
+
+                OrderStatusLog::create([
+                    'order_id' => $order->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => 'CANCELLED',
+                    'changed_by' => $user->id,
+                    'reason' => $request->input('reason', 'Dibatalkan oleh customer'),
+                ]);
+
+                // Refund DP if already paid
+                $refundedPayments = [];
+                $dpPayment = $order->payments()->where('payment_type', 'DP')->where('status', 'PAID')->first();
+                if ($dpPayment) {
+                    $dpPayment->update(
+                        $this->paymentFinanceService->applyRefundPolicy($dpPayment, $order, 'customer_cancelled')
+                    );
+                    $refundedPayments[] = $dpPayment;
+                }
+
+                return ['refund_count' => count($refundedPayments)];
+            });
+
+            app(N8nNotificationService::class)->dispatch('order_cancelled', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'customer_id' => $order->customer_id,
+                'provider_id' => $order->provider_id,
+                'reason' => $request->input('reason', 'Dibatalkan oleh customer'),
+                'refund_count' => $result['refund_count'],
+            ]);
+
+            return $this->success(['status' => 'CANCELLED'], 'Order berhasil dibatalkan');
+        } catch (\Throwable $e) {
+            Log::error('Cancel order error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return $this->internalServerError('Failed to cancel order');
         }
     }
 }

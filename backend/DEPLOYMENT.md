@@ -35,8 +35,11 @@ chmod -R 775 storage bootstrap/cache
 
 ```bash
 php artisan migrate --force
-php artisan db:seed --class=AdminSeeder --force   # jika Anda memiliki seeder untuk membuat admin/bendahara
+php artisan db:seed --class=AdminSeeder --force
+php artisan db:seed --class=TreasurerSeeder --force
 ```
+
+> Seeder `TreasurerSeeder` akan membuat akun bendahara default dengan email `treasurer@example.com` dan password `password`. Gunakan variabel `.env` `TREASURER_SEED_EMAIL`, `TREASURER_SEED_PHONE`, dan `TREASURER_SEED_PASSWORD` untuk mengubah kredensial ini.
 
 5. Optimasi cache dan konfigurasi:
 

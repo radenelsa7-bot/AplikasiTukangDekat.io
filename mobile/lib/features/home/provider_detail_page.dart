@@ -66,7 +66,7 @@ class ProviderDetailPage extends ConsumerWidget {
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        '${provider.avgRating} ⭐',
+                                        provider.avgRating.toStringAsFixed(1),
                                         style: Theme.of(
                                           context,
                                         ).textTheme.bodyMedium,
@@ -263,10 +263,7 @@ class ProviderDetailPage extends ConsumerWidget {
                     padding: EdgeInsets.symmetric(vertical: 16),
                     child: Text(
                       'Akses hanya untuk admin: silakan gunakan menu Admin untuk manajemen dan verifikasi.',
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.black54, fontSize: 14),
                     ),
                   ),
               ],

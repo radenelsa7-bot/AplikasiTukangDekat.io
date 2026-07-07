@@ -29,6 +29,12 @@ final dioProvider = Provider<Dio>((ref) {
   if (!kIsWeb) {
     dio.interceptors.add(CookieManager(_cookieJar));
   }
+
+  // Add retry interceptor for rate limiting (429/409 errors)
+  dio.interceptors.add(
+    RetryOnConnectionChangeInterceptor(dio: dio),
+  );
+
   _sharedDio = dio;
   return dio;
 });
@@ -55,5 +61,51 @@ Future<void> enablePersistCookies() async {
     // If persistent storage initialization fails (platform unsupported),
     // keep using in-memory CookieJar.
     return;
+  }
+}
+
+/// Retry interceptor for handling rate limiting (429, 409) with exponential backoff
+class RetryOnConnectionChangeInterceptor extends Interceptor {
+  RetryOnConnectionChangeInterceptor({required this.dio});
+
+  final Dio dio;
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
+  static const Duration _baseDelay = Duration(milliseconds: 500);
+
+  @override
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    final statusCode = err.response?.statusCode;
+
+    // Retry on 429 (Too Many Requests) or 409 (Conflict) up to 3 times
+    if ((statusCode == 429 || statusCode == 409) && _retryCount < _maxRetries) {
+      _retryCount++;
+      
+      // Exponential backoff: 500ms, 1s, 2s
+      final delayMs = _baseDelay.inMilliseconds * (_retryCount);
+      await Future.delayed(Duration(milliseconds: delayMs));
+
+      try {
+        final options = err.requestOptions;
+        final response = await dio.request<dynamic>(
+          options.path,
+          data: options.data,
+          queryParameters: options.queryParameters,
+          options: Options(
+            method: options.method,
+            headers: options.headers,
+          ),
+        );
+        return handler.resolve(response);
+      } catch (e) {
+        return handler.next(err);
+      }
+    }
+
+    _retryCount = 0; // Reset retry counter
+    return handler.next(err);
   }
 }

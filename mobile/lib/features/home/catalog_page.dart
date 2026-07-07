@@ -58,13 +58,67 @@ class CatalogPage extends ConsumerStatefulWidget {
   ConsumerState<CatalogPage> createState() => _CatalogPageState();
 }
 
-class _CatalogPageState extends ConsumerState<CatalogPage> {
+class _CatalogPageState extends ConsumerState<CatalogPage>
+    with WidgetsBindingObserver {
   final _searchCtrl = TextEditingController();
+  TabController? _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   @override
   void dispose() {
+    _tabController?.removeListener(_handleTabChange);
+    WidgetsBinding.instance.removeObserver(this);
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final controller = DefaultTabController.of(context);
+    if (_tabController != controller) {
+      _tabController?.removeListener(_handleTabChange);
+      _tabController = controller;
+      _tabController?.addListener(_handleTabChange);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshCatalogData();
+    }
+  }
+
+  void _handleTabChange() {
+    if (_tabController?.index == 0 && !_tabController!.indexIsChanging) {
+      _refreshCatalogData();
+    }
+  }
+
+  void _refreshCatalogData() {
+    final selectedCategory = ref.read(selectedCategoryProvider);
+    final searchQuery = ref.read(searchQueryProvider);
+
+    ref.invalidate(categoriesProvider);
+
+    if (searchQuery.isNotEmpty) {
+      ref.invalidate(searchProvidersProvider(searchQuery));
+    } else if (selectedCategory != null) {
+      ref.invalidate(providersByCategoryProvider(selectedCategory));
+    } else {
+      final categoriesAsync = ref.read(categoriesProvider);
+      categoriesAsync.whenData((categories) {
+        if (categories.isNotEmpty) {
+          ref.invalidate(providersByCategoryProvider(categories.first.id));
+        }
+      });
+    }
   }
 
   @override
@@ -148,7 +202,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           ),
 
           // ── Kategori Layanan ─────────────────────────────────────────────
-          _buildSectionHeader(context, 'Kategori Layanan', 'Lihat Semua'),
+          _buildSectionHeader(context, 'Kategori Layanan', null),
           _buildCategories(context, ref, selectedCategory),
 
           // ── Provider List ────────────────────────────────────────────────
@@ -303,28 +357,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   ],
                 ),
 
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.search_rounded, size: 18),
-                  label: const Text('Mulai Cari Sekarang'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: cs.secondary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 14,
-                    ),
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 8),
               ],
             ),
           ),
@@ -381,7 +414,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -478,6 +513,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
               return GestureDetector(
                 onTap: () {
+                  // Clear any active search query when selecting a category
+                  ref.read(searchQueryProvider.notifier).state = '';
                   ref.read(selectedCategoryProvider.notifier).state = isSelected
                       ? null
                       : category.id;
@@ -494,7 +531,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     color: isSelected ? color : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? color : Colors.grey.withValues(alpha: 0.15),
+                      color: isSelected
+                          ? color
+                          : Colors.grey.withValues(alpha: 0.15),
                       width: isSelected ? 2 : 1,
                     ),
                     boxShadow: [

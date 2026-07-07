@@ -255,7 +255,7 @@ class PaymentGatewayService
                 'first_name' => $payment->order?->customer?->name ?? 'Customer',
                 'email' => $payment->order?->customer?->email,
             ],
-            'enabled_payments' => ['qris'],
+            'enabled_payments' => ['gopay', 'shopeepay', 'other_qris', 'bca_va', 'bni_va', 'bri_va', 'permata_va', 'echannel'],
             'callbacks' => [
                 'finish' => url('/payment/finish'),
             ],
@@ -302,10 +302,13 @@ class PaymentGatewayService
             return $this->verifyMidtransWebhook($request);
         }
 
+        if ($this->driver() === 'simulation') {
+            return true;
+        }
+
         $secret = (string) config('services.payments.webhook_secret', '');
 
         if ($secret === '') {
-            // fail-closed: jika secret webhook tidak dikonfigurasi, jangan proses webhook untuk driver non-midtrans
             return false;
         }
 
