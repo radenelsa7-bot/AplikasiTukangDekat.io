@@ -1,6 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+import '../../core/services/api_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as img_pkg;
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../shared/widgets/site_footer.dart';
@@ -30,6 +37,8 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   final _addressCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   final _attachmentUrlsCtrl = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
+  final List<XFile> _selectedImages = [];
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   ProviderService? _selectedService;
@@ -49,6 +58,27 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     _notesCtrl.dispose();
     _attachmentUrlsCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImages() async {
+    try {
+      final images = await _imagePicker.pickMultiImage();
+      if (images.isNotEmpty) {
+        setState(() {
+          _selectedImages.addAll(images);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gagal memilih gambar')));
+    }
+  }
+
+  void _removeImageAt(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -100,6 +130,125 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       return;
     }
 
+    // If user selected images, compress them client-side and send in single multipart request
+    List<String>? attachmentUrls;
+    final api = ref.read(apiServiceProvider);
+    if (_selectedImages.isNotEmpty) {
+      final parts = <MultipartFile>[];
+      for (final xfile in _selectedImages) {
+        try {
+          final originalBytes = await xfile.readAsBytes();
+          final decoded = img_pkg.decodeImage(originalBytes);
+          final pathLower = xfile.path.toLowerCase();
+          late List<int> encoded;
+          String mime;
+          String filename = xfile.name;
+
+          if (decoded != null) {
+            var resized = decoded;
+            if (resized.width > 1280) {
+              resized = img_pkg.copyResize(resized, width: 1280);
+            }
+
+            if (pathLower.endsWith('.png')) {
+              encoded = img_pkg.encodePng(resized);
+              mime = 'image/png';
+              if (encoded.length > 5 * 1024 * 1024) {
+                encoded = img_pkg.encodeJpg(resized, quality: 80);
+                mime = 'image/jpeg';
+                filename = filename.replaceAll(
+                  RegExp(r'\.png$', caseSensitive: false),
+                  '.jpg',
+                );
+              }
+            } else {
+              int quality = 80;
+              encoded = img_pkg.encodeJpg(resized, quality: quality);
+              mime = 'image/jpeg';
+              while (encoded.length > 5 * 1024 * 1024 && quality > 30) {
+                quality -= 10;
+                encoded = img_pkg.encodeJpg(resized, quality: quality);
+              }
+              if (encoded.length > 5 * 1024 * 1024) {
+                resized = img_pkg.copyResize(resized, width: 960);
+                quality = 70;
+                encoded = img_pkg.encodeJpg(resized, quality: quality);
+              }
+            }
+          } else {
+            encoded = originalBytes;
+            mime = pathLower.endsWith('.png') ? 'image/png' : 'image/jpeg';
+          }
+
+          if (encoded.length > 5 * 1024 * 1024) {
+            final decodedAgain =
+                img_pkg.decodeImage(Uint8List.fromList(encoded)) ??
+                img_pkg.Image(width: 800, height: 600);
+            final scaled = img_pkg.copyResize(decodedAgain, width: 800);
+            encoded = img_pkg.encodeJpg(scaled, quality: 70);
+            mime = 'image/jpeg';
+            filename = filename.replaceAll(
+              RegExp(r'\.png$', caseSensitive: false),
+              '.jpg',
+            );
+          }
+
+          parts.add(
+            MultipartFile.fromBytes(
+              encoded,
+              filename: filename,
+              contentType: MediaType.parse(mime),
+            ),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal memproses gambar')),
+          );
+          return;
+        }
+      }
+
+      // Prepare fields for order
+      final fields = <String, dynamic>{
+        'provider_id': widget.providerId,
+        'category_id': widget.categoryId,
+        'provider_service_id': _selectedService?.id,
+        'schedule_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(
+          DateTime(
+            _selectedDate!.year,
+            _selectedDate!.month,
+            _selectedDate!.day,
+            _selectedTime!.hour,
+            _selectedTime!.minute,
+          ),
+        ),
+        'address': _addressCtrl.text.trim(),
+        'notes': _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+        'estimated_price': _selectedService?.basePrice,
+      };
+
+      try {
+        await api.createOrderWithFiles(fields, parts);
+        // navigate back with success
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order berhasil dibuat!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop();
+        return;
+      } catch (e) {
+        final errorMessage = e is DioException && e.response != null
+            ? (e.response?.data['message']?.toString() ?? 'Gagal membuat order')
+            : 'Gagal membuat order';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+        return;
+      }
+    }
+
     final request = CreateOrderRequest(
       providerId: widget.providerId,
       categoryId: widget.categoryId,
@@ -116,13 +265,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       address: _addressCtrl.text.trim(),
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       estimatedPrice: _selectedService?.basePrice,
-      attachmentUrls: _attachmentUrlsCtrl.text.trim().isEmpty
-          ? null
-          : _attachmentUrlsCtrl.text
-            .split('\n')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList(),
+      attachmentUrls: attachmentUrls,
     );
 
     final success = await ref
@@ -241,12 +384,79 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
               ),
               const SizedBox(height: 16),
 
-              AppTextField(
-                controller: _attachmentUrlsCtrl,
-                label: 'URL Foto Kerusakan (opsional, 1 URL per baris)',
-                maxLines: 3,
-                prefixIcon: const Icon(Icons.image_outlined),
-                errorText: state.fieldErrors['attachment_urls.0'],
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Foto Kerusakan (opsional) - JPG/PNG'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List.generate(_selectedImages.length, (index) {
+                      final xfile = _selectedImages[index];
+                      return Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: FutureBuilder<Uint8List>(
+                                future: xfile.readAsBytes(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                          ConnectionState.done &&
+                                      snapshot.hasData) {
+                                    return Image.memory(
+                                      snapshot.data!,
+                                      fit: BoxFit.cover,
+                                    );
+                                  }
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => _removeImageAt(index),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              padding: const EdgeInsets.all(4),
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _pickImages,
+                    icon: const Icon(Icons.upload_file),
+                    label: const Text('Pilih Gambar'),
+                  ),
+                  if (state.fieldErrors['attachment_urls.0'] != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      state.fieldErrors['attachment_urls.0'] ?? '',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 16),
 

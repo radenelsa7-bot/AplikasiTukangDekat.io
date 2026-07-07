@@ -40,6 +40,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/profile/photo', [ProfileController::class, 'deleteProfilePhoto'])->middleware('throttle:10,1');
 
     Route::prefix('orders')->group(function () {
+        // Upload attachments before creating an order (returns stored paths)
+        Route::post('/attachments', [OrderController::class, 'uploadAttachments'])->middleware('throttle:10,1');
         Route::post('/', [OrderController::class, 'createOrder'])->middleware(['throttle:10,1', 'role:customer']);
         Route::get('/my-orders', [OrderController::class, 'getMyOrders'])->middleware('throttle:20,1');
         Route::get('/{orderId}', [OrderController::class, 'getOrder'])->middleware('throttle:30,1');
@@ -117,7 +119,12 @@ Route::get('/storage/{path}', function ($path) {
         abort(404);
     }
     $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
-    return response()->file($fullPath, ['Content-Type' => $mime]);
+    return response()->file($fullPath, [
+        'Content-Type' => $mime,
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Content-Type, Authorization',
+    ]);
 })->where('path', '.*')->middleware('throttle:120,1');
 
 Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback'])->middleware('throttle:30,1');
