@@ -28,26 +28,22 @@
 @push('scripts')
 <script>
     async function fetchMe(){
-      const token = localStorage.getItem('td_token');
-      if(!token){ location.href = '/login'; return; }
+    async function fetchMe(){
       try{
-        const res = await fetch('/api/user', { headers: { 'Authorization': 'Bearer ' + token, 'Accept':'application/json' }});
+        // For web auth using session cookies, call API that can resolve authenticated user
+        const res = await fetch('/api/user', { headers: { 'Accept':'application/json' }, credentials: 'include' });
         const d = await res.json().catch(()=>({}));
-        if(!res.ok){ document.body.insertAdjacentHTML('beforeend','<div class="max-w-5xl mx-auto p-4 text-red-600">Failed to fetch user: '+(d.message||res.status)+'</div>'); return; }
+        if(!res.ok){ location.href = '/login'; return; }
         document.body.insertAdjacentHTML('beforeend','<div class="max-w-5xl mx-auto p-4 mt-4 bg-white rounded shadow"><strong>User:</strong> <pre>'+JSON.stringify(d, null, 2)+'</pre></div>');
       }catch(err){ document.body.insertAdjacentHTML('beforeend','<div class="max-w-5xl mx-auto p-4 mt-4 text-red-600">Network error</div>'); }
     }
     fetchMe();
 
     document.getElementById('logoutBtn').addEventListener('click', async function(){
-      const token = localStorage.getItem('td_token');
-      if(!token){ location.href = '/login'; return; }
       try{
-        const res = await fetch('/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Accept':'application/json' }});
-        // ignore response, clear token
-        localStorage.removeItem('td_token');
-        location.href = '/login';
-      }catch(err){ localStorage.removeItem('td_token'); location.href = '/login'; }
+        await fetch('/api/auth/session-logout', { method: 'POST', headers: { 'Accept':'application/json' }, credentials: 'include' });
+      }catch(err){ /* ignore */ }
+      location.href = '/login';
     });
   </script>
 @endpush
