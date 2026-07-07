@@ -48,7 +48,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder'])->middleware(['throttle:10,1', 'role:provider']);
         Route::post('/{orderId}/cancel', [OrderController::class, 'cancelOrder'])->middleware(['throttle:10,1', 'role:customer']);
         Route::post('/{orderId}/review', [ReviewController::class, 'createReview'])->middleware(['throttle:10,1', 'role:customer']);
+
+        // Customer menyetujui/tolak harga final sebelum pelunasan
+        Route::post('/{orderId}/final-price/approve', [App\Http\Controllers\Api\OrderFinalPriceController::class, 'decide'])
+            ->middleware(['throttle:10,1', 'role:customer']);
     });
+
 
     Route::prefix('payments')->group(function () {
         Route::get('/order/{orderId}', [PaymentController::class, 'getPayments'])->middleware('throttle:30,1');

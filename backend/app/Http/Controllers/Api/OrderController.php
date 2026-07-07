@@ -34,9 +34,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'CUSTOMER') {
-            return $this->forbidden('Only customers can create orders');
-        }
 
         try {
             $validated = $request->validated();
@@ -46,6 +43,30 @@ class OrderController extends Controller
                 ->where('role', 'PROVIDER')
                 ->firstOrFail();
 
+            // Coverage area validation (per-provider)
+            // provider_coverages mengacu ke provider_profiles.user_id
+            $providerProfile = \App\Models\ProviderProfile::where('user_id', $provider->id)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$providerProfile) {
+                return $this->validationError([
+                    'provider_id' => ['Sepertinya Provider kita belum tersedia disana'],
+                ]);
+            }
+
+            $kecamatanId = (int) $validated['kecamatan_id'];
+            $hasCoverage = \App\Models\ProviderCoverage::where('provider_profile_id', $providerProfile->id)
+                ->where('kecamatan_id', $kecamatanId)
+                ->where('is_active', true)
+                ->exists();
+
+            if (!$hasCoverage) {
+                return $this->validationError([
+                    'kecamatan_id' => ['Sepertinya Provider kita belum tersedia disana'],
+                ]);
+            }
+
             $result = DB::transaction(function () use ($validated, $user) {
                 $order = Order::create([
                     'order_code' => Order::generateCode(),
@@ -53,6 +74,8 @@ class OrderController extends Controller
                     'provider_id' => $validated['provider_id'],
                     'category_id' => $validated['category_id'],
                     'provider_service_id' => $validated['provider_service_id'] ?? null,
+                    'kota_id' => $validated['kota_id'],
+                    'kecamatan_id' => $validated['kecamatan_id'],
                     'schedule_at' => $validated['schedule_at'],
                     'address' => $validated['address'],
                     'notes' => $validated['notes'] ?? null,
@@ -149,9 +172,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'PROVIDER') {
-            return $this->forbidden('Only providers can respond to orders.');
-        }
 
         $order = Order::with(['customer', 'payments'])->find($orderId);
 
@@ -234,9 +254,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'PROVIDER') {
-            return $this->forbidden('Only providers can start work.');
-        }
 
         $order = Order::with('payments')->find($orderId);
 
@@ -291,9 +308,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'PROVIDER') {
-            return $this->forbidden('Only providers can complete orders.');
-        }
 
         $order = Order::with('payments')->find($orderId);
 
@@ -324,6 +338,7 @@ class OrderController extends Controller
                     'status' => 'COMPLETED',
                     'final_price' => $validated['final_price'],
                 ]);
+
                 OrderStatusLog::create([
                     'order_id' => $order->id,
                     'old_status' => $oldStatus,
@@ -331,18 +346,24 @@ class OrderController extends Controller
                     'changed_by' => $user->id,
                 ]);
 
+                // Buat/refresh record approval harga akhir. Payment FINAL baru boleh dibuat
+                // setelah customer menyetujui (sesuai requirement).
+                \App\Models\FinalPriceApproval::updateOrCreate(
+                    [
+                        'order_id' => $order->id,
+                    ],
+                    [
+                        'proposed_final_price' => $validated['final_price'],
+                        'approval_status' => 'PENDING',
+                        'approved_by' => null,
+                    ]
+                );
+
+
+
                 $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
                 $dpAmount = $dpPayment?->amount ?? 0;
                 $finalAmount = max(0, $validated['final_price'] - $dpAmount);
-
-                if ($finalAmount > 0) {
-                    Payment::create([
-                        'order_id' => $order->id,
-                        'payment_type' => 'FINAL',
-                        'amount' => $finalAmount,
-                        'status' => 'UNPAID',
-                    ]);
-                }
 
                 return ['order' => $order, 'finalAmount' => $finalAmount];
             });
@@ -376,9 +397,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'CUSTOMER') {
-            return $this->forbidden('Only customers can cancel orders');
-        }
 
         $order = Order::with('payments')->find($orderId);
 

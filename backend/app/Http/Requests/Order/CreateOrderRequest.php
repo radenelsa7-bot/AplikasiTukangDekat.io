@@ -22,6 +22,8 @@ class CreateOrderRequest extends FormRequest
             ],
             'provider_service_id' => 'nullable|exists:provider_services,id',
             'category_id' => 'required|exists:service_categories,id',
+            'kota_id' => 'required|integer|exists:wilayah_kota,id',
+            'kecamatan_id' => 'required|integer|exists:wilayah_kecamatan,id',
             'schedule_at' => 'required|date_format:Y-m-d H:i:s|after:now',
             'address' => 'required|string|max:500',
             'notes' => 'nullable|string|max:1000',
