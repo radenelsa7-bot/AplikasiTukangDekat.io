@@ -8,6 +8,7 @@ class OrderData {
   final String? notes;
   final String scheduleAt;
   final List<PaymentData> payments;
+  final List<OrderAttachmentData> attachments;
 
   OrderData({
     required this.id,
@@ -19,6 +20,7 @@ class OrderData {
     this.notes,
     required this.scheduleAt,
     required this.payments,
+    required this.attachments,
   });
 
   factory OrderData.fromJson(Map<String, dynamic> json) {
@@ -36,6 +38,34 @@ class OrderData {
               ?.map((item) => PaymentData.fromJson(item))
               .toList() ??
           [],
+      attachments:
+          (json['attachments'] as List?)
+              ?.map((item) => OrderAttachmentData.fromJson(item))
+              .toList() ??
+          [],
+    );
+  }
+}
+
+class OrderAttachmentData {
+  final int id;
+  final String? fileUrl;
+  final String? publicUrl;
+  final String? fileType;
+
+  OrderAttachmentData({
+    required this.id,
+    this.fileUrl,
+    this.publicUrl,
+    this.fileType,
+  });
+
+  factory OrderAttachmentData.fromJson(Map<String, dynamic> json) {
+    return OrderAttachmentData(
+      id: json['id'] ?? 0,
+      fileUrl: json['file_url'],
+      publicUrl: json['public_url'] ?? json['file_url'],
+      fileType: json['file_type'],
     );
   }
 }

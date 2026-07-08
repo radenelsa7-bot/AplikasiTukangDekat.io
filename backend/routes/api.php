@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\N8nIntegrationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ProviderServiceController;
 use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\TreasurerController;
@@ -39,6 +40,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/profile/photo', [ProfileController::class, 'deleteProfilePhoto'])->middleware('throttle:10,1');
 
     Route::prefix('orders')->group(function () {
+        // Upload attachments before creating an order (returns stored paths)
+        Route::post('/attachments', [OrderController::class, 'uploadAttachments'])->middleware('throttle:10,1');
         Route::post('/', [OrderController::class, 'createOrder'])->middleware(['throttle:10,1', 'role:customer']);
         Route::get('/my-orders', [OrderController::class, 'getMyOrders'])->middleware('throttle:20,1');
         Route::get('/{orderId}', [OrderController::class, 'getOrder'])->middleware('throttle:30,1');
@@ -102,7 +105,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('provider')->middleware('role:provider')->group(function () {
+        Route::get('/profile', [ProfileController::class, 'getProviderProfile'])->middleware('throttle:10,1');
         Route::put('/profile', [ProfileController::class, 'updateProviderProfile'])->middleware('throttle:10,1');
+        Route::post('/services', [ProviderServiceController::class, 'store'])->middleware('throttle:10,1');
+        Route::patch('/services/{id}', [ProviderServiceController::class, 'update'])->middleware('throttle:10,1');
     });
 });
 
@@ -113,7 +119,12 @@ Route::get('/storage/{path}', function ($path) {
         abort(404);
     }
     $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
-    return response()->file($fullPath, ['Content-Type' => $mime]);
+    return response()->file($fullPath, [
+        'Content-Type' => $mime,
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Content-Type, Authorization',
+    ]);
 })->where('path', '.*')->middleware('throttle:120,1');
 
 Route::post('/webhooks/payment', [PaymentController::class, 'webhookPaymentCallback'])->middleware('throttle:30,1');

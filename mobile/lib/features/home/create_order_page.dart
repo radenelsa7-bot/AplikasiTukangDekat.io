@@ -1,9 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+import '../../core/services/api_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as img_pkg;
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
-import '../../shared/widgets/site_footer.dart';
 import '../../core/models/order_model.dart';
 import '../../core/models/provider_model.dart';
 import '../auth/auth_controller.dart';
@@ -30,6 +36,8 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   final _addressCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   final _attachmentUrlsCtrl = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
+  final List<XFile> _selectedImages = [];
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   ProviderService? _selectedService;
@@ -49,6 +57,27 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     _notesCtrl.dispose();
     _attachmentUrlsCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImages() async {
+    try {
+      final images = await _imagePicker.pickMultiImage();
+      if (images.isNotEmpty) {
+        setState(() {
+          _selectedImages.addAll(images);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gagal memilih gambar')));
+    }
+  }
+
+  void _removeImageAt(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -98,6 +127,125 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
         ),
       );
       return;
+    }
+
+    // If user selected images, compress them client-side and send in single multipart request
+    List<String>? attachmentUrls;
+    final api = ref.read(apiServiceProvider);
+    if (_selectedImages.isNotEmpty) {
+      final parts = <MultipartFile>[];
+      for (final xfile in _selectedImages) {
+        try {
+          final originalBytes = await xfile.readAsBytes();
+          final decoded = img_pkg.decodeImage(originalBytes);
+          final pathLower = xfile.path.toLowerCase();
+          late List<int> encoded;
+          String mime;
+          String filename = xfile.name;
+
+          if (decoded != null) {
+            var resized = decoded;
+            if (resized.width > 1280) {
+              resized = img_pkg.copyResize(resized, width: 1280);
+            }
+
+            if (pathLower.endsWith('.png')) {
+              encoded = img_pkg.encodePng(resized);
+              mime = 'image/png';
+              if (encoded.length > 5 * 1024 * 1024) {
+                encoded = img_pkg.encodeJpg(resized, quality: 80);
+                mime = 'image/jpeg';
+                filename = filename.replaceAll(
+                  RegExp(r'\.png$', caseSensitive: false),
+                  '.jpg',
+                );
+              }
+            } else {
+              int quality = 80;
+              encoded = img_pkg.encodeJpg(resized, quality: quality);
+              mime = 'image/jpeg';
+              while (encoded.length > 5 * 1024 * 1024 && quality > 30) {
+                quality -= 10;
+                encoded = img_pkg.encodeJpg(resized, quality: quality);
+              }
+              if (encoded.length > 5 * 1024 * 1024) {
+                resized = img_pkg.copyResize(resized, width: 960);
+                quality = 70;
+                encoded = img_pkg.encodeJpg(resized, quality: quality);
+              }
+            }
+          } else {
+            encoded = originalBytes;
+            mime = pathLower.endsWith('.png') ? 'image/png' : 'image/jpeg';
+          }
+
+          if (encoded.length > 5 * 1024 * 1024) {
+            final decodedAgain =
+                img_pkg.decodeImage(Uint8List.fromList(encoded)) ??
+                img_pkg.Image(width: 800, height: 600);
+            final scaled = img_pkg.copyResize(decodedAgain, width: 800);
+            encoded = img_pkg.encodeJpg(scaled, quality: 70);
+            mime = 'image/jpeg';
+            filename = filename.replaceAll(
+              RegExp(r'\.png$', caseSensitive: false),
+              '.jpg',
+            );
+          }
+
+          parts.add(
+            MultipartFile.fromBytes(
+              encoded,
+              filename: filename,
+              contentType: MediaType.parse(mime),
+            ),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal memproses gambar')),
+          );
+          return;
+        }
+      }
+
+      // Prepare fields for order
+      final fields = <String, dynamic>{
+        'provider_id': widget.providerId,
+        'category_id': widget.categoryId,
+        'provider_service_id': _selectedService?.id,
+        'schedule_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(
+          DateTime(
+            _selectedDate!.year,
+            _selectedDate!.month,
+            _selectedDate!.day,
+            _selectedTime!.hour,
+            _selectedTime!.minute,
+          ),
+        ),
+        'address': _addressCtrl.text.trim(),
+        'notes': _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+        'estimated_price': _selectedService?.basePrice,
+      };
+
+      try {
+        await api.createOrderWithFiles(fields, parts);
+        // navigate back with success
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order berhasil dibuat!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop();
+        return;
+      } catch (e) {
+        final errorMessage = e is DioException && e.response != null
+            ? (e.response?.data['message']?.toString() ?? 'Gagal membuat order')
+            : 'Gagal membuat order';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+        return;
+      }
     }
 
     final request = CreateOrderRequest(
@@ -178,68 +326,72 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Buat Order')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Detail Order',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 24),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Detail Order',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 24),
 
-              // Pilih Layanan
-              Text(
-                'Pilih Layanan',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              if (widget.services.isNotEmpty)
-                DropdownButton<ProviderService>(
-                  isExpanded: true,
-                  value: _selectedService,
-                  items: widget.services.map((service) {
-                    return DropdownMenuItem(
-                      value: service,
-                      child: Text(
-                        '${service.name} - Rp${service.basePrice}/${service.priceUnit}',
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (ProviderService? newService) {
-                    setState(() => _selectedService = newService);
-                  },
-                )
-              else
-                const Text('Tidak ada layanan tersedia'),
-              const SizedBox(height: 24),
+                    // Pilih Layanan
+                    Text(
+                      'Pilih Layanan',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    if (widget.services.isNotEmpty)
+                      DropdownButton<ProviderService>(
+                        isExpanded: true,
+                        value: _selectedService,
+                        items: widget.services.map((service) {
+                          return DropdownMenuItem(
+                            value: service,
+                            child: Text(
+                              '${service.name} - Rp${service.basePrice}/${service.priceUnit}',
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (ProviderService? newService) {
+                          setState(() => _selectedService = newService);
+                        },
+                      )
+                    else
+                      const Text('Tidak ada layanan tersedia'),
+                    const SizedBox(height: 24),
 
-              // Alamat
-              AppTextField(
-                controller: _addressCtrl,
-                label: 'Alamat Lokasi',
-                maxLines: 3,
-                prefixIcon: const Icon(Icons.location_on),
-                errorText: state.fieldErrors['address'],
-                validator: (v) {
-                  if ((v ?? '').trim().isEmpty) return 'Alamat wajib diisi';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                    // Alamat
+                    AppTextField(
+                      controller: _addressCtrl,
+                      label: 'Alamat Lokasi',
+                      maxLines: 3,
+                      prefixIcon: const Icon(Icons.location_on),
+                      errorText: state.fieldErrors['address'],
+                      validator: (v) {
+                        if ((v ?? '').trim().isEmpty)
+                          return 'Alamat wajib diisi';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
-              // Catatan
-              AppTextField(
-                controller: _notesCtrl,
-                label: 'Catatan Tambahan (opsional)',
-                maxLines: 3,
-                prefixIcon: const Icon(Icons.note),
-                errorText: state.fieldErrors['notes'],
-              ),
-              const SizedBox(height: 16),
+                    // Catatan
+                    AppTextField(
+                      controller: _notesCtrl,
+                      label: 'Catatan Tambahan (opsional)',
+                      maxLines: 3,
+                      prefixIcon: const Icon(Icons.note),
+                      errorText: state.fieldErrors['notes'],
+                    ),
+                    const SizedBox(height: 16),
 
               AppTextField(
                 controller: _attachmentUrlsCtrl,
@@ -250,118 +402,122 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
               ),
               const SizedBox(height: 16),
 
-              // Tanggal
-              Text('Tanggal Pekerjaan'),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => _selectDate(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today),
-                      const SizedBox(width: 12),
-                      Text(
-                        _selectedDate != null
-                            ? DateFormat('dd MMM yyyy').format(_selectedDate!)
-                            : 'Pilih tanggal',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Jam
-              Text('Jam Pekerjaan'),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => _selectTime(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.access_time),
-                      const SizedBox(width: 12),
-                      Text(
-                        _selectedTime != null
-                            ? _selectedTime!.format(context)
-                            : 'Pilih jam',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Info
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  border: Border.all(color: Colors.blue.shade200),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Informasi Pembayaran',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    // Tanggal
+                    Text('Tanggal Pekerjaan'),
                     const SizedBox(height: 8),
-                    const Text('• Akan ada 2 tahap pembayaran'),
-                    const Text('• DP 50% saat order diterima'),
-                    const Text('• Sisa 50% saat pekerjaan selesai'),
+                    GestureDetector(
+                      onTap: () => _selectDate(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today),
+                            const SizedBox(width: 12),
+                            Text(
+                              _selectedDate != null
+                                  ? DateFormat(
+                                      'dd MMM yyyy',
+                                    ).format(_selectedDate!)
+                                  : 'Pilih tanggal',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Jam
+                    Text('Jam Pekerjaan'),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _selectTime(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.access_time),
+                            const SizedBox(width: 12),
+                            Text(
+                              _selectedTime != null
+                                  ? _selectedTime!.format(context)
+                                  : 'Pilih jam',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Info
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        border: Border.all(color: Colors.blue.shade200),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Informasi Pembayaran',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text('• Akan ada 2 tahap pembayaran'),
+                          const Text('• DP 50% saat order diterima'),
+                          const Text('• Sisa 50% saat pekerjaan selesai'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // CTA
+                    SizedBox(
+                      width: double.infinity,
+                      child: AppButton(
+                        label: 'Buat Order',
+                        isLoading: state.isLoading,
+                        onPressed: _createOrder,
+                      ),
+                    ),
+
+                    if (state.errorMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          border: Border.all(color: Colors.red.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          state.errorMessage!,
+                          style: TextStyle(color: Colors.red.shade700),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // CTA
-              SizedBox(
-                width: double.infinity,
-                child: AppButton(
-                  label: 'Buat Order',
-                  isLoading: state.isLoading,
-                  onPressed: _createOrder,
-                ),
-              ),
-
-              if (state.errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    border: Border.all(color: Colors.red.shade200),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    state.errorMessage!,
-                    style: TextStyle(color: Colors.red.shade700),
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
+        ],
       ),
-      bottomNavigationBar: const TukangDekatFooter(),
     );
   }
 }

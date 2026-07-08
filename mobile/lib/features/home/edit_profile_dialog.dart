@@ -190,13 +190,6 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
         authState.userProfilePhotoPath != null ||
         _picked != null ||
         _pickedBytes != null;
-    final ImageProvider<Object>? backgroundImage = _pickedBytes != null
-        ? MemoryImage(_pickedBytes!)
-        : (authState.userProfilePhotoPath != null
-              ? NetworkImage(
-                  '${ApiConfig.baseUrl}/api/storage/${authState.userProfilePhotoPath}',
-                )
-              : null);
 
     return AlertDialog(
       title: const Text('Edit Profil'),
@@ -208,8 +201,17 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
               onTap: _pickImage,
               child: CircleAvatar(
                 radius: 36,
-                backgroundImage: backgroundImage,
-                child: backgroundImage == null
+                backgroundColor: Colors.grey[300],
+                backgroundImage: _pickedBytes != null
+                    ? MemoryImage(_pickedBytes!) as ImageProvider
+                    : (authState.userProfilePhotoPath != null && authState.userProfilePhotoPath!.isNotEmpty
+                        ? NetworkImage(
+                            '${ApiConfig.baseUrl}/api/storage/${authState.userProfilePhotoPath}',
+                          )
+                        : null),
+                child: _pickedBytes == null &&
+                        (authState.userProfilePhotoPath == null ||
+                            authState.userProfilePhotoPath!.isEmpty)
                     ? const Icon(Icons.camera_alt)
                     : null,
               ),

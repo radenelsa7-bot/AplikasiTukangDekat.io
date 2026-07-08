@@ -26,6 +26,10 @@ class CreateOrderRequest extends FormRequest
             'address' => 'required|string|max:500',
             'notes' => 'nullable|string|max:1000',
             'estimated_price' => 'required|integer|min:1|max:100000000',
+            'attachment_urls' => 'nullable|array',
+            'attachment_urls.*' => 'nullable|string|max:2000000',
+            'files' => 'nullable|array',
+            'files.*' => 'file|mimes:jpeg,jpg,png|max:5120',
         ];
     }
 
@@ -43,6 +47,10 @@ class CreateOrderRequest extends FormRequest
             'estimated_price.required' => 'Estimated price is required.',
             'estimated_price.min' => 'Estimated price must be at least 1.',
             'estimated_price.max' => 'Estimated price cannot exceed 100,000,000.',
+            'files.array' => 'Lampiran gambar harus berupa daftar file.',
+            'files.*.file' => 'Setiap lampiran harus berupa file gambar.',
+            'files.*.mimes' => 'Gambar hanya boleh berformat JPG atau PNG.',
+            'files.*.max' => 'Ukuran setiap gambar maksimal 5 MB.',
         ];
     }
 }

@@ -81,21 +81,25 @@ class ProviderSeeder extends Seeder
         ['user_id' => $user->id],
         array_merge($profileData, [
           'is_verified' => true,
+          'is_active' => true,
           'avg_rating' => 0,
         ])
       );
 
-      // Create services without duplicating existing entries
+      // Create or update services to keep them active
       foreach ($categoryIds as $categoryId) {
-        ProviderService::firstOrCreate([
-          'provider_profile_id' => $profile->id,
-          'category_id' => $categoryId,
-          'name' => 'Service Standard',
-        ], [
-          'base_price' => 150000,
-          'price_unit' => 'per kunjungan',
-          'is_active' => true,
-        ]);
+        ProviderService::updateOrCreate(
+          [
+            'provider_profile_id' => $profile->id,
+            'category_id' => $categoryId,
+            'name' => 'Service Standard',
+          ],
+          [
+            'base_price' => 150000,
+            'price_unit' => 'per kunjungan',
+            'is_active' => true,
+          ],
+        );
       }
     }
   }

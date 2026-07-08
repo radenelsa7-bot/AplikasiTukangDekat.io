@@ -351,14 +351,23 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               _buildTextField(
                 controller: _passCtrl,
                 label: 'Password',
-                hint: 'Minimal 6 karakter',
+                hint: 'Minimal 8 karakter, gunakan huruf kapital, angka, dan simbol',
                 icon: Icons.lock_outline,
                 obscureText: true,
                 errorText: state.fieldErrors['password'],
                 validator: (v) {
                   final value = v ?? '';
                   if (value.isEmpty) return 'Password wajib diisi';
-                  if (value.length < 6) return 'Minimal 6 karakter';
+                  if (value.length < 8) return 'Password minimal 8 karakter';
+                  if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                    return 'Password harus mengandung huruf kapital';
+                  }
+                  if (!RegExp(r'[0-9]').hasMatch(value)) {
+                    return 'Password harus mengandung angka';
+                  }
+                  if (!RegExp(r'[@\$!%*?&]').hasMatch(value)) {
+                    return 'Password harus mengandung simbol (@\$!%*?&)';
+                  }
                   return null;
                 },
               ),

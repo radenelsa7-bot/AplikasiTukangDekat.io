@@ -1,22 +1,32 @@
 class ProviderService {
   final int id;
+  final int? categoryId;
+  final String? categoryName;
   final String name;
+  final String? description;
   final int basePrice;
   final String priceUnit;
   final bool isActive;
 
   ProviderService({
     required this.id,
+    this.categoryId,
+    this.categoryName,
     required this.name,
+    this.description,
     required this.basePrice,
     required this.priceUnit,
     required this.isActive,
   });
 
   factory ProviderService.fromJson(Map<String, dynamic> json) {
+    final category = json['category'];
     return ProviderService(
       id: json['id'] ?? 0,
+      categoryId: json['category_id'],
+      categoryName: category is Map<String, dynamic> ? category['name']?.toString() : null,
       name: json['name'] ?? '',
+      description: json['description'],
       basePrice: json['base_price'] ?? 0,
       priceUnit: json['price_unit'] ?? '',
       isActive: json['is_active'] ?? false,
@@ -35,6 +45,7 @@ class ProviderProfile {
   final bool isVerified;
   final double avgRating;
   final List<ProviderService> services;
+  final String userStatus; // User account status: ACTIVE, SUSPENDED, INACTIVE
 
   ProviderProfile({
     required this.id,
@@ -47,10 +58,13 @@ class ProviderProfile {
     required this.isVerified,
     required this.avgRating,
     required this.services,
+    this.userStatus = 'ACTIVE',
   });
 
   factory ProviderProfile.fromJson(Map<String, dynamic> json) {
     final user = json['user'];
+    final userStatus =
+        (user is Map<String, dynamic> ? user['status'] : null) ?? 'ACTIVE';
 
     return ProviderProfile(
       id: json['id'] ?? 0,
@@ -67,6 +81,7 @@ class ProviderProfile {
               ?.map((item) => ProviderService.fromJson(item))
               .toList() ??
           [],
+      userStatus: userStatus,
     );
   }
 }

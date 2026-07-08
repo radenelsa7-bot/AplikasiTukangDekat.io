@@ -2,20 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../config/api_config.dart';
-import '../../shared/widgets/site_footer.dart';
-import '../../shared/widgets/site_header.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_page.dart';
 import '../admin/admin_dashboard_page.dart';
 import 'catalog_page.dart';
 import 'my_orders_page.dart';
+import 'provider_services_page.dart';
 import 'edit_profile_dialog.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  int _selectedIndex = 0;
+
+  static const List<BottomNavigationBarItem> _bottomItems = [
+    BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Beranda'),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.receipt_long_rounded),
+      label: 'Pesanan',
+    ),
+    BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Akun'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
 
     // Admin gets full dashboard
@@ -23,17 +38,23 @@ class HomePage extends ConsumerWidget {
       return const AdminDashboardPage();
     }
 
-    final tabs = [
-      const Tab(icon: Icon(Icons.home_rounded), text: 'Beranda'),
-      const Tab(icon: Icon(Icons.receipt_long_rounded), text: 'Pesanan'),
-      const Tab(icon: Icon(Icons.person_rounded), text: 'Akun'),
-    ];
     final pages = [
       const CatalogPage(),
       const MyOrdersPage(),
       _buildAccountTab(context, ref, state),
     ];
 
+    return Scaffold(
+      backgroundColor: AppTheme.cream,
+      body: pages[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        items: _bottomItems,
+        selectedItemColor: AppTheme.orange,
+        unselectedItemColor: AppTheme.grey600,
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
@@ -138,7 +159,7 @@ class HomePage extends ConsumerWidget {
                   child: CircleAvatar(
                     radius: 36,
                     backgroundColor: Colors.white12,
-                    backgroundImage: state.userProfilePhotoPath != null
+                    backgroundImage: state.userProfilePhotoPath != null && state.userProfilePhotoPath!.isNotEmpty
                         ? NetworkImage(
                             '${ApiConfig.baseUrl}/api/storage/${state.userProfilePhotoPath}',
                           )
@@ -236,6 +257,23 @@ class HomePage extends ConsumerWidget {
                     }
                   },
                 ),
+                if (state.userRole == 'PROVIDER') ...[
+                  const Divider(height: 1, indent: 56),
+                  _buildMenuTile(
+                    icon: Icons.build_rounded,
+                    iconColor: AppTheme.orange,
+                    title: 'Kelola Layanan',
+                    subtitle: 'Tambah dan edit informasi layanan Anda',
+                    onTap: () async {
+                      if (!context.mounted) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ProviderServicesPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const Divider(height: 1, indent: 56),
                 _buildMenuTile(
                   icon: Icons.chat_bubble_rounded,
