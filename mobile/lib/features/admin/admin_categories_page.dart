@@ -253,8 +253,10 @@ class _CategoryCard extends ConsumerWidget {
                     description: descController.text.trim(),
                     isActive: isActive,
                   );
-                  ref.refresh(adminCategoriesProvider);
-                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    ref.refresh(adminCategoriesProvider);
+                  }
                 } catch (e) {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Gagal: $e'), backgroundColor: AppTheme.danger));
@@ -282,8 +284,10 @@ class _CategoryCard extends ConsumerWidget {
             onPressed: () async {
               try {
                 await ref.read(apiServiceProvider).deleteCategory(category.id);
-                ref.refresh(adminCategoriesProvider);
-                if (ctx.mounted) Navigator.pop(ctx);
+                if (ctx.mounted) {
+                  Navigator.pop(ctx);
+                  ref.refresh(adminCategoriesProvider);
+                }
               } catch (e) {
                 if (ctx.mounted) {
                   ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Gagal: $e'), backgroundColor: AppTheme.danger));

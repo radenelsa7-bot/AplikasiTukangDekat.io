@@ -32,15 +32,18 @@ class _AdminTransactionsPageState extends ConsumerState<AdminTransactionsPage> {
             children: [
               const Text('Monitoring Transaksi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildFilterChip('Semua', _statusFilter == null, () => setState(() => _statusFilter = null)),
-                  _buildFilterChip('Lunas', _statusFilter == 'PAID', () => setState(() => _statusFilter = 'PAID')),
-                  _buildFilterChip('Pending', _statusFilter == 'PENDING', () => setState(() => _statusFilter = 'PENDING')),
-                  const SizedBox(width: 12),
-                  _buildFilterChip('DP', _typeFilter == 'DP', () => setState(() => _typeFilter = _typeFilter == 'DP' ? null : 'DP')),
-                  _buildFilterChip('Final', _typeFilter == 'FINAL', () => setState(() => _typeFilter = _typeFilter == 'FINAL' ? null : 'FINAL')),
-                ],
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('Semua', _statusFilter == null, () => setState(() => _statusFilter = null)),
+                    _buildFilterChip('Lunas', _statusFilter == 'PAID', () => setState(() => _statusFilter = 'PAID')),
+                    _buildFilterChip('Pending', _statusFilter == 'PENDING', () => setState(() => _statusFilter = 'PENDING')),
+                    const SizedBox(width: 12),
+                    _buildFilterChip('DP', _typeFilter == 'DP', () => setState(() => _typeFilter = _typeFilter == 'DP' ? null : 'DP')),
+                    _buildFilterChip('Final', _typeFilter == 'FINAL', () => setState(() => _typeFilter = _typeFilter == 'FINAL' ? null : 'FINAL')),
+                  ],
+                ),
               ),
             ],
           ),

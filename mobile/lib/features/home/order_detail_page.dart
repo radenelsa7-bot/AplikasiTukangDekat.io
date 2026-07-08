@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
@@ -9,21 +10,32 @@ import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 import '../../core/models/order_model.dart';
 import '../auth/auth_controller.dart';
-import '../../shared/widgets/site_footer.dart';
-import '../../shared/widgets/site_header.dart';
 import 'order_providers.dart';
 
-class OrderDetailPage extends ConsumerWidget {
+class OrderDetailPage extends ConsumerStatefulWidget {
   final int orderId;
+  final bool autoOpenQris;
+  final int? autoPaymentId;
 
-  const OrderDetailPage({super.key, required this.orderId});
+  const OrderDetailPage({
+    super.key,
+    required this.orderId,
+    this.autoOpenQris = false,
+    this.autoPaymentId,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final orderAsync = ref.watch(orderDetailProvider(orderId));
+  ConsumerState<OrderDetailPage> createState() => _OrderDetailPageState();
+}
+
+class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
+  bool _autoOpened = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final orderAsync = ref.watch(orderDetailProvider(widget.orderId));
 
     return Scaffold(
-      appBar: const TukangDekatHeader(title: Text('Detail Order')),
       body: orderAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppTheme.orange),
@@ -63,6 +75,48 @@ class OrderDetailPage extends ConsumerWidget {
           ),
         ),
         data: (order) {
+          // Auto-open QRIS dialog if requested via navigation flags (only once)
+          if (widget.autoOpenQris && !_autoOpened) {
+            _autoOpened = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              try {
+                final api = ref.read(apiServiceProvider);
+                if (widget.autoPaymentId != null) {
+                  final q = await api.generateQRIS(widget.autoPaymentId!);
+                  if (context.mounted) {
+                    _showQrisDialog(
+                      context,
+                      ref,
+                      q,
+                      order.id,
+                      widget.autoPaymentId!,
+                    );
+                  }
+                  return;
+                }
+
+                // If no payment id, try to find unpaid payment on order
+                PaymentData? unpaid;
+                if (order.payments.isNotEmpty) {
+                  unpaid = order.payments.firstWhere(
+                    (p) => p.status == 'UNPAID' || p.status == 'PENDING',
+                    orElse: () => order.payments.first,
+                  );
+                } else {
+                  unpaid = null;
+                }
+                if (unpaid != null) {
+                  final q = await api.generateQRIS(unpaid.id);
+                  if (context.mounted) {
+                    _showQrisDialog(context, ref, q, order.id, unpaid.id);
+                  }
+                }
+              } catch (_) {
+                // ignore errors silently
+              }
+            });
+          }
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -72,6 +126,9 @@ class OrderDetailPage extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildInfoCard(context, order),
                 const SizedBox(height: 16),
+                if (order.attachments.isNotEmpty)
+                  _buildAttachmentsCard(context, order),
+                if (order.attachments.isNotEmpty) const SizedBox(height: 16),
                 _buildPricingCard(context, order),
                 const SizedBox(height: 16),
                 if (order.payments.isNotEmpty)
@@ -88,7 +145,6 @@ class OrderDetailPage extends ConsumerWidget {
           );
         },
       ),
-      bottomNavigationBar: const TukangDekatFooter(),
     );
   }
 
@@ -221,6 +277,73 @@ class OrderDetailPage extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachmentsCard(BuildContext context, OrderData order) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.grey200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.image_outlined, size: 18, color: AppTheme.navy),
+              const SizedBox(width: 8),
+              Text(
+                'Foto Pesanan',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 100,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: order.attachments.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final att = order.attachments[index];
+                final url = att.publicUrl ?? att.fileUrl ?? '';
+                if (url.isEmpty) return const SizedBox.shrink();
+                return GestureDetector(
+                  onTap: () async {
+                    if (await canLaunch(url)) {
+                      await launch(url);
+                    }
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      url,
+                      width: 120,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 120,
+                        height: 100,
+                        color: AppTheme.grey100,
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: AppTheme.grey600,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -493,6 +616,42 @@ class OrderDetailPage extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
 
     if (authState.userRole != 'CUSTOMER') return const SizedBox.shrink();
+    if (order.status == 'COMPLETED') {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.grey200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Row(
+              children: [
+                Icon(
+                  Icons.rate_review_outlined,
+                  size: 18,
+                  color: AppTheme.navy,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Beri Ulasan',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Order sudah selesai dan menunggu pelunasan final. Setelah pelunasan, order akan ditutup dan Anda dapat memberikan ulasan.',
+              style: TextStyle(fontSize: 13, color: AppTheme.grey600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (order.status != 'CLOSED') return const SizedBox.shrink();
     if (order.status != 'COMPLETED' && order.status != 'CLOSED') {
       return const SizedBox.shrink();
     }
@@ -589,7 +748,17 @@ class OrderDetailPage extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => _showReviewDialog(context, ref, order.id),
+                  onPressed: order.status == 'CLOSED'
+                      ? () => _showReviewDialog(context, ref, order.id)
+                      : () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Order harus selesai untuk memberi ulasan',
+                              ),
+                            ),
+                          );
+                        },
                   icon: const Icon(Icons.edit, size: 18),
                   label: const Text('Tulis Ulasan'),
                 ),
@@ -662,7 +831,7 @@ class OrderDetailPage extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Order diterima!')),
                           );
-                          ref.refresh(orderDetailProvider(order.id));
+                          ref.invalidate(orderDetailProvider(order.id));
                         }
                       },
               ),
@@ -691,7 +860,7 @@ class OrderDetailPage extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Order ditolak')),
                           );
-                          ref.refresh(orderDetailProvider(order.id));
+                          ref.invalidate(orderDetailProvider(order.id));
                         }
                       },
               ),
@@ -720,7 +889,7 @@ class OrderDetailPage extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Pekerjaan dimulai')),
                           );
-                          ref.refresh(orderDetailProvider(order.id));
+                          ref.invalidate(orderDetailProvider(order.id));
                         } else if (!success && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -928,7 +1097,7 @@ class OrderDetailPage extends ConsumerWidget {
                       content: Text('Pesanan berhasil dibatalkan'),
                     ),
                   );
-                  ref.refresh(orderDetailProvider(order.id));
+                  ref.invalidate(orderDetailProvider(order.id));
                 } else {
                   final errorMsg = ref
                       .read(orderActionControllerProvider)
@@ -1009,7 +1178,7 @@ class OrderDetailPage extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Pekerjaan selesai!')),
                   );
-                  ref.refresh(orderDetailProvider(order.id));
+                  ref.invalidate(orderDetailProvider(order.id));
                 }
               }
             },
@@ -1096,7 +1265,7 @@ class OrderDetailPage extends ConsumerWidget {
                                 ? null
                                 : commentController.text.trim(),
                           );
-                      ref.refresh(orderReviewProvider(orderId));
+                      ref.invalidate(orderReviewProvider(orderId));
                       if (context.mounted) {
                         Navigator.pop(dialogContext);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -1211,14 +1380,18 @@ class OrderDetailPage extends ConsumerWidget {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) {
+        // Auto-open checkout URL on Web platform after dialog appears
         if (qrisHint == 'open_checkout_url' &&
             checkoutUrl != null &&
-            checkoutUrl.isNotEmpty) {
+            checkoutUrl.isNotEmpty &&
+            kIsWeb) {
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             final uri = Uri.tryParse(checkoutUrl);
             if (uri != null) {
-              await launchUrl(uri, mode: LaunchMode.inAppWebView);
+              // Use externalApplication on Web to prevent blank screen
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
             }
           });
         }
@@ -1312,7 +1485,11 @@ class OrderDetailPage extends ConsumerWidget {
                       onPressed: () async {
                         final uri = Uri.tryParse(checkoutUrl);
                         if (uri != null) {
-                          await launchUrl(uri, mode: LaunchMode.inAppWebView);
+                          // Use externalApplication for Web, inAppWebView for mobile
+                          final launchMode = kIsWeb
+                              ? LaunchMode.externalApplication
+                              : LaunchMode.inAppWebView;
+                          await launchUrl(uri, mode: launchMode);
                         }
                       },
                     ),
@@ -1328,10 +1505,11 @@ class OrderDetailPage extends ConsumerWidget {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
-            ),
+            if (!kIsWeb)
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Tutup'),
+              ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.success,
@@ -1342,7 +1520,7 @@ class OrderDetailPage extends ConsumerWidget {
                   final result = await ref
                       .read(apiServiceProvider)
                       .confirmPayment(paymentId);
-                  ref.refresh(orderDetailProvider(orderId));
+                  ref.invalidate(orderDetailProvider(orderId));
                   if (context.mounted) {
                     Navigator.pop(ctx);
                     final midtransStatus = result['midtrans_status'];

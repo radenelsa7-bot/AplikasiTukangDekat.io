@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/auth_response.dart';
@@ -180,6 +182,42 @@ class ApiService {
     }
   }
 
+  Future<List<String>> uploadOrderAttachments(List<MultipartFile> files) async {
+    try {
+      final form = FormData();
+      for (var f in files) {
+        form.files.add(MapEntry('files[]', f));
+      }
+      final response = await dio.post('/api/orders/attachments', data: form);
+      final data = response.data['data'];
+      if (data != null && data['file_urls'] != null) {
+        return List<String>.from(data['file_urls']);
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<OrderData> createOrderWithFiles(
+    Map<String, dynamic> fields,
+    List<MultipartFile> files,
+  ) async {
+    try {
+      final form = FormData();
+      fields.forEach((k, v) {
+        if (v != null) form.fields.add(MapEntry(k, v.toString()));
+      });
+      for (var f in files) {
+        form.files.add(MapEntry('files[]', f));
+      }
+      final response = await dio.post('/api/orders', data: form);
+      return OrderData.fromJson(response.data['data']);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<OrdersResponse> getMyOrders() async {
     try {
       final response = await dio.get('/api/orders/my-orders');
@@ -232,7 +270,90 @@ class ApiService {
     }
   }
 
-  Future<String> sendChatbotMessage(String message) async {
+  Future<Map<String, dynamic>> getProviderProfile() async {
+    try {
+      final response = await dio.get('/api/provider/profile');
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateProviderProfile({
+    String? businessName,
+    String? description,
+    String? area,
+    String? address,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (businessName != null) data['business_name'] = businessName;
+      if (description != null) data['description'] = description;
+      if (area != null) data['area'] = area;
+      if (address != null) data['address'] = address;
+
+      final response = await dio.put('/api/provider/profile', data: data);
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<int> createProviderService({
+    required int categoryId,
+    required String name,
+    String? description,
+    required int basePrice,
+    String? priceUnit,
+    bool isActive = true,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/api/provider/services',
+        data: {
+          'category_id': categoryId,
+          'name': name,
+          'description': description,
+          'base_price': basePrice,
+          'price_unit': priceUnit,
+          'is_active': isActive,
+        },
+      );
+      return response.data['data']['service_id'];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateProviderService({
+    required int serviceId,
+    int? categoryId,
+    String? name,
+    String? description,
+    int? basePrice,
+    String? priceUnit,
+    bool? isActive,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (categoryId != null) data['category_id'] = categoryId;
+      if (name != null) data['name'] = name;
+      if (description != null) data['description'] = description;
+      if (basePrice != null) data['base_price'] = basePrice;
+      if (priceUnit != null) data['price_unit'] = priceUnit;
+      if (isActive != null) data['is_active'] = isActive;
+
+      final response = await dio.patch(
+        '/api/provider/services/$serviceId',
+        data: data,
+      );
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> sendChatbotMessage(String message) async {
     try {
       final response = await dio.post(
         '/api/chatbot/send',
@@ -242,9 +363,21 @@ class ApiService {
       if (data is Map &&
           data['data'] != null &&
           data['data']['reply'] != null) {
-        return data['data']['reply'].toString();
+        final replyRaw = data['data']['reply'].toString();
+        try {
+          if (replyRaw.startsWith('{') || replyRaw.startsWith('[')) {
+            final decoded = jsonDecode(replyRaw);
+            if (decoded is Map<String, dynamic>) {
+              return decoded;
+            }
+          }
+        } catch (_) {
+          // ignore JSON decode errors, fallbacks below
+        }
+
+        return {'reply': replyRaw, 'actions': []};
       }
-      return data.toString();
+      return {'reply': data.toString(), 'actions': []};
     } catch (e) {
       rethrow;
     }
@@ -350,6 +483,19 @@ class ApiService {
         '/api/orders/$orderId/review',
         data: {'rating': rating, 'comment': comment},
       );
+    } on DioException catch (e) {
+      // Better error messages for common review errors
+      if (e.response?.statusCode == 409) {
+        final errorMsg = e.response?.data?['message'] ?? '';
+        if (errorMsg.contains('already been submitted')) {
+          throw Exception('Anda sudah memberikan ulasan untuk order ini');
+        } else if (errorMsg.contains('closed orders')) {
+          throw Exception(
+            'Ulasan hanya dapat diberikan untuk order yang sudah selesai',
+          );
+        }
+      }
+      rethrow;
     } catch (e) {
       rethrow;
     }
@@ -487,21 +633,21 @@ class ApiService {
 
   Future<ServiceCategory> updateCategory({
     required int categoryId,
-    String? name,
+    required String name,
     String? description,
-    bool? isActive,
+    bool isActive = true,
   }) async {
     try {
-      final data = <String, dynamic>{};
-      if (name != null) data['name'] = name;
-      if (description != null) data['description'] = description;
-      if (isActive != null) data['is_active'] = isActive;
       final response = await dio.put(
         '/api/admin/categories/$categoryId',
-        data: data,
+        data: {
+          'name': name,
+          'description': description ?? '',
+          'is_active': isActive,
+        },
       );
       return ServiceCategory.fromJson(
-        Map<String, dynamic>.from(response.data['data']),
+        Map<String, dynamic>.from(response.data['data'] ?? {}),
       );
     } catch (e) {
       rethrow;
@@ -617,13 +763,14 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> getAdminPaymentReport({
+  Future<Uint8List> getAdminPaymentReport({
     Map<String, dynamic>? queryParameters,
   }) async {
     try {
       final response = await dio.get(
         '/api/admin/payments/report',
         queryParameters: queryParameters,
+        options: Options(responseType: ResponseType.bytes),
       );
       return Map<String, dynamic>.from(response.data);
     } catch (e) {

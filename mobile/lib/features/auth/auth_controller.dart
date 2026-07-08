@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 
+import '../../config/api_config.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/auth_storage_service.dart';
 import 'auth_state.dart';
@@ -170,59 +172,29 @@ class AuthController extends StateNotifier<AuthState> {
         return false;
       }
     } on DioException catch (e) {
-      final errorMsg =
-          e.response?.data['email']?[0] ??
-          e.response?.data['message'] ??
-          'Login failed';
+      String errorMsg;
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        final url = ApiConfig.baseUrl;
+        errorMsg =
+            'Tidak bisa terhubung ke server ($url). Pastikan:\n'
+            '1. Backend jalan: php artisan serve --host=0.0.0.0\n'
+            '2. HP & komputer di WiFi yang sama\n'
+            '3. IP address benar di .env atau --dart-define';
+        debugPrint('[Login] Connection failed to: $url');
+        debugPrint('[Login] Error: ${e.message}');
+      } else {
+        errorMsg =
+            e.response?.data['email']?[0] ??
+            e.response?.data['message'] ??
+            'Login gagal';
+      }
       state = state.copyWith(isLoading: false, errorMessage: errorMsg);
       return false;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Unexpected error: $e',
-      );
-      return false;
-    }
-  }
-
-  Future<bool> updateProfile({String? fullName, String? phoneNumber}) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-    try {
-      final apiService = _ref.read(apiServiceProvider);
-      final result = await apiService.updateProfile(
-        fullName: fullName,
-        phoneNumber: phoneNumber,
-      );
-
-      final updatedFullName =
-          result['full_name'] as String? ?? state.userFullName;
-      final updatedPhoneNumber =
-          result['phone_number'] as String? ?? state.userPhoneNumber;
-      final updatedProfilePhotoPath =
-          result['profile_photo_path'] as String? ?? state.userProfilePhotoPath;
-
-      await _ref
-          .read(authStorageProvider)
-          .saveUserData(
-            userId: state.userId ?? 0,
-            userRole: state.userRole ?? 'CUSTOMER',
-            userEmail: state.userEmail ?? '',
-            fullName: updatedFullName,
-            phoneNumber: updatedPhoneNumber,
-            profilePhotoPath: updatedProfilePhotoPath,
-          );
-
-      state = state.copyWith(
-        isLoading: false,
-        userFullName: updatedFullName,
-        userPhoneNumber: updatedPhoneNumber,
-        userProfilePhotoPath: updatedProfilePhotoPath,
-      );
-      return true;
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Failed to update profile: $e',
       );
       return false;
     }
