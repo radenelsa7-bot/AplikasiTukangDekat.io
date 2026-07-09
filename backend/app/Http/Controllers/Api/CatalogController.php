@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceCategory;
 use App\Models\ProviderProfile;
+use App\Models\Order;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
@@ -30,7 +31,7 @@ class CatalogController extends Controller
             ->with(['user', 'services.category'])
             ->get();
 
-        return $this->success($providers, 'Providers retrieved');
+        return $this->success($this->withAvailability($providers), 'Providers retrieved');
     }
 
     /**
@@ -53,7 +54,7 @@ class CatalogController extends Controller
             }])
             ->get();
 
-        return $this->success($providers, 'Providers retrieved');
+        return $this->success($this->withAvailability($providers), 'Providers retrieved');
     }
 
     /**
@@ -69,7 +70,7 @@ class CatalogController extends Controller
             return $this->notFound('Provider not found');
         }
 
-        return $this->success($provider, 'Provider detail retrieved');
+        return $this->success($this->withAvailability(collect([$provider]))->first(), 'Provider detail retrieved');
     }
 
     /**
@@ -94,6 +95,22 @@ class CatalogController extends Controller
             ->with('services')
             ->get();
 
-        return $this->success($providers, 'Providers found');
+        return $this->success($this->withAvailability($providers), 'Providers found');
+    }
+
+    private function withAvailability($providers)
+    {
+        $providerUserIds = $providers->pluck('user_id')->filter()->values();
+        $busyProviderIds = Order::whereIn('provider_id', $providerUserIds)
+            ->whereIn('status', ['ACCEPTED', 'IN_PROGRESS'])
+            ->pluck('provider_id')
+            ->all();
+
+        return $providers->map(function ($provider) use ($busyProviderIds) {
+            $provider->availability_status = in_array($provider->user_id, $busyProviderIds, true)
+                ? 'BUSY'
+                : ($provider->availability_status ?: 'AVAILABLE');
+            return $provider;
+        });
     }
 }

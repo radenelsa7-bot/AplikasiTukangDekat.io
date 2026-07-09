@@ -63,6 +63,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
     with WidgetsBindingObserver {
   final _searchCtrl = TextEditingController();
   TabController? _tabController;
+  bool _showFooter = false;
 
   @override
   void initState() {
@@ -127,97 +128,109 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final searchQuery = ref.watch(searchQueryProvider);
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Hero Banner ──────────────────────────────────────────────────
-          _buildHeroBanner(context),
+    return NotificationListener<UserScrollNotification>(
+      onNotification: (notification) {
+        // Show footer when near bottom, hide when scrolling away
+        if (notification.metrics.extentAfter < 50 && !_showFooter) {
+          setState(() => _showFooter = true);
+        } else if (notification.metrics.extentAfter > 100 && _showFooter) {
+          setState(() => _showFooter = false);
+        }
+        return false;
+      },
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Hero Banner ──────────────────────────────────────────────────
+            _buildHeroBanner(context),
 
-          // ── Search Bar ──────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.07),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
+            // ── Search Bar ──────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.07),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: AppTextField(
+                  controller: _searchCtrl,
+                  label: 'Cari teknisi atau layanan',
+                  hintText: 'Contoh: listrik, plumbing, AC',
+                  prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.orange),
+                  onChanged: (value) {
+                    ref.read(searchQueryProvider.notifier).state = value;
+                  },
+                ),
+              ),
+            ),
+
+            // ── Langkah Mudah ────────────────────────────────────────────────
+            _buildSectionHeader(context, 'Langkah Mudah', null),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildStepCard(
+                      context,
+                      '1',
+                      'Pilih\nLayanan',
+                      Icons.category_rounded,
+                      const Color(0xFF2196F3),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStepCard(
+                      context,
+                      '2',
+                      'Pilih\nProvider',
+                      Icons.person_search_rounded,
+                      const Color(0xFFFF6B35),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStepCard(
+                      context,
+                      '3',
+                      'Buat\nOrder',
+                      Icons.receipt_long_rounded,
+                      const Color(0xFF4CAF50),
+                    ),
                   ),
                 ],
               ),
-              child: AppTextField(
-                controller: _searchCtrl,
-                label: 'Cari teknisi atau layanan',
-                hintText: 'Contoh: listrik, plumbing, AC',
-                prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.orange),
-                onChanged: (value) {
-                  ref.read(searchQueryProvider.notifier).state = value;
-                },
-              ),
             ),
-          ),
 
-          // ── Langkah Mudah ────────────────────────────────────────────────
-          _buildSectionHeader(context, 'Langkah Mudah', null),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildStepCard(
-                    context,
-                    '1',
-                    'Pilih\nLayanan',
-                    Icons.category_rounded,
-                    const Color(0xFF2196F3),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStepCard(
-                    context,
-                    '2',
-                    'Pilih\nProvider',
-                    Icons.person_search_rounded,
-                    const Color(0xFFFF6B35),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStepCard(
-                    context,
-                    '3',
-                    'Buat\nOrder',
-                    Icons.receipt_long_rounded,
-                    const Color(0xFF4CAF50),
-                  ),
-                ),
-              ],
+            // ── Kategori Layanan ─────────────────────────────────────────────
+            _buildSectionHeader(context, 'Kategori Layanan', null),
+            _buildCategories(context, ref, selectedCategory),
+
+            // ── Provider List ────────────────────────────────────────────────
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: searchQuery.isNotEmpty
+                  ? _buildSearchResults(context, ref)
+                  : selectedCategory != null
+                  ? _buildProvidersByCategory(context, ref, selectedCategory)
+                  : _buildSuggestedProviders(context, ref),
             ),
-          ),
 
-          // ── Kategori Layanan ─────────────────────────────────────────────
-          _buildSectionHeader(context, 'Kategori Layanan', null),
-          _buildCategories(context, ref, selectedCategory),
-
-          // ── Provider List ────────────────────────────────────────────────
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: searchQuery.isNotEmpty
-                ? _buildSearchResults(context, ref)
-                : selectedCategory != null
-                ? _buildProvidersByCategory(context, ref, selectedCategory)
-                : _buildSuggestedProviders(context, ref),
-          ),
-
-          const SizedBox(height: 32),
-        ],
+            const SizedBox(height: 24),
+            if (_showFooter) const _CatalogFooter(),
+          ],
+        ),
       ),
     );
   }
@@ -739,6 +752,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
     int categoryId,
   ) {
     final rating = (provider.avgRating ?? 0.0) as double;
+    final isBusy = provider.availabilityStatus == 'BUSY';
     final initials = (provider.businessName as String)
         .trim()
         .split(' ')
@@ -860,13 +874,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.10),
+                              color: (isBusy ? Colors.orange : Colors.green).withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
-                              'Tersedia',
+                            child: Text(
+                              isBusy ? 'Sedang dipesan' : 'Tersedia',
                               style: TextStyle(
-                                color: Colors.green,
+                                color: isBusy ? Colors.orange : Colors.green,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -896,6 +910,21 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CatalogFooter extends StatelessWidget {
+  const _CatalogFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text(
+        'TukangDekat - Temukan teknisi terdekat dengan mudah.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: AppTheme.grey600, fontSize: 12),
       ),
     );
   }

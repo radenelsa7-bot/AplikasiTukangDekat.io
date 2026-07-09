@@ -8,6 +8,7 @@ import '../admin/admin_dashboard_page.dart';
 import 'catalog_page.dart';
 import 'my_orders_page.dart';
 import 'provider_services_page.dart';
+import 'provider_dashboard_page.dart';
 import 'edit_profile_dialog.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -20,7 +21,7 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   int _selectedIndex = 0;
 
-  static const List<BottomNavigationBarItem> _bottomItems = [
+  static const List<BottomNavigationBarItem> _customerBottomItems = [
     BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Beranda'),
     BottomNavigationBarItem(
       icon: Icon(Icons.receipt_long_rounded),
@@ -38,11 +39,28 @@ class _HomePageState extends ConsumerState<HomePage> {
       return const AdminDashboardPage();
     }
 
-    final pages = [
-      const CatalogPage(),
-      const MyOrdersPage(),
-      _buildAccountTab(context, ref, state),
-    ];
+    final isProvider = state.userRole == 'PROVIDER';
+    final bottomItems = isProvider
+        ? const [
+            BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
+            BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Pesanan'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Akun'),
+          ]
+        : _customerBottomItems;
+    final pages = isProvider
+        ? [
+            ProviderDashboardPage(
+              onOpenOrders: () => setState(() => _selectedIndex = 1),
+              onOpenAccount: () => setState(() => _selectedIndex = 2),
+            ),
+            const MyOrdersPage(),
+            _buildAccountTab(context, ref, state),
+          ]
+        : [
+            const CatalogPage(),
+            const MyOrdersPage(),
+            _buildAccountTab(context, ref, state),
+          ];
 
     return Scaffold(
       backgroundColor: AppTheme.cream,
@@ -50,7 +68,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
-        items: _bottomItems,
+        items: bottomItems,
         selectedItemColor: AppTheme.orange,
         unselectedItemColor: AppTheme.grey600,
         backgroundColor: Colors.white,

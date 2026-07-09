@@ -284,6 +284,8 @@ class ApiService {
     String? description,
     String? area,
     String? address,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       final data = <String, dynamic>{};
@@ -291,6 +293,8 @@ class ApiService {
       if (description != null) data['description'] = description;
       if (area != null) data['area'] = area;
       if (address != null) data['address'] = address;
+      if (latitude != null) data['latitude'] = latitude;
+      if (longitude != null) data['longitude'] = longitude;
 
       final response = await dio.put('/api/provider/profile', data: data);
       return Map<String, dynamic>.from(response.data['data'] ?? {});
@@ -405,12 +409,35 @@ class ApiService {
   Future<void> completeOrder({
     required int orderId,
     required int finalPrice,
+    List<MultipartFile> initialConditionPhotos = const [],
+    List<MultipartFile> finalConditionPhotos = const [],
+    List<MultipartFile> receiptPhotos = const [],
   }) async {
     try {
+      final form = FormData();
+      form.fields.add(MapEntry('final_price', finalPrice.toString()));
+      for (final file in initialConditionPhotos) {
+        form.files.add(MapEntry('initial_condition_photos[]', file));
+      }
+      for (final file in finalConditionPhotos) {
+        form.files.add(MapEntry('final_condition_photos[]', file));
+      }
+      for (final file in receiptPhotos) {
+        form.files.add(MapEntry('receipt_photos[]', file));
+      }
       await dio.post(
         '/api/orders/$orderId/complete',
-        data: {'final_price': finalPrice},
+        data: form,
       );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getProviderDashboard() async {
+    try {
+      final response = await dio.get('/api/provider/dashboard');
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
     } catch (e) {
       rethrow;
     }
@@ -772,7 +799,7 @@ class ApiService {
         queryParameters: queryParameters,
         options: Options(responseType: ResponseType.bytes),
       );
-      return Map<String, dynamic>.from(response.data);
+      return Uint8List.fromList(response.data);
     } catch (e) {
       rethrow;
     }
@@ -808,3 +835,4 @@ final apiServiceProvider = Provider<ApiService>((ref) {
   final dio = ref.watch(dioProvider);
   return ApiService(dio: dio);
 });
+

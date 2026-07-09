@@ -42,10 +42,13 @@ class ProviderProfile {
   final String? description;
   final String? area;
   final String? address;
+  final double? latitude;
+  final double? longitude;
   final bool isVerified;
   final double avgRating;
   final List<ProviderService> services;
   final String userStatus; // User account status: ACTIVE, SUSPENDED, INACTIVE
+  final String availabilityStatus;
 
   ProviderProfile({
     required this.id,
@@ -55,10 +58,13 @@ class ProviderProfile {
     this.description,
     this.area,
     this.address,
+    this.latitude,
+    this.longitude,
     required this.isVerified,
     required this.avgRating,
     required this.services,
     this.userStatus = 'ACTIVE',
+    this.availabilityStatus = 'AVAILABLE',
   });
 
   factory ProviderProfile.fromJson(Map<String, dynamic> json) {
@@ -74,6 +80,8 @@ class ProviderProfile {
       description: json['description'],
       area: json['area'],
       address: json['address'],
+      latitude: double.tryParse(json['latitude']?.toString() ?? ''),
+      longitude: double.tryParse(json['longitude']?.toString() ?? ''),
       isVerified: json['is_verified'] ?? false,
       avgRating: double.tryParse(json['avg_rating'].toString()) ?? 0,
       services:
@@ -82,6 +90,7 @@ class ProviderProfile {
               .toList() ??
           [],
       userStatus: userStatus,
+      availabilityStatus: json['availability_status']?.toString() ?? 'AVAILABLE',
     );
   }
 }
