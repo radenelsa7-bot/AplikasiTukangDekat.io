@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ProviderProfile extends Model
 {
@@ -41,6 +41,11 @@ class ProviderProfile extends Model
   public function services(): HasMany
   {
     return $this->hasMany(ProviderService::class);
+  }
+
+  public function coverages(): HasMany
+  {
+    return $this->hasMany(ProviderCoverage::class, 'provider_profile_id');
   }
 
   public function reviews(): HasMany
