@@ -16,6 +16,12 @@ class CompleteOrderRequest extends FormRequest
     {
         return [
             'final_price' => 'required|integer|min:1|max:100000000',
+            'initial_condition_photos' => 'nullable|array|max:5',
+            'initial_condition_photos.*' => 'file|mimes:jpeg,jpg,png|max:5120',
+            'final_condition_photos' => 'nullable|array|max:5',
+            'final_condition_photos.*' => 'file|mimes:jpeg,jpg,png|max:5120',
+            'receipt_photos' => 'nullable|array|max:5',
+            'receipt_photos.*' => 'file|mimes:jpeg,jpg,png|max:5120',
         ];
     }
 

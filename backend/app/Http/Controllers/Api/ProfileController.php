@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Models\Order;
+use App\Models\Payment;
 use App\Models\ProviderProfile;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -90,6 +92,8 @@ class ProfileController extends Controller
             'description' => 'nullable|string|max:2000',
             'area' => 'nullable|string|max:100',
             'address' => 'nullable|string|max:500',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         $profile = ProviderProfile::firstOrCreate(
@@ -97,7 +101,7 @@ class ProfileController extends Controller
             ['is_verified' => false]
         );
 
-        $profile->update($request->only(['business_name', 'description', 'area', 'address']));
+        $profile->update($request->only(['business_name', 'description', 'area', 'address', 'latitude', 'longitude']));
 
         return $this->success([
             'profile' => $profile->fresh(['services.category']),
@@ -122,5 +126,42 @@ class ProfileController extends Controller
         return $this->success([
             'profile' => $profile->fresh(['services.category']),
         ], 'Provider profile retrieved successfully', 200);
+    }
+
+    public function providerDashboard(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'PROVIDER') {
+            return $this->forbidden('Only providers can access this resource');
+        }
+
+        $orders = Order::where('provider_id', $user->id);
+        $activeOrders = (clone $orders)->whereIn('status', ['CREATED', 'ACCEPTED', 'IN_PROGRESS'])->count();
+        $completedOrders = (clone $orders)->whereIn('status', ['COMPLETED', 'CLOSED'])->count();
+
+        $paidPayments = Payment::whereHas('order', function ($query) use ($user) {
+            $query->where('provider_id', $user->id);
+        })->where('status', 'PAID');
+
+        $grossRevenue = (clone $paidPayments)->sum('amount');
+        $providerBalance = (clone $paidPayments)->sum('provider_payout');
+        if ($providerBalance <= 0) {
+            $providerBalance = (int) round($grossRevenue * 0.9);
+        }
+
+        $transactions = (clone $paidPayments)
+            ->with('order:id,order_code,customer_id,provider_id,status')
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        return $this->success([
+            'balance' => $providerBalance,
+            'gross_revenue' => $grossRevenue,
+            'active_orders' => $activeOrders,
+            'completed_orders' => $completedOrders,
+            'transactions' => $transactions,
+        ], 'Provider dashboard retrieved successfully', 200);
     }
 }

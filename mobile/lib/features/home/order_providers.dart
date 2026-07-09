@@ -203,11 +203,23 @@ class OrderActionController extends StateNotifier<OrderActionState> {
     }
   }
 
-  Future<bool> completeOrder(int orderId, int finalPrice) async {
+  Future<bool> completeOrder(
+    int orderId,
+    int finalPrice, {
+    List<MultipartFile> initialConditionPhotos = const [],
+    List<MultipartFile> finalConditionPhotos = const [],
+    List<MultipartFile> receiptPhotos = const [],
+  }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final apiService = _ref.read(apiServiceProvider);
-      await apiService.completeOrder(orderId: orderId, finalPrice: finalPrice);
+      await apiService.completeOrder(
+        orderId: orderId,
+        finalPrice: finalPrice,
+        initialConditionPhotos: initialConditionPhotos,
+        finalConditionPhotos: finalConditionPhotos,
+        receiptPhotos: receiptPhotos,
+      );
       state = state.copyWith(isLoading: false, success: true);
       // Refresh orders after completing
       _ref.refresh(myOrdersProvider); // ignore: unused_result

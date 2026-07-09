@@ -5,7 +5,16 @@ class OrderData {
   final int estimatedPrice;
   final int? finalPrice;
   final String address;
+  final double? customerLatitude;
+  final double? customerLongitude;
+  final double? providerLatitude;
+  final double? providerLongitude;
   final String? notes;
+  final String? damageLevel;
+  final String? damageDescription;
+  final int? estimatedPriceMin;
+  final int? estimatedPriceMax;
+  final String? queueNote;
   final String scheduleAt;
   final List<PaymentData> payments;
   final List<OrderAttachmentData> attachments;
@@ -17,7 +26,16 @@ class OrderData {
     required this.estimatedPrice,
     this.finalPrice,
     required this.address,
+    this.customerLatitude,
+    this.customerLongitude,
+    this.providerLatitude,
+    this.providerLongitude,
     this.notes,
+    this.damageLevel,
+    this.damageDescription,
+    this.estimatedPriceMin,
+    this.estimatedPriceMax,
+    this.queueNote,
     required this.scheduleAt,
     required this.payments,
     required this.attachments,
@@ -31,7 +49,16 @@ class OrderData {
       estimatedPrice: json['estimated_price'] ?? 0,
       finalPrice: json['final_price'],
       address: json['address'] ?? '',
+      customerLatitude: double.tryParse(json['customer_latitude']?.toString() ?? ''),
+      customerLongitude: double.tryParse(json['customer_longitude']?.toString() ?? ''),
+      providerLatitude: double.tryParse(json['provider_latitude']?.toString() ?? ''),
+      providerLongitude: double.tryParse(json['provider_longitude']?.toString() ?? ''),
       notes: json['notes'],
+      damageLevel: json['damage_level'],
+      damageDescription: json['damage_description'],
+      estimatedPriceMin: json['estimated_price_min'],
+      estimatedPriceMax: json['estimated_price_max'],
+      queueNote: json['queue_note'],
       scheduleAt: json['schedule_at'] ?? '',
       payments:
           (json['payments'] as List?)
@@ -52,12 +79,14 @@ class OrderAttachmentData {
   final String? fileUrl;
   final String? publicUrl;
   final String? fileType;
+  final String purpose;
 
   OrderAttachmentData({
     required this.id,
     this.fileUrl,
     this.publicUrl,
     this.fileType,
+    this.purpose = 'CUSTOMER_DAMAGE',
   });
 
   factory OrderAttachmentData.fromJson(Map<String, dynamic> json) {
@@ -66,6 +95,7 @@ class OrderAttachmentData {
       fileUrl: json['file_url'],
       publicUrl: json['public_url'] ?? json['file_url'],
       fileType: json['file_type'],
+      purpose: json['purpose'] ?? 'CUSTOMER_DAMAGE',
     );
   }
 }
@@ -125,6 +155,10 @@ class CreateOrderRequest {
   final String scheduleAt;
   final String address;
   final String? notes;
+  final String? damageLevel;
+  final String? damageDescription;
+  final int? estimatedPriceMin;
+  final int? estimatedPriceMax;
   final int? estimatedPrice;
   final List<String>? attachmentUrls;
 
@@ -135,6 +169,10 @@ class CreateOrderRequest {
     required this.scheduleAt,
     required this.address,
     this.notes,
+    this.damageLevel,
+    this.damageDescription,
+    this.estimatedPriceMin,
+    this.estimatedPriceMax,
     this.estimatedPrice,
     this.attachmentUrls,
   });
@@ -154,6 +192,18 @@ class CreateOrderRequest {
     }
     if (notes != null) {
       data['notes'] = notes!;
+    }
+    if (damageLevel != null) {
+      data['damage_level'] = damageLevel!;
+    }
+    if (damageDescription != null) {
+      data['damage_description'] = damageDescription!;
+    }
+    if (estimatedPriceMin != null) {
+      data['estimated_price_min'] = estimatedPriceMin!;
+    }
+    if (estimatedPriceMax != null) {
+      data['estimated_price_max'] = estimatedPriceMax!;
     }
     if (estimatedPrice != null) {
       data['estimated_price'] = estimatedPrice!;

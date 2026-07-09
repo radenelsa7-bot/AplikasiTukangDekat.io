@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_controller.dart';
+import '../../shared/widgets/location_map_preview.dart';
 import 'catalog_providers.dart';
 import 'create_order_page.dart';
 
@@ -24,6 +25,7 @@ class ProviderDetailPage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, st) => Center(child: Text('Error: $err')),
         data: (provider) {
+          final isBusy = provider.availabilityStatus == 'BUSY';
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -88,6 +90,22 @@ class ProviderDetailPage extends ConsumerWidget {
                                         ),
                                       ],
                                     ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: isBusy ? Colors.orange.shade50 : Colors.green.shade50,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      isBusy ? 'Sedang dipesan' : 'Tersedia',
+                                      style: TextStyle(
+                                        color: isBusy ? Colors.orange.shade800 : Colors.green.shade700,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -108,6 +126,12 @@ class ProviderDetailPage extends ConsumerWidget {
                 _buildInfoRow('Deskripsi', provider.description ?? '-'),
                 _buildInfoRow('Area', provider.area ?? '-'),
                 _buildInfoRow('Alamat', provider.address ?? '-'),
+                const SizedBox(height: 12),
+                LocationMapPreview(
+                  providerLatitude: provider.latitude,
+                  providerLongitude: provider.longitude,
+                  providerLabel: provider.businessName,
+                ),
 
                 const SizedBox(height: 24),
 
@@ -242,6 +266,11 @@ class ProviderDetailPage extends ConsumerWidget {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
+                        if (isBusy) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Provider sedang dipesan pelanggan lain. Anda tetap bisa membuat antrian, tetapi provider mungkin mengarahkan ke penyedia lain.')),
+                          );
+                        }
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => CreateOrderPage(

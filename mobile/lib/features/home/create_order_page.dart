@@ -41,6 +41,27 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   ProviderService? _selectedService;
+  String _damageLevel = 'LIGHT';
+
+  Map<String, dynamic> get _damageInfo {
+    final basePrice = _selectedService?.basePrice ?? 0;
+    final minMultiplier = _damageLevel == 'HEAVY'
+        ? 1.5
+        : (_damageLevel == 'MEDIUM' ? 1.0 : 0.8);
+    final maxMultiplier = _damageLevel == 'HEAVY'
+        ? 2.5
+        : (_damageLevel == 'MEDIUM' ? 1.5 : 1.0);
+    final description = _damageLevel == 'HEAVY'
+        ? 'Kerusakan berat: membutuhkan pembongkaran besar, komponen utama, risiko tambahan, atau kunjungan lanjutan.'
+        : (_damageLevel == 'MEDIUM'
+              ? 'Kerusakan sedang: perlu pembongkaran ringan, penggantian komponen kecil, atau durasi pengerjaan lebih lama.'
+              : 'Kerusakan ringan: kendala kecil, pengecekan cepat, penyetelan, atau perbaikan tanpa penggantian komponen besar.');
+    return {
+      'min': (basePrice * minMultiplier).round(),
+      'max': (basePrice * maxMultiplier).round(),
+      'description': description,
+    };
+  }
 
   @override
   void initState() {
@@ -223,6 +244,10 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
         ),
         'address': _addressCtrl.text.trim(),
         'notes': _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+        'damage_level': _damageLevel,
+        'damage_description': _damageInfo['description'],
+        'estimated_price_min': _damageInfo['min'],
+        'estimated_price_max': _damageInfo['max'],
         'estimated_price': _selectedService?.basePrice,
       };
 
@@ -263,6 +288,10 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       ),
       address: _addressCtrl.text.trim(),
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      damageLevel: _damageLevel,
+      damageDescription: _damageInfo['description'],
+      estimatedPriceMin: _damageInfo['min'],
+      estimatedPriceMax: _damageInfo['max'],
       estimatedPrice: _selectedService?.basePrice,
       attachmentUrls: _attachmentUrlsCtrl.text.trim().isEmpty
           ? null
@@ -366,6 +395,36 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                       )
                     else
                       const Text('Tidak ada layanan tersedia'),
+                    const SizedBox(height: 24),
+
+                    Text(
+                      'Kondisi Kerusakan',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildDamageChoice('LIGHT', 'Ringan'),
+                        _buildDamageChoice('MEDIUM', 'Sedang'),
+                        _buildDamageChoice('HEAVY', 'Berat'),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        border: Border.all(color: Colors.orange.shade100),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${_damageInfo['description']}\nEstimasi range: Rp${_damageInfo['min']} - Rp${_damageInfo['max']}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
                     const SizedBox(height: 24),
 
                     // Alamat
@@ -518,6 +577,14 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDamageChoice(String value, String label) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: _damageLevel == value,
+      onSelected: (_) => setState(() => _damageLevel = value),
     );
   }
 }
