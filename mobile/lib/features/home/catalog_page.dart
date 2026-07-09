@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
+import '../../core/services/api_service.dart';
 import '../../shared/widgets/app_text_field.dart';
 import 'catalog_providers.dart';
 import 'provider_detail_page.dart';
@@ -64,11 +65,17 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
   final _searchCtrl = TextEditingController();
   TabController? _tabController;
   bool _showFooter = false;
+  List<Map<String, dynamic>> _kotaList = [];
+  List<Map<String, dynamic>> _kecamatanList = [];
+  int? _selectedKotaId;
+  int? _selectedKecamatanId;
+  bool _isLoadingWilayah = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    Future.microtask(_loadKota);
   }
 
   @override
@@ -110,17 +117,73 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
     ref.invalidate(categoriesProvider);
 
     if (searchQuery.isNotEmpty) {
-      ref.invalidate(searchProvidersProvider(searchQuery));
+      ref.invalidate(
+        searchProvidersProvider(
+          ProviderSearchQuery(
+            query: searchQuery,
+            kotaId: _selectedKotaId,
+            kecamatanId: _selectedKecamatanId,
+          ),
+        ),
+      );
     } else if (selectedCategory != null) {
-      ref.invalidate(providersByCategoryProvider(selectedCategory));
+      ref.invalidate(
+        providersByCategoryProvider(
+          ProviderCatalogQuery(
+            categoryId: selectedCategory,
+            kotaId: _selectedKotaId,
+            kecamatanId: _selectedKecamatanId,
+          ),
+        ),
+      );
     } else {
       final categoriesAsync = ref.read(categoriesProvider);
       categoriesAsync.whenData((categories) {
         if (categories.isNotEmpty) {
-          ref.invalidate(providersByCategoryProvider(categories.first.id));
+          ref.invalidate(
+            providersByCategoryProvider(
+              ProviderCatalogQuery(
+                categoryId: categories.first.id,
+                kotaId: _selectedKotaId,
+                kecamatanId: _selectedKecamatanId,
+              ),
+            ),
+          );
         }
       });
     }
+  }
+
+  Future<void> _loadKota() async {
+    setState(() => _isLoadingWilayah = true);
+    try {
+      final api = ref.read(apiServiceProvider);
+      final kota = await api.getKota();
+      if (!mounted) return;
+      setState(() {
+        _kotaList = kota;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal memuat daftar kota'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoadingWilayah = false);
+    }
+  }
+
+  Future<void> _loadKecamatan(int kotaId) async {
+    final api = ref.read(apiServiceProvider);
+    final kecamatan = await api.getKecamatan(kotaId);
+    if (!mounted) return;
+    setState(() {
+      _kecamatanList = kecamatan;
+      _selectedKecamatanId = null;
+    });
   }
 
   @override
@@ -174,6 +237,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             ),
 
             // ── Langkah Mudah ────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: _buildLocationFilters(context),
+            ),
             _buildSectionHeader(context, 'Langkah Mudah', null),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -236,6 +303,102 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
   }
 
   // ─── Hero Banner ──────────────────────────────────────────────────────────
+  Widget _buildLocationFilters(BuildContext context) {
+    if (_isLoadingWilayah) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: LinearProgressIndicator(minHeight: 3),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Filter Wilayah',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<int?>(
+            value: _selectedKotaId,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Kota',
+              prefixIcon: const Icon(Icons.location_city),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            items: [
+              const DropdownMenuItem<int?>(
+                value: null,
+                child: Text('Semua kota'),
+              ),
+              ..._kotaList.map((item) {
+                final id = (item['id'] as num).toInt();
+                return DropdownMenuItem<int?>(
+                  value: id,
+                  child: Text(item['name']?.toString() ?? '-'),
+                );
+              }),
+            ],
+            onChanged: (value) async {
+              setState(() {
+                _selectedKotaId = value;
+                _selectedKecamatanId = null;
+                _kecamatanList = [];
+              });
+              if (value != null) {
+                await _loadKecamatan(value);
+              }
+              _refreshCatalogData();
+            },
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<int?>(
+            value: _selectedKecamatanId,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Kecamatan',
+              prefixIcon: const Icon(Icons.map_outlined),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            items: [
+              const DropdownMenuItem<int?>(
+                value: null,
+                child: Text('Semua kecamatan'),
+              ),
+              ..._kecamatanList.map((item) {
+                final id = (item['id'] as num).toInt();
+                return DropdownMenuItem<int?>(
+                  value: id,
+                  child: Text(item['name']?.toString() ?? '-'),
+                );
+              }),
+            ],
+            onChanged: _selectedKotaId == null
+                ? null
+                : (value) {
+                    setState(() => _selectedKecamatanId = value);
+                    _refreshCatalogData();
+                  },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeroBanner(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -650,7 +813,15 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
     WidgetRef ref,
     int categoryId,
   ) {
-    final providersAsync = ref.watch(providersByCategoryProvider(categoryId));
+    final providersAsync = ref.watch(
+      providersByCategoryProvider(
+        ProviderCatalogQuery(
+          categoryId: categoryId,
+          kotaId: _selectedKotaId,
+          kecamatanId: _selectedKecamatanId,
+        ),
+      ),
+    );
 
     return providersAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -690,7 +861,15 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
   // ─── Search Results ──────────────────────────────────────────────────────
   Widget _buildSearchResults(BuildContext context, WidgetRef ref) {
     final searchQuery = ref.watch(searchQueryProvider);
-    final resultsAsync = ref.watch(searchProvidersProvider(searchQuery));
+    final resultsAsync = ref.watch(
+      searchProvidersProvider(
+        ProviderSearchQuery(
+          query: searchQuery,
+          kotaId: _selectedKotaId,
+          kecamatanId: _selectedKecamatanId,
+        ),
+      ),
+    );
 
     return resultsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),

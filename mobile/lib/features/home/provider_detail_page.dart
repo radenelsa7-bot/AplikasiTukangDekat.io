@@ -92,15 +92,22 @@ class ProviderDetailPage extends ConsumerWidget {
                                     ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 5,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: isBusy ? Colors.orange.shade50 : Colors.green.shade50,
+                                      color: isBusy
+                                          ? Colors.orange.shade50
+                                          : Colors.green.shade50,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
                                       isBusy ? 'Sedang dipesan' : 'Tersedia',
                                       style: TextStyle(
-                                        color: isBusy ? Colors.orange.shade800 : Colors.green.shade700,
+                                        color: isBusy
+                                            ? Colors.orange.shade800
+                                            : Colors.green.shade700,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -127,6 +134,31 @@ class ProviderDetailPage extends ConsumerWidget {
                 _buildInfoRow('Area', provider.area ?? '-'),
                 _buildInfoRow('Alamat', provider.address ?? '-'),
                 const SizedBox(height: 12),
+                if (provider.coverages.isNotEmpty) ...[
+                  Text(
+                    'Wilayah Layanan',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: provider.coverages
+                        .where((coverage) => coverage.isActive)
+                        .map(
+                          (coverage) => Chip(
+                            label: Text(
+                              coverage.kotaName != null &&
+                                      coverage.kotaName!.isNotEmpty
+                                  ? '${coverage.kotaName} - ${coverage.kecamatanName}'
+                                  : coverage.kecamatanName,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 LocationMapPreview(
                   providerLatitude: provider.latitude,
                   providerLongitude: provider.longitude,
@@ -268,7 +300,11 @@ class ProviderDetailPage extends ConsumerWidget {
                       onPressed: () {
                         if (isBusy) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Provider sedang dipesan pelanggan lain. Anda tetap bisa membuat antrian, tetapi provider mungkin mengarahkan ke penyedia lain.')),
+                            const SnackBar(
+                              content: Text(
+                                'Provider sedang dipesan pelanggan lain. Anda tetap bisa membuat antrian, tetapi provider mungkin mengarahkan ke penyedia lain.',
+                              ),
+                            ),
                           );
                         }
                         Navigator.of(context).push(
@@ -277,6 +313,7 @@ class ProviderDetailPage extends ConsumerWidget {
                               providerId: providerId,
                               categoryId: categoryId,
                               services: provider.services,
+                              coverages: provider.coverages,
                             ),
                           ),
                         );

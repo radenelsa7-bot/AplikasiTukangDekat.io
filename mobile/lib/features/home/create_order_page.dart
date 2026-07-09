@@ -7,13 +7,11 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import '../../core/services/api_service.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img_pkg;
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../core/models/order_model.dart';
 import '../../core/models/provider_model.dart';
-import '../../core/services/api_service.dart';
 import '../../app/theme/app_theme.dart';
 import '../auth/auth_controller.dart';
 import '../maps/location_picker_screen.dart';
@@ -24,12 +22,14 @@ class CreateOrderPage extends ConsumerStatefulWidget {
   final int providerId;
   final int categoryId;
   final List<ProviderService> services;
+  final List<ProviderCoverage> coverages;
 
   const CreateOrderPage({
     super.key,
     required this.providerId,
     required this.categoryId,
     required this.services,
+    this.coverages = const [],
   });
 
   @override
@@ -53,6 +53,29 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   bool _isLoadingWilayah = false;
   List<XFile> _damagePhotos = [];
   String _damageLevel = 'LIGHT';
+
+  bool get _hasCoverageFilter => widget.coverages.isNotEmpty;
+
+  List<int> get _coverageKotaIds {
+    return widget.coverages
+        .where((coverage) => coverage.isActive && coverage.kotaId != null)
+        .map((coverage) => coverage.kotaId!)
+        .toSet()
+        .toList();
+  }
+
+  List<int> _coverageKecamatanIdsForKota(int kotaId) {
+    return widget.coverages
+        .where(
+          (coverage) =>
+              coverage.isActive &&
+              coverage.kotaId == kotaId &&
+              coverage.kecamatanId > 0,
+        )
+        .map((coverage) => coverage.kecamatanId)
+        .toSet()
+        .toList();
+  }
 
   Map<String, dynamic> get _damageInfo {
     final basePrice = _selectedService?.basePrice ?? 0;
@@ -149,10 +172,16 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       final api = ref.read(apiServiceProvider);
       final kota = await api.getKota();
       if (!mounted) return;
+      final filteredKota = _hasCoverageFilter
+          ? kota.where((item) {
+              final id = (item['id'] as num).toInt();
+              return _coverageKotaIds.contains(id);
+            }).toList()
+          : kota;
       setState(() {
-        _kotaList = kota;
-        _selectedKotaId = kota.isNotEmpty
-            ? (kota.first['id'] as num).toInt()
+        _kotaList = filteredKota;
+        _selectedKotaId = filteredKota.isNotEmpty
+            ? (filteredKota.first['id'] as num).toInt()
             : null;
       });
       if (_selectedKotaId != null) {
@@ -175,10 +204,16 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     final api = ref.read(apiServiceProvider);
     final kecamatan = await api.getKecamatan(kotaId);
     if (!mounted) return;
+    final filteredKecamatan = _hasCoverageFilter
+        ? kecamatan.where((item) {
+            final id = (item['id'] as num).toInt();
+            return _coverageKecamatanIdsForKota(kotaId).contains(id);
+          }).toList()
+        : kecamatan;
     setState(() {
-      _kecamatanList = kecamatan;
-      _selectedKecamatanId = kecamatan.isNotEmpty
-          ? (kecamatan.first['id'] as num).toInt()
+      _kecamatanList = filteredKecamatan;
+      _selectedKecamatanId = filteredKecamatan.isNotEmpty
+          ? (filteredKecamatan.first['id'] as num).toInt()
           : null;
     });
   }
@@ -219,8 +254,25 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       return;
     }
 
+    if (_hasCoverageFilter) {
+      final kotaCovered = _coverageKotaIds.contains(_selectedKotaId);
+      final kecamatanCovered = _coverageKecamatanIdsForKota(
+        _selectedKotaId!,
+      ).contains(_selectedKecamatanId);
+      if (!kotaCovered || !kecamatanCovered) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Provider ini tidak melayani kota/kecamatan yang dipilih',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     // If user selected images, compress them client-side and send in single multipart request
-    List<String>? attachmentUrls;
     final api = ref.read(apiServiceProvider);
     if (_selectedImages.isNotEmpty) {
       final parts = <MultipartFile>[];
@@ -367,10 +419,10 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       attachmentUrls: _attachmentUrlsCtrl.text.trim().isEmpty
           ? null
           : _attachmentUrlsCtrl.text
-            .split('\n')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList(),
+                .split('\n')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList(),
       attachmentPaths: _damagePhotos.map((photo) => photo.path).toList(),
     );
 
@@ -445,96 +497,103 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                     ),
                     const SizedBox(height: 24),
 
-              // Pilih Layanan
-              Text(
-                'Pilih Layanan',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              if (widget.services.isNotEmpty)
-                DropdownButton<ProviderService>(
-                  isExpanded: true,
-                  value: _selectedService,
-                  items: widget.services.map((service) {
-                    return DropdownMenuItem(
-                      value: service,
-                      child: Text(
-                        '${service.name} - Rp${service.basePrice}/${service.priceUnit}',
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (ProviderService? newService) {
-                    setState(() => _selectedService = newService);
-                  },
-                )
-              else
-                const Text('Tidak ada layanan tersedia'),
-              const SizedBox(height: 24),
+                    // Pilih Layanan
+                    Text(
+                      'Pilih Layanan',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    if (widget.services.isNotEmpty)
+                      DropdownButton<ProviderService>(
+                        isExpanded: true,
+                        value: _selectedService,
+                        items: widget.services.map((service) {
+                          return DropdownMenuItem(
+                            value: service,
+                            child: Text(
+                              '${service.name} - Rp${service.basePrice}/${service.priceUnit}',
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (ProviderService? newService) {
+                          setState(() => _selectedService = newService);
+                        },
+                      )
+                    else
+                      const Text('Tidak ada layanan tersedia'),
+                    const SizedBox(height: 24),
 
-              Text(
-                'Wilayah Layanan',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              if (_isLoadingWilayah)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: LinearProgressIndicator(),
-                )
-              else ...[
-                DropdownButtonFormField<int>(
-                  value: _selectedKotaId,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: 'Kota',
-                    prefixIcon: const Icon(Icons.location_city),
-                    errorText: state.fieldErrors['kota_id'],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    Text(
+                      'Wilayah Layanan',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                  ),
-                  items: _kotaList.map((item) {
-                    final id = (item['id'] as num).toInt();
-                    return DropdownMenuItem<int>(
-                      value: id,
-                      child: Text(item['name']?.toString() ?? '-'),
-                    );
-                  }).toList(),
-                  onChanged: (value) async {
-                    if (value == null) return;
-                    setState(() {
-                      _selectedKotaId = value;
-                      _selectedKecamatanId = null;
-                      _kecamatanList = [];
-                    });
-                    await _loadKecamatan(value);
-                  },
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<int>(
-                  value: _selectedKecamatanId,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: 'Kecamatan',
-                    prefixIcon: const Icon(Icons.map_outlined),
-                    errorText: state.fieldErrors['kecamatan_id'],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  items: _kecamatanList.map((item) {
-                    final id = (item['id'] as num).toInt();
-                    return DropdownMenuItem<int>(
-                      value: id,
-                      child: Text(item['name']?.toString() ?? '-'),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() => _selectedKecamatanId = value);
-                  },
-                ),
-              ],
-              const SizedBox(height: 16),
+                    const SizedBox(height: 8),
+                    if (_hasCoverageFilter) ...[
+                      Text(
+                        'Provider ini melayani ${widget.coverages.where((c) => c.isActive).length} kecamatan.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    if (_isLoadingWilayah)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: LinearProgressIndicator(),
+                      )
+                    else ...[
+                      DropdownButtonFormField<int>(
+                        value: _selectedKotaId,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Kota',
+                          prefixIcon: const Icon(Icons.location_city),
+                          errorText: state.fieldErrors['kota_id'],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        items: _kotaList.map((item) {
+                          final id = (item['id'] as num).toInt();
+                          return DropdownMenuItem<int>(
+                            value: id,
+                            child: Text(item['name']?.toString() ?? '-'),
+                          );
+                        }).toList(),
+                        onChanged: (value) async {
+                          if (value == null) return;
+                          setState(() {
+                            _selectedKotaId = value;
+                            _selectedKecamatanId = null;
+                            _kecamatanList = [];
+                          });
+                          await _loadKecamatan(value);
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<int>(
+                        value: _selectedKecamatanId,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Kecamatan',
+                          prefixIcon: const Icon(Icons.map_outlined),
+                          errorText: state.fieldErrors['kecamatan_id'],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        items: _kecamatanList.map((item) {
+                          final id = (item['id'] as num).toInt();
+                          return DropdownMenuItem<int>(
+                            value: id,
+                            child: Text(item['name']?.toString() ?? '-'),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() => _selectedKecamatanId = value);
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 16),
                     // Pilih Layanan
                     Text(
                       'Pilih Layanan',
@@ -594,16 +653,20 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                     // Alamat
                     const Text(
                       'Alamat Lokasi',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: () async {
-                        final result = await Navigator.of(context).push<LocationResult>(
-                          MaterialPageRoute(
-                            builder: (_) => const LocationPickerScreen(),
-                          ),
-                        );
+                        final result = await Navigator.of(context)
+                            .push<LocationResult>(
+                              MaterialPageRoute(
+                                builder: (_) => const LocationPickerScreen(),
+                              ),
+                            );
                         if (result != null && mounted) {
                           _addressCtrl.text = result.address;
                         }
@@ -611,11 +674,16 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                       icon: const Icon(Icons.map_rounded, size: 18),
                       label: const Text('Pilih Lewat Google Maps'),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        side: BorderSide(color: AppTheme.orange.withValues(alpha: 0.5)),
+                        side: BorderSide(
+                          color: AppTheme.orange.withValues(alpha: 0.5),
+                        ),
                         foregroundColor: AppTheme.orange,
                       ),
                     ),
@@ -627,8 +695,9 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                       prefixIcon: const Icon(Icons.location_on),
                       errorText: state.fieldErrors['address'],
                       validator: (v) {
-                        if ((v ?? '').trim().isEmpty)
+                        if ((v ?? '').trim().isEmpty) {
                           return 'Alamat wajib diisi';
+                        }
                         return null;
                       },
                     ),
@@ -644,31 +713,34 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                     ),
                     const SizedBox(height: 16),
 
-              OutlinedButton.icon(
-                onPressed: _pickDamagePhotos,
-                icon: const Icon(Icons.photo_library_outlined),
-                label: Text(
-                  _damagePhotos.isEmpty
-                      ? 'Upload Foto Kerusakan'
-                      : '${_damagePhotos.length} foto dipilih',
-                ),
-              ),
-              if (state.fieldErrors['damage_photos.0'] != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  state.fieldErrors['damage_photos.0']!,
-                  style: TextStyle(color: Colors.red.shade700, fontSize: 12),
-                ),
-              ],
-              const SizedBox(height: 8),
-              AppTextField(
-                controller: _attachmentUrlsCtrl,
-                label: 'URL Foto Tambahan (opsional, 1 URL per baris)',
-                maxLines: 2,
-                prefixIcon: const Icon(Icons.link),
-                errorText: state.fieldErrors['attachment_urls.0'],
-              ),
-              const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: _pickDamagePhotos,
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: Text(
+                        _damagePhotos.isEmpty
+                            ? 'Upload Foto Kerusakan'
+                            : '${_damagePhotos.length} foto dipilih',
+                      ),
+                    ),
+                    if (state.fieldErrors['damage_photos.0'] != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        state.fieldErrors['damage_photos.0']!,
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    AppTextField(
+                      controller: _attachmentUrlsCtrl,
+                      label: 'URL Foto Tambahan (opsional, 1 URL per baris)',
+                      maxLines: 2,
+                      prefixIcon: const Icon(Icons.link),
+                      errorText: state.fieldErrors['attachment_urls.0'],
+                    ),
+                    const SizedBox(height: 16),
 
                     // Tanggal
                     Text('Tanggal Pekerjaan'),
