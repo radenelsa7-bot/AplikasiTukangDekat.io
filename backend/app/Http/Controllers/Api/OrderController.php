@@ -9,7 +9,6 @@ use App\Http\Requests\Order\RespondToOrderRequest;
 use App\Models\Order;
 use App\Models\OrderAttachment;
 use App\Models\OrderStatusLog;
-use App\Models\OrderAttachment;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Payment;
 use App\Models\User;

@@ -18,6 +18,7 @@ class OrderData {
   final String scheduleAt;
   final List<PaymentData> payments;
   final String? finalPriceApprovalStatus;
+  final List<OrderAttachment> attachments;
 
   OrderData({
     required this.id,
@@ -39,6 +40,7 @@ class OrderData {
     required this.scheduleAt,
     required this.payments,
     this.finalPriceApprovalStatus,
+    this.attachments = const [],
   });
 
   factory OrderData.fromJson(Map<String, dynamic> json) {
@@ -68,6 +70,40 @@ class OrderData {
       finalPriceApprovalStatus: json['final_price_approval'] is Map
           ? json['final_price_approval']['approval_status']?.toString()
           : null,
+      attachments:
+          (json['attachments'] as List?)
+              ?.map((item) => OrderAttachment.fromJson(item))
+              .toList() ??
+          [],
+    );
+  }
+}
+
+class OrderAttachment {
+  final int id;
+  final int orderId;
+  final String type;
+  final String? publicUrl;
+  final String? fileUrl;
+  final String? purpose;
+
+  OrderAttachment({
+    required this.id,
+    required this.orderId,
+    required this.type,
+    this.publicUrl,
+    this.fileUrl,
+    this.purpose,
+  });
+
+  factory OrderAttachment.fromJson(Map<String, dynamic> json) {
+    return OrderAttachment(
+      id: json['id'] ?? 0,
+      orderId: json['order_id'] ?? 0,
+      type: json['type'] ?? '',
+      publicUrl: json['public_url'],
+      fileUrl: json['file_url'],
+      purpose: json['purpose'],
     );
   }
 }

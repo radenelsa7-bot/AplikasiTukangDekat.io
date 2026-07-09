@@ -224,6 +224,34 @@ class ApiService {
     }
   }
 
+  Future<OrderData> createOrderWithFiles(
+    Map<String, dynamic> fields,
+    List<MultipartFile> files,
+  ) async {
+    try {
+      final form = FormData();
+      fields.forEach((k, v) {
+        if (v != null) form.fields.add(MapEntry(k, v.toString()));
+      });
+      for (var f in files) {
+        form.files.add(MapEntry('files[]', f));
+      }
+      final response = await dio.post('/api/orders', data: form);
+      return OrderData.fromJson(response.data['data']);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getProviderDashboard() async {
+    try {
+      final response = await dio.get('/api/provider/dashboard');
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<OrdersResponse> getMyOrders() async {
     try {
       final response = await dio.get('/api/orders/my-orders');

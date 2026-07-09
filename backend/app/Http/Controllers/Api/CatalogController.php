@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceCategory;
 use App\Models\ProviderProfile;
+use App\Models\Order;
 use App\Models\WilayahKecamatan;
 use App\Models\WilayahKota;
 use App\Traits\ApiResponse;
