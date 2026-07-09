@@ -8,8 +8,19 @@ class RespondToOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role === 'PROVIDER';
+        $user = $this->user();
+
+        // Sanctum sometimes resolves the authenticated user late in the pipeline.
+        // Fallback to Auth facade via $this->user() which is backed by the request.
+        if (!$user) {
+            return false;
+        }
+
+        $role = strtoupper((string) ($user->role ?? ''));
+
+        return $role === 'PROVIDER';
     }
+
 
     public function rules(): array
     {
@@ -26,3 +37,4 @@ class RespondToOrderRequest extends FormRequest
         ];
     }
 }
+

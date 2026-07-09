@@ -1040,7 +1040,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       'ACCEPTED',
       'IN_PROGRESS',
     ].contains(order.status);
-    if (!cancellable) return const SizedBox.shrink();
+    final approvalPending =
+        order.status == 'COMPLETED' &&
+        order.finalPriceApprovalStatus == 'PENDING';
+    if (!cancellable && !approvalPending) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1069,24 +1072,83 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             ],
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.cancel_outlined, size: 18),
-              label: const Text('Batalkan Pesanan'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.danger,
-                side: const BorderSide(color: AppTheme.danger),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: actionState.isLoading
-                  ? null
-                  : () => _showCancelDialog(context, ref, order),
+          if (approvalPending) ...[
+            const Text(
+              'Provider sudah mengirim harga final. Setujui untuk menerbitkan tagihan pelunasan.',
+              style: TextStyle(fontSize: 13, color: AppTheme.grey600),
             ),
-          ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    label: const Text('Tolak'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.danger,
+                      side: const BorderSide(color: AppTheme.danger),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: actionState.isLoading
+                        ? null
+                        : () => _decideFinalPrice(
+                            context,
+                            ref,
+                            order,
+                            'reject',
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.check_rounded, size: 18),
+                    label: const Text('Setuju'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.success,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: actionState.isLoading
+                        ? null
+                        : () => _decideFinalPrice(
+                            context,
+                            ref,
+                            order,
+                            'approve',
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (cancellable) ...[
+            if (approvalPending) const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.cancel_outlined, size: 18),
+                label: const Text('Batalkan Pesanan'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.danger,
+                  side: const BorderSide(color: AppTheme.danger),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: actionState.isLoading
+                    ? null
+                    : () => _showCancelDialog(context, ref, order),
+              ),
+            ),
+          ],
           if (actionState.isLoading)
             const Padding(
               padding: EdgeInsets.only(top: 12),
@@ -1100,6 +1162,35 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _decideFinalPrice(
+    BuildContext context,
+    WidgetRef ref,
+    OrderData order,
+    String action,
+  ) async {
+    try {
+      final api = ref.read(apiServiceProvider);
+      await api.decideFinalPrice(orderId: order.id, action: action);
+      ref.invalidate(orderDetailProvider(order.id));
+      ref.invalidate(myOrdersProvider);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            action == 'approve'
+                ? 'Harga final disetujui. Tagihan pelunasan sudah dibuat.'
+                : 'Harga final ditolak.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memproses harga final: $e')),
+      );
+    }
   }
 
   void _showCancelDialog(BuildContext context, WidgetRef ref, OrderData order) {

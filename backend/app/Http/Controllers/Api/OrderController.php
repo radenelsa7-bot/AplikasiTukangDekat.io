@@ -7,6 +7,7 @@ use App\Http\Requests\Order\CompleteOrderRequest;
 use App\Http\Requests\Order\CreateOrderRequest;
 use App\Http\Requests\Order\RespondToOrderRequest;
 use App\Models\Order;
+use App\Models\OrderAttachment;
 use App\Models\OrderStatusLog;
 use App\Models\OrderAttachment;
 use Illuminate\Support\Facades\Storage;
@@ -38,9 +39,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'CUSTOMER') {
-            return $this->forbidden('Only customers can create orders');
-        }
 
         try {
             $validated = $request->validated();
@@ -50,15 +48,39 @@ class OrderController extends Controller
                 ->where('role', 'PROVIDER')
                 ->firstOrFail();
 
-            $providerProfile = $provider->providerProfile;
+            // Coverage area validation (per-provider)
+            // provider_coverages mengacu ke provider_profiles.user_id
+            $providerProfile = \App\Models\ProviderProfile::where('user_id', $provider->id)
+                ->where('is_active', true)
+                ->first();
 
-            $result = DB::transaction(function () use ($validated, $user, $request, $providerProfile) {
+            if (!$providerProfile) {
+                return $this->validationError([
+                    'provider_id' => ['Sepertinya Provider kita belum tersedia disana'],
+                ]);
+            }
+
+            $kecamatanId = (int) $validated['kecamatan_id'];
+            $hasCoverage = \App\Models\ProviderCoverage::where('provider_profile_id', $providerProfile->id)
+                ->where('kecamatan_id', $kecamatanId)
+                ->where('is_active', true)
+                ->exists();
+
+            if (!$hasCoverage) {
+                return $this->validationError([
+                    'kecamatan_id' => ['Sepertinya Provider kita belum tersedia disana'],
+                ]);
+            }
+
+            $result = DB::transaction(function () use ($validated, $user) {
                 $order = Order::create([
                     'order_code' => Order::generateCode(),
                     'customer_id' => $user->id,
                     'provider_id' => $validated['provider_id'],
                     'category_id' => $validated['category_id'],
                     'provider_service_id' => $validated['provider_service_id'] ?? null,
+                    'kota_id' => $validated['kota_id'],
+                    'kecamatan_id' => $validated['kecamatan_id'],
                     'schedule_at' => $validated['schedule_at'],
                     'address' => $validated['address'],
                     'customer_latitude' => $validated['customer_latitude'] ?? null,
@@ -81,6 +103,23 @@ class OrderController extends Controller
                     'amount' => $dpAmount,
                     'status' => 'UNPAID',
                 ]);
+
+                foreach (($validated['attachment_urls'] ?? []) as $url) {
+                    OrderAttachment::create([
+                        'order_id' => $order->id,
+                        'file_url' => $url,
+                        'file_type' => 'damage_photo_url',
+                    ]);
+                }
+
+                foreach (($validated['damage_photos'] ?? []) as $photo) {
+                    $path = $photo->store('order-damage-photos', 'public');
+                    OrderAttachment::create([
+                        'order_id' => $order->id,
+                        'file_url' => $path,
+                        'file_type' => 'damage_photo',
+                    ]);
+                }
 
                 OrderStatusLog::create([
                     'order_id' => $order->id,
@@ -187,7 +226,7 @@ class OrderController extends Controller
      */
     public function getOrder($orderId)
     {
-        $order = Order::with(['customer', 'provider', 'payments', 'statusLogs'])
+        $order = Order::with(['customer', 'provider', 'payments', 'statusLogs', 'attachments', 'finalPriceApproval'])
             ->find($orderId);
 
         if (!$order) {
@@ -207,12 +246,14 @@ class OrderController extends Controller
 
         if ($user->role === 'CUSTOMER') {
             $orders = Order::where('customer_id', $user->id)
-                ->with(['provider', 'payments', 'attachments'])
+                ->with(['provider', 'payments'])
+                ->with('finalPriceApproval')
                 ->latest()
                 ->get();
         } elseif ($user->role === 'PROVIDER') {
             $orders = Order::where('provider_id', $user->id)
-                ->with(['customer', 'payments', 'attachments'])
+                ->with(['customer', 'payments'])
+                ->with('finalPriceApproval')
                 ->latest()
                 ->get();
         } else {
@@ -258,9 +299,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'PROVIDER') {
-            return $this->forbidden('Only providers can respond to orders.');
-        }
 
         $order = Order::with(['customer', 'payments'])->find($orderId);
 
@@ -370,9 +408,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'PROVIDER') {
-            return $this->forbidden('Only providers can start work.');
-        }
 
         $order = Order::with('payments')->find($orderId);
 
@@ -427,9 +462,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'PROVIDER') {
-            return $this->forbidden('Only providers can complete orders.');
-        }
 
         $order = Order::with('payments')->find($orderId);
 
@@ -460,6 +492,7 @@ class OrderController extends Controller
                     'status' => 'COMPLETED',
                     'final_price' => $validated['final_price'],
                 ]);
+
                 OrderStatusLog::create([
                     'order_id' => $order->id,
                     'old_status' => $oldStatus,
@@ -467,22 +500,29 @@ class OrderController extends Controller
                     'changed_by' => $user->id,
                 ]);
 
+                // Buat/refresh record approval harga akhir. Payment FINAL baru boleh dibuat
+                // setelah customer menyetujui (sesuai requirement).
+                \App\Models\FinalPriceApproval::updateOrCreate(
+                    [
+                        'order_id' => $order->id,
+                    ],
+                    [
+                        'proposed_final_price' => $validated['final_price'],
+                        'approval_status' => 'PENDING',
+                        'approved_by' => null,
+                    ]
+                );
+
+                \App\Models\FinalPriceLog::create([
+                    'order_id' => $order->id,
+                    'proposed_final_price' => $validated['final_price'],
+                    'action' => 'SUBMIT',
+                    'submitted_by' => $user->id,
+                ]);
+
                 $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
                 $dpAmount = $dpPayment?->amount ?? 0;
                 $finalAmount = max(0, $validated['final_price'] - $dpAmount);
-
-                if ($finalAmount > 0) {
-                    Payment::create([
-                        'order_id' => $order->id,
-                        'payment_type' => 'FINAL',
-                        'amount' => $finalAmount,
-                        'status' => 'UNPAID',
-                    ]);
-                }
-
-                $this->storeReportFiles($request, $order, 'initial_condition_photos', 'PROVIDER_INITIAL');
-                $this->storeReportFiles($request, $order, 'final_condition_photos', 'PROVIDER_FINAL');
-                $this->storeReportFiles($request, $order, 'receipt_photos', 'PROVIDER_RECEIPT');
 
                 return ['order' => $order, 'finalAmount' => $finalAmount];
             });
@@ -553,9 +593,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'CUSTOMER') {
-            return $this->forbidden('Only customers can cancel orders');
-        }
 
         $order = Order::with('payments')->find($orderId);
 

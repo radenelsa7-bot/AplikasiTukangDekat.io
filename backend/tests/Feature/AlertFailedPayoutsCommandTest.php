@@ -16,7 +16,7 @@ class AlertFailedPayoutsCommandTest extends TestCase
         config(['services.payouts.alert_webhook' => null, 'services.payouts.alert_email' => null]);
 
         $service = new class extends MonitoringService {
-            public function failedPayoutsCount(int $windowMinutes = null): int
+            public function failedPayoutsCount(?int $windowMinutes = null): int
             {
                 return 2;
             }
@@ -52,7 +52,7 @@ class AlertFailedPayoutsCommandTest extends TestCase
         ]);
 
         $service = new class extends MonitoringService {
-            public function failedPayoutsCount(int $windowMinutes = null): int
+            public function failedPayoutsCount(?int $windowMinutes = null): int
             {
                 return 2;
             }
@@ -94,7 +94,7 @@ class AlertFailedPayoutsCommandTest extends TestCase
         ]);
 
         $service = new class extends MonitoringService {
-            public function failedPayoutsCount(int $windowMinutes = null): int
+            public function failedPayoutsCount(?int $windowMinutes = null): int
             {
                 return 7;
             }

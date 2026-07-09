@@ -22,6 +22,8 @@ class CreateOrderRequest extends FormRequest
             ],
             'provider_service_id' => 'nullable|exists:provider_services,id',
             'category_id' => 'required|exists:service_categories,id',
+            'kota_id' => 'required|integer|exists:wilayah_kota,id',
+            'kecamatan_id' => 'required|integer|exists:wilayah_kecamatan,id',
             'schedule_at' => 'required|date_format:Y-m-d H:i:s|after:now',
             'address' => 'required|string|max:500',
             'customer_latitude' => 'nullable|numeric|between:-90,90',
@@ -32,10 +34,10 @@ class CreateOrderRequest extends FormRequest
             'estimated_price_min' => 'nullable|integer|min:1|max:100000000',
             'estimated_price_max' => 'nullable|integer|min:1|max:100000000|gte:estimated_price_min',
             'estimated_price' => 'required|integer|min:1|max:100000000',
-            'attachment_urls' => 'nullable|array',
-            'attachment_urls.*' => 'nullable|string|max:2000000',
-            'files' => 'nullable|array',
-            'files.*' => 'file|mimes:jpeg,jpg,png|max:5120',
+            'attachment_urls' => 'nullable|array|max:5',
+            'attachment_urls.*' => 'required|url|max:2048',
+            'damage_photos' => 'nullable|array|max:5',
+            'damage_photos.*' => 'image|mimes:jpg,jpeg,png|max:4096',
         ];
     }
 

@@ -6,7 +6,7 @@ use App\Models\ProviderPayoutAttempt;
 
 class MonitoringService
 {
-    public function failedPayoutsCount(int $windowMinutes = null): int
+    public function failedPayoutsCount(?int $windowMinutes = null): int
     {
         $windowMinutes = $windowMinutes ?? config('monitoring.payout_failure_window_minutes', 60);
         $cutoff = now()->subMinutes($windowMinutes);
@@ -16,7 +16,7 @@ class MonitoringService
             ->count();
     }
 
-    public function payoutAttemptsCount(int $windowMinutes = null): int
+    public function payoutAttemptsCount(?int $windowMinutes = null): int
     {
         $windowMinutes = $windowMinutes ?? config('monitoring.payout_failure_window_minutes', 60);
         $cutoff = now()->subMinutes($windowMinutes);
@@ -25,7 +25,7 @@ class MonitoringService
             ->count();
     }
 
-    public function payoutFailureRate(int $windowMinutes = null): float
+    public function payoutFailureRate(?int $windowMinutes = null): float
     {
         $windowMinutes = $windowMinutes ?? config('monitoring.payout_failure_window_minutes', 60);
         $cutoff = now()->subMinutes($windowMinutes);
@@ -38,13 +38,13 @@ class MonitoringService
         return $total === 0 ? 0.0 : round((100 * $failed) / $total, 2);
     }
 
-    public function alertThresholdExceeded(int $windowMinutes = null): bool
+    public function alertThresholdExceeded(?int $windowMinutes = null): bool
     {
         $threshold = config('monitoring.payout_failure_alert_threshold', 3);
         return $this->failedPayoutsCount($windowMinutes) >= $threshold;
     }
 
-    public function alertSeverity(int $windowMinutes = null): string
+    public function alertSeverity(?int $windowMinutes = null): string
     {
         $failed = $this->failedPayoutsCount($windowMinutes);
         $critical = config('monitoring.payout_failure_critical_threshold', 10);

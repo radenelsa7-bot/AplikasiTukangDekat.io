@@ -17,7 +17,7 @@ class OrderData {
   final String? queueNote;
   final String scheduleAt;
   final List<PaymentData> payments;
-  final List<OrderAttachmentData> attachments;
+  final String? finalPriceApprovalStatus;
 
   OrderData({
     required this.id,
@@ -38,7 +38,7 @@ class OrderData {
     this.queueNote,
     required this.scheduleAt,
     required this.payments,
-    required this.attachments,
+    this.finalPriceApprovalStatus,
   });
 
   factory OrderData.fromJson(Map<String, dynamic> json) {
@@ -65,37 +65,9 @@ class OrderData {
               ?.map((item) => PaymentData.fromJson(item))
               .toList() ??
           [],
-      attachments:
-          (json['attachments'] as List?)
-              ?.map((item) => OrderAttachmentData.fromJson(item))
-              .toList() ??
-          [],
-    );
-  }
-}
-
-class OrderAttachmentData {
-  final int id;
-  final String? fileUrl;
-  final String? publicUrl;
-  final String? fileType;
-  final String purpose;
-
-  OrderAttachmentData({
-    required this.id,
-    this.fileUrl,
-    this.publicUrl,
-    this.fileType,
-    this.purpose = 'CUSTOMER_DAMAGE',
-  });
-
-  factory OrderAttachmentData.fromJson(Map<String, dynamic> json) {
-    return OrderAttachmentData(
-      id: json['id'] ?? 0,
-      fileUrl: json['file_url'],
-      publicUrl: json['public_url'] ?? json['file_url'],
-      fileType: json['file_type'],
-      purpose: json['purpose'] ?? 'CUSTOMER_DAMAGE',
+      finalPriceApprovalStatus: json['final_price_approval'] is Map
+          ? json['final_price_approval']['approval_status']?.toString()
+          : null,
     );
   }
 }
@@ -152,6 +124,8 @@ class CreateOrderRequest {
   final int providerId;
   final int? categoryId;
   final int? providerServiceId;
+  final int kotaId;
+  final int kecamatanId;
   final String scheduleAt;
   final String address;
   final String? notes;
@@ -161,11 +135,14 @@ class CreateOrderRequest {
   final int? estimatedPriceMax;
   final int? estimatedPrice;
   final List<String>? attachmentUrls;
+  final List<String>? attachmentPaths;
 
   CreateOrderRequest({
     required this.providerId,
     this.categoryId,
     this.providerServiceId,
+    required this.kotaId,
+    required this.kecamatanId,
     required this.scheduleAt,
     required this.address,
     this.notes,
@@ -175,11 +152,14 @@ class CreateOrderRequest {
     this.estimatedPriceMax,
     this.estimatedPrice,
     this.attachmentUrls,
+    this.attachmentPaths,
   });
 
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{
       'provider_id': providerId,
+      'kota_id': kotaId,
+      'kecamatan_id': kecamatanId,
       'schedule_at': scheduleAt,
       'address': address,
     };

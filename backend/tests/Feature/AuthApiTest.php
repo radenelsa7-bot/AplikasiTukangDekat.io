@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use App\Models\ServiceCategory;
+use App\Models\ProviderProfile;
 
 class AuthApiTest extends TestCase
 {
@@ -41,6 +43,9 @@ class AuthApiTest extends TestCase
 
     public function test_register_provider_creates_provider_profile(): void
     {
+        // RegisterRequest requires category_id + business_name when role=PROVIDER
+        $category = ServiceCategory::factory()->create();
+
         $response = $this->postJson('/api/auth/register', [
             'name' => 'Test Provider',
             'email' => 'provider@example.com',
@@ -48,6 +53,10 @@ class AuthApiTest extends TestCase
             'password' => 'Secret123!',
             'password_confirmation' => 'Secret123!',
             'role' => 'PROVIDER',
+            'category_id' => $category->id,
+            'business_name' => 'PT Test Provider',
+            'service_name' => 'Layanan Test',
+            'base_price' => 10000,
         ]);
 
         $response->assertStatus(201)
@@ -60,6 +69,11 @@ class AuthApiTest extends TestCase
 
         $userId = $response->json('data.user.id');
         $this->assertDatabaseHas('provider_profiles', ['user_id' => $userId]);
+
+        $this->assertDatabaseHas('provider_profiles', [
+            'user_id' => $userId,
+            'business_name' => 'PT Test Provider',
+        ]);
     }
 
     public function test_login_returns_token_with_valid_credentials(): void
