@@ -410,7 +410,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     );
   }
 
-  String _attachmentPurposeLabel(String purpose) {
+  String _attachmentPurposeLabel(String? purpose) {
     switch (purpose) {
       case 'PROVIDER_INITIAL':
         return 'Kondisi awal';

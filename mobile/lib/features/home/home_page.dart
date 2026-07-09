@@ -62,17 +62,20 @@ class _HomePageState extends ConsumerState<HomePage> {
             _buildAccountTab(context, ref, state),
           ];
 
-    return Scaffold(
-      backgroundColor: AppTheme.cream,
-      body: pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        items: bottomItems,
-        selectedItemColor: AppTheme.orange,
-        unselectedItemColor: AppTheme.grey600,
-        backgroundColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
+    return DefaultTabController(
+      length: 1,
+      child: Scaffold(
+        backgroundColor: AppTheme.cream,
+        body: pages[_selectedIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) => setState(() => _selectedIndex = index),
+          items: bottomItems,
+          selectedItemColor: AppTheme.orange,
+          unselectedItemColor: AppTheme.grey600,
+          backgroundColor: Colors.white,
+          type: BottomNavigationBarType.fixed,
+        ),
       ),
     );
   }
@@ -97,13 +100,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.navy.withOpacity(0.3),
-                  blurRadius: 15,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.navy.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
             ),
             child: Row(
               children: [
@@ -121,7 +124,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                             '${ApiConfig.baseUrl}/api/storage/${state.userProfilePhotoPath}',
                           )
                         : null,
-                    onBackgroundImageError: (_, __) {},
+                    // Fix crash: CircleAvatar mensyaratkan salah satu dari:
+                    // - backgroundImage != null
+                    // - onBackgroundImageError == null
+                    onBackgroundImageError: (state.userProfilePhotoPath != null &&
+                            state.userProfilePhotoPath!.isNotEmpty)
+                        ? (_, _) {}
+                        : null,
                     child: state.userProfilePhotoPath == null
                         ? const Icon(
                             Icons.person,
@@ -162,7 +171,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.orange.withOpacity(0.2),
+                          color: AppTheme.orange.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -249,6 +258,21 @@ class _HomePageState extends ConsumerState<HomePage> {
                     onTap: null,
                   ),
                 ],
+
+                const Divider(height: 1, indent: 56),
+                _buildMenuTile(
+                  icon: Icons.logout_rounded,
+                  iconColor: AppTheme.danger,
+                  title: 'Logout',
+                  subtitle: 'Keluar dari akun',
+                  onTap: () async {
+                    await ref.read(authControllerProvider.notifier).logout();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -269,7 +293,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, color: iconColor, size: 22),

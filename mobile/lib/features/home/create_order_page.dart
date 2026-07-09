@@ -14,7 +14,9 @@ import '../../shared/widgets/app_text_field.dart';
 import '../../core/models/order_model.dart';
 import '../../core/models/provider_model.dart';
 import '../../core/services/api_service.dart';
+import '../../app/theme/app_theme.dart';
 import '../auth/auth_controller.dart';
+import '../maps/location_picker_screen.dart';
 import 'my_orders_page.dart';
 import 'order_providers.dart';
 
@@ -39,7 +41,6 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   final _addressCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   final _attachmentUrlsCtrl = TextEditingController();
-  final _imagePicker = ImagePicker();
   final ImagePicker _imagePicker = ImagePicker();
   final List<XFile> _selectedImages = [];
   DateTime? _selectedDate;
@@ -591,9 +592,37 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                     const SizedBox(height: 24),
 
                     // Alamat
+                    const Text(
+                      'Alamat Lokasi',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final result = await Navigator.of(context).push<LocationResult>(
+                          MaterialPageRoute(
+                            builder: (_) => const LocationPickerScreen(),
+                          ),
+                        );
+                        if (result != null && mounted) {
+                          _addressCtrl.text = result.address;
+                        }
+                      },
+                      icon: const Icon(Icons.map_rounded, size: 18),
+                      label: const Text('Pilih Lewat Google Maps'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        side: BorderSide(color: AppTheme.orange.withValues(alpha: 0.5)),
+                        foregroundColor: AppTheme.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     AppTextField(
                       controller: _addressCtrl,
-                      label: 'Alamat Lokasi',
+                      label: 'Atau tulis alamat lengkap',
                       maxLines: 3,
                       prefixIcon: const Icon(Icons.location_on),
                       errorText: state.fieldErrors['address'],
