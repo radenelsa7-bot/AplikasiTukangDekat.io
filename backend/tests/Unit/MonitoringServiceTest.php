@@ -10,7 +10,7 @@ class MonitoringServiceTest extends TestCase
     public function test_alert_severity_returns_none_below_threshold()
     {
         $service = new class extends MonitoringService {
-            public function failedPayoutsCount(int $windowMinutes = null): int
+            public function failedPayoutsCount(?int $windowMinutes = null): int
             {
                 return 1;
             }

@@ -94,6 +94,18 @@ class PaymentController extends Controller
             return $this->successResponse(['payment' => $payment], 'Payment already confirmed', 200);
         }
 
+        // Requirement: FINAL payment hanya bisa diproses setelah customer menyetujui harga akhir.
+        if (strtoupper((string) $payment->payment_type) === 'FINAL') {
+            $approval = \App\Models\FinalPriceApproval::where('order_id', $payment->order_id)
+                ->latest('id')
+                ->first();
+
+            if (!$approval || $approval->approval_status !== 'APPROVED') {
+                return $this->errorResponse('Customer approval for final price is required', 409);
+            }
+        }
+
+
         // Check Midtrans transaction status if using Midtrans
         if ($this->paymentGatewayService->driver() === 'midtrans') {
             $serverKey = (string) config('services.payments.midtrans_server_key', '');
@@ -170,6 +182,7 @@ class PaymentController extends Controller
                     'reason' => 'Payment confirmed by user',
                 ]);
             }
+
 
             DB::commit();
             return $this->successResponse(['payment' => $payment->fresh()], 'Payment confirmed', 200);

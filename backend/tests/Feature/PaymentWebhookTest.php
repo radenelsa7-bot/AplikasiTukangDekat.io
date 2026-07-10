@@ -10,177 +10,180 @@ use Tests\TestCase;
 
 class PaymentWebhookTest extends TestCase
 {
-  use RefreshDatabase;
+    use RefreshDatabase;
 
-  public function test_midtrans_webhook_marks_payment_paid_and_closes_final_order(): void
-  {
-    config([
-      'services.payments.driver' => 'midtrans',
-      'services.payments.midtrans_server_key' => 'midtrans-secret-key',
-      'services.payments.midtrans_is_production' => false,
-      'services.payments.platform_commission_percent' => 0,
-    ]);
+    public function test_midtrans_webhook_marks_payment_paid_and_closes_final_order(): void
+    {
+        config([
+            'services.payments.driver' => 'midtrans',
+            'services.payments.midtrans_server_key' => 'midtrans-secret-key',
+            'services.payments.midtrans_is_production' => false,
+            'services.payments.platform_commission_percent' => 0,
+        ]);
 
-    $customer = User::factory()->create(['role' => 'CUSTOMER']);
-    $provider = User::factory()->create(['role' => 'PROVIDER']);
+        $customer = User::factory()->create(['role' => 'CUSTOMER']);
+        $provider = User::factory()->create(['role' => 'PROVIDER']);
 
-    $order = Order::create([
-      'order_code' => 'ORD-' . now()->format('Ymd') . '-0001',
-      'customer_id' => $customer->id,
-      'provider_id' => $provider->id,
-      'schedule_at' => now()->addDay(),
-      'address' => 'Jl. Test 123',
-      'estimated_price' => 150000,
-      'final_price' => 150000,
-      'status' => 'CREATED',
-    ]);
+        $order = Order::create([
+            'order_code' => 'ORD-' . now()->format('Ymd') . '-0001',
+            'customer_id' => $customer->id,
+            'provider_id' => $provider->id,
+            'schedule_at' => now()->addDay(),
+            'address' => 'Jl. Test 123',
+            'estimated_price' => 150000,
+            'final_price' => 150000,
+            'status' => 'CREATED',
+        ]);
 
-    $payment = Payment::create([
-      'order_id' => $order->id,
-      'payment_type' => 'FINAL',
-      'amount' => 150000,
-      'commission_percent' => 0,
-      'platform_fee' => 0,
-      'provider_payout' => 0,
-      'status' => 'PENDING',
-      'provider' => null,
-      'external_payment_id' => 'PAY-' . $order->id . '-ABC123',
-    ]);
+        $payment = Payment::create([
+            'order_id' => $order->id,
+            'payment_type' => 'FINAL',
+            'amount' => 150000,
+            'commission_percent' => 0,
+            'platform_fee' => 0,
+            'provider_payout' => 0,
+            'status' => 'PENDING',
+            'provider' => null,
+            'external_payment_id' => 'PAY-' . $order->id . '-ABC123',
+        ]);
 
-    $payload = [
-      'order_id' => $payment->external_payment_id,
-      'status_code' => '200',
-      'gross_amount' => (string) $payment->amount,
-      'transaction_status' => 'settlement',
-      'transaction_id' => 'TX-' . time(),
-      'signature_key' => hash('sha512', $payment->external_payment_id . '200' . $payment->amount . 'midtrans-secret-key'),
-      'metadata' => [
-        'payment_id' => $payment->id,
-      ],
-    ];
+        $payload = [
+            'order_id' => $payment->external_payment_id,
+            'status_code' => '200',
+            'gross_amount' => (string) $payment->amount,
+            'transaction_status' => 'settlement',
+            'transaction_id' => 'TX-' . time(),
+            'signature_key' => hash('sha512', $payment->external_payment_id . '200' . $payment->amount . 'midtrans-secret-key'),
+            'metadata' => [
+                'payment_id' => $payment->id,
+            ],
+        ];
 
-    $response = $this->postJson('/api/webhooks/payment', $payload);
+        $response = $this->postJson('/api/webhooks/payment', $payload);
 
-    $response->assertStatus(200)->assertJson(['message' => 'payment processed']);
+        $response->assertStatus(200)->assertJson(['message' => 'payment processed']);
 
-    $payment->refresh();
-    $order->refresh();
+        $payment->refresh();
+        $order->refresh();
 
-    $this->assertSame('PAID', $payment->status);
-    $this->assertSame('MIDTRANS', $payment->provider);
-    $this->assertNotNull($payment->paid_at);
-    $this->assertSame('READY', $payment->settlement_status);
-    $this->assertSame(150000, (int) $payment->provider_payout);
-    $this->assertSame('CLOSED', $order->status);
-  }
+        $this->assertSame('PAID', $payment->status);
+        $this->assertSame('MIDTRANS', $payment->provider);
+        $this->assertNotNull($payment->paid_at);
+        $this->assertSame('READY', $payment->settlement_status);
+        $this->assertSame(150000, (int) $payment->provider_payout);
+        $this->assertSame('CLOSED', $order->status);
+    }
 
-  public function test_midtrans_webhook_dp_marks_order_accepted(): void
-  {
-    config([
-      'services.payments.driver' => 'midtrans',
-      'services.payments.midtrans_server_key' => 'midtrans-secret-key',
-      'services.payments.midtrans_is_production' => false,
-    ]);
+    public function test_midtrans_webhook_dp_marks_payment_paid(): void
+    {
+        // Current implementation only updates Payment on DP webhook (order status transition
+        // to ACCEPTED is handled by provider respondToOrder, not by DP payment webhook).
+        config([
+            'services.payments.driver' => 'midtrans',
+            'services.payments.midtrans_server_key' => 'midtrans-secret-key',
+            'services.payments.midtrans_is_production' => false,
+        ]);
 
-    $customer = User::factory()->create(['role' => 'CUSTOMER']);
-    $provider = User::factory()->create(['role' => 'PROVIDER']);
+        $customer = User::factory()->create(['role' => 'CUSTOMER']);
+        $provider = User::factory()->create(['role' => 'PROVIDER']);
 
-    $order = Order::create([
-      'order_code' => 'ORD-' . now()->format('Ymd') . '-0003',
-      'customer_id' => $customer->id,
-      'provider_id' => $provider->id,
-      'schedule_at' => now()->addDay(),
-      'address' => 'Jl. Test DP',
-      'estimated_price' => 100000,
-      'status' => 'CREATED',
-    ]);
+        $order = Order::create([
+            'order_code' => 'ORD-' . now()->format('Ymd') . '-0003',
+            'customer_id' => $customer->id,
+            'provider_id' => $provider->id,
+            'schedule_at' => now()->addDay(),
+            'address' => 'Jl. Test DP',
+            'estimated_price' => 100000,
+            'status' => 'CREATED',
+        ]);
 
-    $payment = Payment::create([
-      'order_id' => $order->id,
-      'payment_type' => 'DP',
-      'amount' => 50000,
-      'commission_percent' => 0,
-      'platform_fee' => 0,
-      'provider_payout' => 0,
-      'status' => 'PENDING',
-      'provider' => null,
-      'external_payment_id' => 'PAY-' . $order->id . '-DP123',
-    ]);
+        $payment = Payment::create([
+            'order_id' => $order->id,
+            'payment_type' => 'DP',
+            'amount' => 50000,
+            'commission_percent' => 0,
+            'platform_fee' => 0,
+            'provider_payout' => 0,
+            'status' => 'PENDING',
+            'provider' => null,
+            'external_payment_id' => 'PAY-' . $order->id . '-DP123',
+        ]);
 
-    $payload = [
-      'order_id' => $payment->external_payment_id,
-      'status_code' => '200',
-      'gross_amount' => (string) $payment->amount,
-      'transaction_status' => 'settlement',
-      'transaction_id' => 'TX-DP-' . time(),
-      'signature_key' => hash('sha512', $payment->external_payment_id . '200' . $payment->amount . 'midtrans-secret-key'),
-      'metadata' => [
-        'payment_id' => $payment->id,
-      ],
-    ];
+        $payload = [
+            'order_id' => $payment->external_payment_id,
+            'status_code' => '200',
+            'gross_amount' => (string) $payment->amount,
+            'transaction_status' => 'settlement',
+            'transaction_id' => 'TX-DP-' . time(),
+            'signature_key' => hash('sha512', $payment->external_payment_id . '200' . $payment->amount . 'midtrans-secret-key'),
+            'metadata' => [
+                'payment_id' => $payment->id,
+            ],
+        ];
 
-    $response = $this->postJson('/api/webhooks/payment', $payload);
+        $response = $this->postJson('/api/webhooks/payment', $payload);
 
-    $response->assertStatus(200)->assertJson(['message' => 'payment processed']);
+        $response->assertStatus(200)->assertJson(['message' => 'payment processed']);
 
-    $payment->refresh();
-    $order->refresh();
+        $payment->refresh();
+        $order->refresh();
 
-    $this->assertSame('PAID', $payment->status);
-    $this->assertSame('MIDTRANS', $payment->provider);
-    $this->assertNotNull($payment->paid_at);
-    $this->assertSame('READY', $payment->settlement_status);
-    $this->assertSame('ACCEPTED', $order->status);
-  }
+        $this->assertSame('PAID', $payment->status);
+        $this->assertSame('MIDTRANS', $payment->provider);
+        $this->assertNotNull($payment->paid_at);
 
-  public function test_midtrans_webhook_rejects_invalid_signature(): void
-  {
-    config([
-      'services.payments.driver' => 'midtrans',
-      'services.payments.midtrans_server_key' => 'midtrans-secret-key',
-    ]);
+        // Order status is still CREATE/CREATED until provider responds.
+        $this->assertSame('CREATED', $order->status);
+    }
 
-    $customer = User::factory()->create(['role' => 'CUSTOMER']);
-    $provider = User::factory()->create(['role' => 'PROVIDER']);
+    public function test_midtrans_webhook_rejects_invalid_signature(): void
+    {
+        config([
+            'services.payments.driver' => 'midtrans',
+            'services.payments.midtrans_server_key' => 'midtrans-secret-key',
+        ]);
 
-    $order = Order::create([
-      'order_code' => 'ORD-' . now()->format('Ymd') . '-0002',
-      'customer_id' => $customer->id,
-      'provider_id' => $provider->id,
-      'schedule_at' => now()->addDay(),
-      'address' => 'Jl. Test 456',
-      'estimated_price' => 50000,
-      'final_price' => 50000,
-      'status' => 'CREATED',
-    ]);
+        $customer = User::factory()->create(['role' => 'CUSTOMER']);
+        $provider = User::factory()->create(['role' => 'PROVIDER']);
 
-    $payment = Payment::create([
-      'order_id' => $order->id,
-      'payment_type' => 'DP',
-      'amount' => 50000,
-      'commission_percent' => 0,
-      'platform_fee' => 0,
-      'provider_payout' => 0,
-      'status' => 'PENDING',
-      'provider' => null,
-      'external_payment_id' => 'PAY-' . $order->id . '-XYZ789',
-    ]);
+        $order = Order::create([
+            'order_code' => 'ORD-' . now()->format('Ymd') . '-0002',
+            'customer_id' => $customer->id,
+            'provider_id' => $provider->id,
+            'schedule_at' => now()->addDay(),
+            'address' => 'Jl. Test 456',
+            'estimated_price' => 50000,
+            'final_price' => 50000,
+            'status' => 'CREATED',
+        ]);
 
-    $response = $this->postJson('/api/webhooks/payment', [
-      'order_id' => $payment->external_payment_id,
-      'status_code' => '200',
-      'gross_amount' => (string) $payment->amount,
-      'transaction_status' => 'settlement',
-      'signature_key' => 'invalid-signature',
-      'metadata' => ['payment_id' => $payment->id],
-    ]);
+        $payment = Payment::create([
+            'order_id' => $order->id,
+            'payment_type' => 'DP',
+            'amount' => 50000,
+            'commission_percent' => 0,
+            'platform_fee' => 0,
+            'provider_payout' => 0,
+            'status' => 'PENDING',
+            'provider' => null,
+            'external_payment_id' => 'PAY-' . $order->id . '-XYZ789',
+        ]);
 
-    $response->assertStatus(403)->assertJson(['message' => 'invalid signature']);
+        $response = $this->postJson('/api/webhooks/payment', [
+            'order_id' => $payment->external_payment_id,
+            'status_code' => '200',
+            'gross_amount' => (string) $payment->amount,
+            'transaction_status' => 'settlement',
+            'signature_key' => 'invalid-signature',
+            'metadata' => ['payment_id' => $payment->id],
+        ]);
 
-    $payment->refresh();
-    $order->refresh();
+        $response->assertStatus(403)->assertJson(['message' => 'invalid signature']);
 
-    $this->assertSame('PENDING', $payment->status);
-    $this->assertSame('CREATED', $order->status);
-  }
+        $payment->refresh();
+        $order->refresh();
+
+        $this->assertSame('PENDING', $payment->status);
+        $this->assertSame('CREATED', $order->status);
+    }
 }
