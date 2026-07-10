@@ -482,7 +482,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                 )
               else ...[
                 DropdownButtonFormField<int>(
-                  value: _selectedKotaId,
+                  initialValue: _selectedKotaId,
                   isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Kota',
@@ -511,7 +511,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
-                  value: _selectedKecamatanId,
+                  initialValue: _selectedKecamatanId,
                   isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Kecamatan',
@@ -598,8 +598,9 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                       prefixIcon: const Icon(Icons.location_on),
                       errorText: state.fieldErrors['address'],
                       validator: (v) {
-                        if ((v ?? '').trim().isEmpty)
+                        if ((v ?? '').trim().isEmpty) {
                           return 'Alamat wajib diisi';
+                        }
                         return null;
                       },
                     ),

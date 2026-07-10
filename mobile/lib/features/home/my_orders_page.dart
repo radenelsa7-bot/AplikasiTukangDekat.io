@@ -324,7 +324,7 @@ class MyOrdersPage extends ConsumerWidget {
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.only(left: 2, right: 2),
                       itemCount: order.attachments.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, i) {
                         final att = order.attachments[i];
                         final url = att.publicUrl ?? att.fileUrl ?? '';
@@ -336,7 +336,7 @@ class MyOrdersPage extends ConsumerWidget {
                             width: 120,
                             height: 100,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder: (_, _, _) => Container(
                               width: 120,
                               height: 100,
                               color: AppTheme.grey100,

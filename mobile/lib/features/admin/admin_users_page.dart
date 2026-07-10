@@ -197,7 +197,7 @@ class _UserCardState extends ConsumerState<_UserCard> {
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundColor: _roleColor(role).withOpacity(0.1),
+              backgroundColor: _roleColor(role).withValues(alpha: 0.1),
               child: Icon(_roleIcon(role), color: _roleColor(role), size: 22),
             ),
             const SizedBox(width: 12),
@@ -218,7 +218,7 @@ class _UserCardState extends ConsumerState<_UserCard> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: _roleColor(role).withOpacity(0.1),
+                    color: _roleColor(role).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(role, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _roleColor(role))),
@@ -227,7 +227,7 @@ class _UserCardState extends ConsumerState<_UserCard> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: _statusColor(status).withOpacity(0.1),
+                    color: _statusColor(status).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(status, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _statusColor(status))),

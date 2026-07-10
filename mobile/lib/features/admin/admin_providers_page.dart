@@ -92,7 +92,7 @@ class _PendingProvidersList extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.verified, size: 64, color: AppTheme.success.withOpacity(0.3)),
+                Icon(Icons.verified, size: 64, color: AppTheme.success.withValues(alpha: 0.3)),
                 const SizedBox(height: 12),
                 const Text('Semua provider sudah diverifikasi', style: TextStyle(color: AppTheme.grey600)),
               ],
@@ -240,7 +240,7 @@ class _ProviderCardState extends ConsumerState<_ProviderCard> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: AppTheme.navy.withOpacity(0.1),
+                  backgroundColor: AppTheme.navy.withValues(alpha: 0.1),
                   child: Text(
                     (p.businessName.isNotEmpty ? p.businessName[0] : 'P').toUpperCase(),
                     style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navy),
@@ -304,7 +304,7 @@ class _ProviderCardState extends ConsumerState<_ProviderCard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: (isVerified ? AppTheme.success : AppTheme.warning).withOpacity(0.1),
+        color: (isVerified ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
