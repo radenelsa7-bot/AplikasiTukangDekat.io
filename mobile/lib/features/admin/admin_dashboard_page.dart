@@ -94,7 +94,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppTheme.orange.withOpacity(0.15)
+                        ? AppTheme.orange.withValues(alpha: 0.15)
                         : null,
                     border: Border(
                       left: BorderSide(
@@ -370,7 +370,7 @@ class _DashboardOverview extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: item.color.withOpacity(0.1),
+                      color: item.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(item.icon, size: 12, color: item.color),
@@ -427,7 +427,7 @@ class _DashboardOverview extends ConsumerWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: orders.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (context, i) {
           final o = orders[i];
           return ListTile(
@@ -473,14 +473,14 @@ class _DashboardOverview extends ConsumerWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: payments.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (context, i) {
           final p = payments[i];
           return ListTile(
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.success.withOpacity(0.1),
+                color: AppTheme.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -523,7 +523,7 @@ class _DashboardOverview extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: entry.$2.withOpacity(0.1),
+        color: entry.$2.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(entry.$1, color: entry.$2, size: 20),
@@ -543,7 +543,7 @@ class _DashboardOverview extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

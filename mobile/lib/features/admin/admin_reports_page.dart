@@ -1,12 +1,10 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:js/js.dart';
-import 'package:js/js_util.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 

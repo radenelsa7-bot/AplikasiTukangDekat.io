@@ -192,8 +192,9 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
   Widget _buildBotActions(Map<String, dynamic> message) {
     final actions = message['actions'];
-    if (actions == null || actions is! List || actions.isEmpty)
+    if (actions == null || actions is! List || actions.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: 8, left: 12, right: 12),
@@ -215,11 +216,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                   final pid = (payload is Map)
                       ? (payload['payment_id'] ??
                             payload['paymentId'] ??
-                            payload['payment'] ??
-                            null)
+                            payload['payment'])
                       : null;
                   final oid = (payload is Map)
-                      ? (payload['order_id'] ?? payload['orderId'] ?? null)
+                      ? (payload['order_id'] ?? payload['orderId'])
                       : null;
 
                   if (oid != null) {
@@ -229,7 +229,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                           orderId: int.tryParse(oid.toString()) ?? 0,
                           autoOpenQris: true,
                           autoPaymentId: pid != null
-                              ? int.tryParse(pid.toString()) ?? null
+                              ? int.tryParse(pid.toString())
                               : null,
                         ),
                       ),
@@ -256,7 +256,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
                 if (type == 'open_order') {
                   final oid = (payload is Map)
-                      ? (payload['order_id'] ?? payload['orderId'] ?? null)
+                      ? (payload['order_id'] ?? payload['orderId'])
                       : null;
                   if (oid != null) {
                     Navigator.of(context).push(
@@ -270,7 +270,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                   }
 
                   final info = payload is Map && payload['order_code'] != null
-                      ? 'Order: ' + payload['order_code'].toString()
+                      ? 'Order: ${payload['order_code']}'
                       : payload?.toString() ?? '';
                   ScaffoldMessenger.of(
                     context,
@@ -280,7 +280,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
                 if (type == 'view_payment') {
                   final oid = (payload is Map)
-                      ? (payload['order_id'] ?? payload['orderId'] ?? null)
+                      ? (payload['order_id'] ?? payload['orderId'])
                       : null;
                   if (oid != null) {
                     Navigator.of(context).push(
@@ -296,7 +296,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
                 // Default behavior
                 final info = payload is Map && payload['order_code'] != null
-                    ? 'Order: ' + payload['order_code'].toString()
+                    ? 'Order: ${payload['order_code']}'
                     : payload?.toString() ?? '';
                 ScaffoldMessenger.of(
                   context,

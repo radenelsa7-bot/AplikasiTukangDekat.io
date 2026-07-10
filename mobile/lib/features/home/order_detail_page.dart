@@ -356,7 +356,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: order.attachments.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final att = order.attachments[index];
                 final url = att.publicUrl ?? att.fileUrl ?? '';
@@ -379,7 +379,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                               width: 120,
                               height: 76,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
+                              errorBuilder: (_, _, _) => Container(
                                 width: 120,
                                 height: 76,
                                 color: AppTheme.grey100,
@@ -1219,7 +1219,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.warning.withOpacity(0.1),
+                  color: AppTheme.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(

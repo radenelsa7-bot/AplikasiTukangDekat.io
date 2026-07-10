@@ -182,7 +182,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             '${ApiConfig.baseUrl}/api/storage/${state.userProfilePhotoPath}',
                           )
                         : null,
-                    onBackgroundImageError: (_, __) {},
+                    onBackgroundImageError: (_, _) {},
                     child: state.userProfilePhotoPath == null
                         ? const Icon(
                             Icons.person,
