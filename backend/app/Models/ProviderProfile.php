@@ -17,15 +17,20 @@ class ProviderProfile extends Model
     'description',
     'area',
     'address',
+    'latitude',
+    'longitude',
     'is_verified',
     'is_active',
     'avg_rating',
+    'availability_status',
   ];
 
   protected $casts = [
     'is_verified' => 'boolean',
     'is_active' => 'boolean',
     'avg_rating' => 'decimal:2',
+    'latitude' => 'decimal:7',
+    'longitude' => 'decimal:7',
   ];
 
   public function user(): HasOne

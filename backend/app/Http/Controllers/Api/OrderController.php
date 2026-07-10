@@ -7,6 +7,7 @@ use App\Http\Requests\Order\CompleteOrderRequest;
 use App\Http\Requests\Order\CreateOrderRequest;
 use App\Http\Requests\Order\RespondToOrderRequest;
 use App\Models\Order;
+use App\Models\OrderAttachment;
 use App\Models\OrderStatusLog;
 use App\Models\OrderAttachment;
 use Illuminate\Support\Facades\Storage;
@@ -38,9 +39,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'CUSTOMER') {
-            return $this->forbidden('Only customers can create orders');
-        }
 
         try {
             $validated = $request->validated();
@@ -50,16 +48,50 @@ class OrderController extends Controller
                 ->where('role', 'PROVIDER')
                 ->firstOrFail();
 
-            $result = DB::transaction(function () use ($validated, $user, $request) {
+            // Coverage area validation (per-provider)
+            // provider_coverages mengacu ke provider_profiles.user_id
+            $providerProfile = \App\Models\ProviderProfile::where('user_id', $provider->id)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$providerProfile) {
+                return $this->validationError([
+                    'provider_id' => ['Sepertinya Provider kita belum tersedia disana'],
+                ]);
+            }
+
+            $kecamatanId = (int) $validated['kecamatan_id'];
+            $hasCoverage = \App\Models\ProviderCoverage::where('provider_profile_id', $providerProfile->id)
+                ->where('kecamatan_id', $kecamatanId)
+                ->where('is_active', true)
+                ->exists();
+
+            if (!$hasCoverage) {
+                return $this->validationError([
+                    'kecamatan_id' => ['Sepertinya Provider kita belum tersedia disana'],
+                ]);
+            }
+
+            $result = DB::transaction(function () use ($validated, $user) {
                 $order = Order::create([
                     'order_code' => Order::generateCode(),
                     'customer_id' => $user->id,
                     'provider_id' => $validated['provider_id'],
                     'category_id' => $validated['category_id'],
                     'provider_service_id' => $validated['provider_service_id'] ?? null,
+                    'kota_id' => $validated['kota_id'],
+                    'kecamatan_id' => $validated['kecamatan_id'],
                     'schedule_at' => $validated['schedule_at'],
                     'address' => $validated['address'],
+                    'customer_latitude' => $validated['customer_latitude'] ?? null,
+                    'customer_longitude' => $validated['customer_longitude'] ?? null,
+                    'provider_latitude' => $providerProfile?->latitude,
+                    'provider_longitude' => $providerProfile?->longitude,
                     'notes' => $validated['notes'] ?? null,
+                    'damage_level' => $validated['damage_level'] ?? null,
+                    'damage_description' => $validated['damage_description'] ?? null,
+                    'estimated_price_min' => $validated['estimated_price_min'] ?? $validated['estimated_price'],
+                    'estimated_price_max' => $validated['estimated_price_max'] ?? $validated['estimated_price'],
                     'estimated_price' => $validated['estimated_price'],
                     'status' => 'CREATED',
                 ]);
@@ -71,6 +103,23 @@ class OrderController extends Controller
                     'amount' => $dpAmount,
                     'status' => 'UNPAID',
                 ]);
+
+                foreach (($validated['attachment_urls'] ?? []) as $url) {
+                    OrderAttachment::create([
+                        'order_id' => $order->id,
+                        'file_url' => $url,
+                        'file_type' => 'damage_photo_url',
+                    ]);
+                }
+
+                foreach (($validated['damage_photos'] ?? []) as $photo) {
+                    $path = $photo->store('order-damage-photos', 'public');
+                    OrderAttachment::create([
+                        'order_id' => $order->id,
+                        'file_url' => $path,
+                        'file_type' => 'damage_photo',
+                    ]);
+                }
 
                 OrderStatusLog::create([
                     'order_id' => $order->id,
@@ -97,6 +146,7 @@ class OrderController extends Controller
                                         'order_id' => $order->id,
                                         'file_url' => $path,
                                         'file_type' => $mime,
+                                        'purpose' => 'CUSTOMER_DAMAGE',
                                     ]);
                                 }
                             } elseif (is_string($attachment) && filter_var($attachment, FILTER_VALIDATE_URL)) {
@@ -105,6 +155,7 @@ class OrderController extends Controller
                                     'order_id' => $order->id,
                                     'file_url' => $attachment,
                                     'file_type' => 'external',
+                                    'purpose' => 'CUSTOMER_DAMAGE',
                                 ]);
                             } elseif (is_string($attachment) && !empty($attachment)) {
                                 // Assume it's a previously uploaded storage path like 'orders/xyz.jpg'
@@ -112,6 +163,7 @@ class OrderController extends Controller
                                     'order_id' => $order->id,
                                     'file_url' => $attachment,
                                     'file_type' => 'uploaded',
+                                    'purpose' => 'CUSTOMER_DAMAGE',
                                 ]);
                             }
                         } catch (\Throwable $e) {
@@ -133,6 +185,7 @@ class OrderController extends Controller
                                 'order_id' => $order->id,
                                 'file_url' => $path,
                                 'file_type' => $file->getClientMimeType() ?? 'image/jpeg',
+                                'purpose' => 'CUSTOMER_DAMAGE',
                             ]);
                         } catch (\Throwable $e) {
                             Log::warning('Failed to store uploaded file: ' . $e->getMessage());
@@ -173,7 +226,7 @@ class OrderController extends Controller
      */
     public function getOrder($orderId)
     {
-        $order = Order::with(['customer', 'provider', 'payments', 'statusLogs'])
+        $order = Order::with(['customer', 'provider', 'payments', 'statusLogs', 'attachments', 'finalPriceApproval'])
             ->find($orderId);
 
         if (!$order) {
@@ -193,12 +246,14 @@ class OrderController extends Controller
 
         if ($user->role === 'CUSTOMER') {
             $orders = Order::where('customer_id', $user->id)
-                ->with(['provider', 'payments', 'attachments'])
+                ->with(['provider', 'payments'])
+                ->with('finalPriceApproval')
                 ->latest()
                 ->get();
         } elseif ($user->role === 'PROVIDER') {
             $orders = Order::where('provider_id', $user->id)
-                ->with(['customer', 'payments', 'attachments'])
+                ->with(['customer', 'payments'])
+                ->with('finalPriceApproval')
                 ->latest()
                 ->get();
         } else {
@@ -244,9 +299,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'PROVIDER') {
-            return $this->forbidden('Only providers can respond to orders.');
-        }
 
         $order = Order::with(['customer', 'payments'])->find($orderId);
 
@@ -269,6 +321,28 @@ class OrderController extends Controller
                 if ($validated['action'] === 'accept') {
                     $oldStatus = $order->status;
                     $order->update(['status' => 'ACCEPTED']);
+                    $order->provider?->providerProfile?->update(['availability_status' => 'BUSY']);
+
+                    $otherOrders = Order::where('provider_id', $order->provider_id)
+                        ->where('id', '!=', $order->id)
+                        ->where('status', 'CREATED')
+                        ->get();
+
+                    foreach ($otherOrders as $otherOrder) {
+                        $otherOldStatus = $otherOrder->status;
+                        $otherOrder->update([
+                            'status' => 'CANCELLED',
+                            'queue_note' => 'Provider sudah menerima pesanan lain terlebih dahulu. Silakan pilih provider lain tanpa mengisi ulang kebutuhan.',
+                        ]);
+                        OrderStatusLog::create([
+                            'order_id' => $otherOrder->id,
+                            'old_status' => $otherOldStatus,
+                            'new_status' => 'CANCELLED',
+                            'changed_by' => $user->id,
+                            'reason' => 'Provider accepted another queued order',
+                        ]);
+                    }
+
                     OrderStatusLog::create([
                         'order_id' => $order->id,
                         'old_status' => $oldStatus,
@@ -287,7 +361,10 @@ class OrderController extends Controller
                 }
 
                 $oldStatus = $order->status;
-                $order->update(['status' => 'CANCELLED']);
+                $order->update([
+                    'status' => 'CANCELLED',
+                    'queue_note' => 'Provider menolak pesanan ini. Silakan pilih provider lain tanpa mengisi ulang kebutuhan.',
+                ]);
                 OrderStatusLog::create([
                     'order_id' => $order->id,
                     'old_status' => $oldStatus,
@@ -306,6 +383,8 @@ class OrderController extends Controller
                         $this->paymentFinanceService->applyRefundPolicy($refundPayment, $order, 'order_rejected')
                     );
                 }
+
+                $this->refreshProviderAvailability($order->provider_id);
 
                 app(N8nNotificationService::class)->dispatch('order_rejected', [
                     'order_id' => $order->id,
@@ -329,9 +408,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'PROVIDER') {
-            return $this->forbidden('Only providers can start work.');
-        }
 
         $order = Order::with('payments')->find($orderId);
 
@@ -386,9 +462,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'PROVIDER') {
-            return $this->forbidden('Only providers can complete orders.');
-        }
 
         $order = Order::with('payments')->find($orderId);
 
@@ -413,12 +486,13 @@ class OrderController extends Controller
         }
 
         try {
-            $result = DB::transaction(function () use ($order, $validated, $user) {
+            $result = DB::transaction(function () use ($order, $validated, $user, $request) {
                 $oldStatus = $order->status;
                 $order->update([
                     'status' => 'COMPLETED',
                     'final_price' => $validated['final_price'],
                 ]);
+
                 OrderStatusLog::create([
                     'order_id' => $order->id,
                     'old_status' => $oldStatus,
@@ -426,18 +500,29 @@ class OrderController extends Controller
                     'changed_by' => $user->id,
                 ]);
 
+                // Buat/refresh record approval harga akhir. Payment FINAL baru boleh dibuat
+                // setelah customer menyetujui (sesuai requirement).
+                \App\Models\FinalPriceApproval::updateOrCreate(
+                    [
+                        'order_id' => $order->id,
+                    ],
+                    [
+                        'proposed_final_price' => $validated['final_price'],
+                        'approval_status' => 'PENDING',
+                        'approved_by' => null,
+                    ]
+                );
+
+                \App\Models\FinalPriceLog::create([
+                    'order_id' => $order->id,
+                    'proposed_final_price' => $validated['final_price'],
+                    'action' => 'SUBMIT',
+                    'submitted_by' => $user->id,
+                ]);
+
                 $dpPayment = $order->payments()->where('payment_type', 'DP')->first();
                 $dpAmount = $dpPayment?->amount ?? 0;
                 $finalAmount = max(0, $validated['final_price'] - $dpAmount);
-
-                if ($finalAmount > 0) {
-                    Payment::create([
-                        'order_id' => $order->id,
-                        'payment_type' => 'FINAL',
-                        'amount' => $finalAmount,
-                        'status' => 'UNPAID',
-                    ]);
-                }
 
                 return ['order' => $order, 'finalAmount' => $finalAmount];
             });
@@ -454,6 +539,8 @@ class OrderController extends Controller
                 'status' => $order->status,
             ]);
 
+            $this->refreshProviderAvailability($order->provider_id);
+
             return $this->success([
                 'status' => $order->status,
                 'final_amount' => $finalAmount,
@@ -464,6 +551,41 @@ class OrderController extends Controller
         }
     }
 
+    private function storeReportFiles(Request $request, Order $order, string $field, string $purpose): void
+    {
+        if (!$request->hasFile($field)) {
+            return;
+        }
+
+        foreach ($request->file($field) as $file) {
+            try {
+                /** @var UploadedFile $file */
+                $ext = $file->getClientOriginalExtension() ?: 'jpg';
+                $fileName = sprintf('%s_%s_%s.%s', $order->id, strtolower($purpose), uniqid(), $ext);
+                $path = $file->storeAs('orders/reports', $fileName, 'public');
+                OrderAttachment::create([
+                    'order_id' => $order->id,
+                    'file_url' => $path,
+                    'file_type' => $file->getClientMimeType() ?? 'image/jpeg',
+                    'purpose' => $purpose,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Failed to store provider report file: ' . $e->getMessage());
+            }
+        }
+    }
+
+    private function refreshProviderAvailability(int $providerId): void
+    {
+        $hasActiveOrder = Order::where('provider_id', $providerId)
+            ->whereIn('status', ['ACCEPTED', 'IN_PROGRESS'])
+            ->exists();
+
+        User::find($providerId)?->providerProfile?->update([
+            'availability_status' => $hasActiveOrder ? 'BUSY' : 'AVAILABLE',
+        ]);
+    }
+
     /**
      * Customer batalkan order
      */
@@ -471,9 +593,6 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'CUSTOMER') {
-            return $this->forbidden('Only customers can cancel orders');
-        }
 
         $order = Order::with('payments')->find($orderId);
 
@@ -528,6 +647,8 @@ class OrderController extends Controller
                 'reason' => $request->input('reason', 'Dibatalkan oleh customer'),
                 'refund_count' => $result['refund_count'],
             ]);
+
+            $this->refreshProviderAvailability($order->provider_id);
 
             return $this->success(['status' => 'CANCELLED'], 'Order berhasil dibatalkan');
         } catch (\Throwable $e) {

@@ -133,6 +133,34 @@ class ApiService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getKota() async {
+    try {
+      final response = await dio.get('/api/catalog/wilayah/kota');
+      final data = response.data['data'];
+      if (data is List) {
+        return data.map((item) => Map<String, dynamic>.from(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getKecamatan(int kotaId) async {
+    try {
+      final response = await dio.get(
+        '/api/catalog/wilayah/kota/$kotaId/kecamatan',
+      );
+      final data = response.data['data'];
+      if (data is List) {
+        return data.map((item) => Map<String, dynamic>.from(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<ProvidersResponse> getProvidersByCategory(int categoryId) async {
     try {
       final response = await dio.get(
@@ -175,43 +203,21 @@ class ApiService {
 
   Future<OrderData> createOrder(CreateOrderRequest request) async {
     try {
-      final response = await dio.post('/api/orders', data: request.toJson());
-      return OrderData.fromJson(response.data['data']);
-    } catch (e) {
-      rethrow;
-    }
-  }
+      final Object payload;
+      if (request.attachmentPaths != null &&
+          request.attachmentPaths!.isNotEmpty) {
+        final form = FormData.fromMap(request.toJson());
+        for (final path in request.attachmentPaths!) {
+          form.files.add(
+            MapEntry('damage_photos[]', await MultipartFile.fromFile(path)),
+          );
+        }
+        payload = form;
+      } else {
+        payload = request.toJson();
+      }
 
-  Future<List<String>> uploadOrderAttachments(List<MultipartFile> files) async {
-    try {
-      final form = FormData();
-      for (var f in files) {
-        form.files.add(MapEntry('files[]', f));
-      }
-      final response = await dio.post('/api/orders/attachments', data: form);
-      final data = response.data['data'];
-      if (data != null && data['file_urls'] != null) {
-        return List<String>.from(data['file_urls']);
-      }
-      return [];
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<OrderData> createOrderWithFiles(
-    Map<String, dynamic> fields,
-    List<MultipartFile> files,
-  ) async {
-    try {
-      final form = FormData();
-      fields.forEach((k, v) {
-        if (v != null) form.fields.add(MapEntry(k, v.toString()));
-      });
-      for (var f in files) {
-        form.files.add(MapEntry('files[]', f));
-      }
-      final response = await dio.post('/api/orders', data: form);
+      final response = await dio.post('/api/orders', data: payload);
       return OrderData.fromJson(response.data['data']);
     } catch (e) {
       rethrow;
@@ -284,6 +290,8 @@ class ApiService {
     String? description,
     String? area,
     String? address,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       final data = <String, dynamic>{};
@@ -291,6 +299,8 @@ class ApiService {
       if (description != null) data['description'] = description;
       if (area != null) data['area'] = area;
       if (address != null) data['address'] = address;
+      if (latitude != null) data['latitude'] = latitude;
+      if (longitude != null) data['longitude'] = longitude;
 
       final response = await dio.put('/api/provider/profile', data: data);
       return Map<String, dynamic>.from(response.data['data'] ?? {});
@@ -405,11 +415,43 @@ class ApiService {
   Future<void> completeOrder({
     required int orderId,
     required int finalPrice,
+    List<MultipartFile> initialConditionPhotos = const [],
+    List<MultipartFile> finalConditionPhotos = const [],
+    List<MultipartFile> receiptPhotos = const [],
+  }) async {
+    try {
+      final form = FormData();
+      form.fields.add(MapEntry('final_price', finalPrice.toString()));
+      for (final file in initialConditionPhotos) {
+        form.files.add(MapEntry('initial_condition_photos[]', file));
+      }
+      for (final file in finalConditionPhotos) {
+        form.files.add(MapEntry('final_condition_photos[]', file));
+      }
+      for (final file in receiptPhotos) {
+        form.files.add(MapEntry('receipt_photos[]', file));
+      }
+      await dio.post(
+        '/api/orders/$orderId/complete',
+        data: form,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> decideFinalPrice({
+    required int orderId,
+    required String action,
+    String? reason,
   }) async {
     try {
       await dio.post(
-        '/api/orders/$orderId/complete',
-        data: {'final_price': finalPrice},
+        '/api/orders/$orderId/final-price/approve',
+        data: {
+          'action': action,
+          if (reason != null && reason.isNotEmpty) 'reason': reason,
+        },
       );
     } catch (e) {
       rethrow;
@@ -772,7 +814,7 @@ class ApiService {
         queryParameters: queryParameters,
         options: Options(responseType: ResponseType.bytes),
       );
-      return Map<String, dynamic>.from(response.data);
+      return Uint8List.fromList(response.data);
     } catch (e) {
       rethrow;
     }
@@ -808,3 +850,4 @@ final apiServiceProvider = Provider<ApiService>((ref) {
   final dio = ref.watch(dioProvider);
   return ApiService(dio: dio);
 });
+
