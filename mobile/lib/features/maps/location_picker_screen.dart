@@ -1,8 +1,9 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../app/theme/app_theme.dart';
 import '../../shared/widgets/app_button.dart';
 
@@ -22,7 +23,7 @@ class LocationResult {
 /// Provider untuk menyimpan koordinat yang dipilih
 final selectedLocationProvider = StateProvider<LocationResult?>((ref) => null);
 
-/// Screen untuk memilih lokasi via Google Maps
+/// Screen untuk memilih lokasi via Google Maps (interaktif)
 class LocationPickerScreen extends ConsumerStatefulWidget {
   final double? initialLat;
   final double? initialLng;
@@ -46,6 +47,8 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
   bool _isLoadingLocation = false;
   String? _error;
 
+  GoogleMapController? _mapController;
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +57,11 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     _address = widget.initialAddress ?? '';
   }
 
+  LatLng? get _selectedLatLng =>
+      (_latitude != null && _longitude != null)
+          ? LatLng(_latitude!, _longitude!)
+          : null;
+
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLoadingLocation = true;
@@ -61,7 +69,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     });
 
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
           _error = 'Lokasi GPS tidak aktif. Silakan aktifkan GPS.';
@@ -97,9 +105,16 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
       setState(() {
         _latitude = position.latitude;
         _longitude = position.longitude;
-        _address = 'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
+        _address =
+            'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
         _isLoadingLocation = false;
       });
+
+      if (_mapController != null) {
+        await _mapController!.animateCamera(
+          CameraUpdate.newLatLng(_selectedLatLng!),
+        );
+      }
     } catch (e) {
       setState(() {
         _error = 'Gagal mendapatkan lokasi: $e';
@@ -148,6 +163,11 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final initialCamera = CameraPosition(
+      target: _selectedLatLng ?? const LatLng(-6.200000, 106.816666),
+      zoom: _selectedLatLng == null ? 5 : 14,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pilih Lokasi'),
@@ -156,83 +176,100 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
       ),
       body: Column(
         children: [
-          // Map preview area
           Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                image: _latitude != null && _longitude != null
-                    ? DecorationImage(
-                        image: NetworkImage(
-                          'https://maps.googleapis.com/maps/api/staticmap'
-                          '?center=$_latitude,$_longitude'
-                          '&zoom=16&size=600x400'
-                          '&markers=color:red%7C$_latitude,$_longitude'
-                          '&key=YOUR_API_KEY',
+            child: Stack(
+              children: [
+                GoogleMap(
+                  initialCameraPosition: initialCamera,
+                  onMapCreated: (c) => _mapController = c,
+                  markers: {
+                    if (_selectedLatLng != null)
+                      Marker(
+                        markerId: const MarkerId('selected'),
+                        position: _selectedLatLng!,
+                        icon: BitmapDescriptor.defaultMarkerWithHue(
+                          BitmapDescriptor.hueOrange,
                         ),
-                        fit: BoxFit.cover,
-                        onError: (_, __) {},
-                      )
-                    : null,
-              ),
-              child: Center(
-                child: _latitude == null
-                    ? Column(
+                      ),
+                  },
+                  myLocationEnabled: false,
+                  myLocationButtonEnabled: true,
+                  zoomControlsEnabled: true,
+                  mapToolbarEnabled: false,
+                  onTap: (pos) {
+                    setState(() {
+                      _latitude = pos.latitude;
+                      _longitude = pos.longitude;
+                      _address =
+                          'Lat: ${pos.latitude.toStringAsFixed(6)}, Lng: ${pos.longitude.toStringAsFixed(6)}';
+                    });
+                  },
+                ),
+
+                if (_selectedLatLng == null)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.map_rounded,
                             size: 80,
-                            color: Colors.grey[400],
+                            color: Colors.grey,
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           Text(
-                            'Tekan tombol GPS\ndan atur titik lokasi',
+                            'Tekan tombol GPS\natau tap peta untuk atur lokasi',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: Colors.black54,
                               fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.all(16),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 8,
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.location_on, color: AppTheme.orange),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    '$_latitude, $_longitude',
-                                    style: const TextStyle(fontWeight: FontWeight.w500),
-                                  ),
-                                ),
-                              ],
+                              height: 1.2,
                             ),
                           ),
                         ],
                       ),
-              ),
+                    ),
+                  ),
+
+                if (_selectedLatLng != null)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 96,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on, color: AppTheme.orange),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '$_latitude, $_longitude',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
 
-          // Controls
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -248,7 +285,6 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Alamat
                 TextField(
                   decoration: InputDecoration(
                     labelText: 'Alamat Lengkap',
@@ -286,7 +322,6 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                     ),
                   ),
 
-                // Buttons
                 Row(
                   children: [
                     Expanded(
@@ -326,7 +361,9 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 12),
+
                 SizedBox(
                   width: double.infinity,
                   child: AppButton(
@@ -343,3 +380,4 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     );
   }
 }
+

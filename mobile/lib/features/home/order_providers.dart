@@ -5,6 +5,8 @@ import '../../core/services/api_service.dart';
 import '../../core/models/order_model.dart';
 import '../../core/models/review_model.dart';
 
+final myOrdersStatusFilterProvider = StateProvider<String?>((ref) => null);
+
 // My orders provider
 final myOrdersProvider = FutureProvider<List<OrderData>>((ref) async {
   final apiService = ref.read(apiServiceProvider);
@@ -192,7 +194,8 @@ class OrderActionController extends StateNotifier<OrderActionState> {
         if (data is Map<String, dynamic> && data['message'] != null) {
           errorMsg = data['message'].toString();
         } else {
-          errorMsg = 'DP harus dibayar terlebih dahulu sebelum memulai pekerjaan';
+          errorMsg =
+              'DP harus dibayar terlebih dahulu sebelum memulai pekerjaan';
         }
       }
       state = state.copyWith(isLoading: false, errorMessage: errorMsg);

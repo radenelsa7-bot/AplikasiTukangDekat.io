@@ -9,10 +9,57 @@ import 'order_detail_page.dart';
 class MyOrdersPage extends ConsumerWidget {
   const MyOrdersPage({super.key});
 
+  Future<void> _openStatusFilter(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(myOrdersStatusFilterProvider);
+    final selected = await showModalBottomSheet<String?>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Semua'),
+                leading: const Icon(Icons.filter_alt_off),
+                trailing: current == null ? const Icon(Icons.check) : null,
+                onTap: () => Navigator.of(sheetContext).pop(null),
+              ),
+              const Divider(height: 1),
+              ...const [
+                ('CREATED', 'Menunggu'),
+                ('ACCEPTED', 'Diterima'),
+                ('IN_PROGRESS', 'Dikerjakan'),
+                ('COMPLETED', 'Selesai'),
+                ('CANCELLED', 'Dibatalkan'),
+                ('CLOSED', 'Ditutup'),
+              ].map(
+                (entry) => ListTile(
+                  title: Text(entry.$2),
+                  leading: const Icon(Icons.receipt_long),
+                  trailing: current == entry.$1
+                      ? const Icon(Icons.check)
+                      : null,
+                  onTap: () => Navigator.of(sheetContext).pop(entry.$1),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected != null || current != null) {
+      ref.read(myOrdersStatusFilterProvider.notifier).state = selected;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ordersAsync = ref.watch(myOrdersProvider);
     final authState = ref.watch(authControllerProvider);
+    final statusFilter = ref.watch(myOrdersStatusFilterProvider);
 
     return ordersAsync.when(
       loading: () => const Center(
@@ -62,7 +109,11 @@ class MyOrdersPage extends ConsumerWidget {
         ),
       ),
       data: (orders) {
-        if (orders.isEmpty) {
+        final filteredOrders = statusFilter == null
+            ? orders
+            : orders.where((order) => order.status == statusFilter).toList();
+
+        if (filteredOrders.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -85,7 +136,9 @@ class MyOrdersPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    authState.userRole == 'PROVIDER'
+                    statusFilter != null
+                        ? 'Tidak Ada Hasil Filter'
+                        : authState.userRole == 'PROVIDER'
                         ? 'Belum Ada Order Masuk'
                         : 'Belum Ada Pesanan',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -94,7 +147,9 @@ class MyOrdersPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    authState.userRole == 'PROVIDER'
+                    statusFilter != null
+                        ? 'Coba pilih status lain atau hapus filter'
+                        : authState.userRole == 'PROVIDER'
                         ? 'Order dari pelanggan akan muncul di sini'
                         : 'Pesan jasa teknisi dari halaman Beranda',
                     style: Theme.of(
@@ -112,67 +167,98 @@ class MyOrdersPage extends ConsumerWidget {
           onRefresh: () async => ref.refresh(myOrdersProvider),
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-            itemCount: orders.length + 1,
+            itemCount: filteredOrders.length + 1,
             itemBuilder: (context, index) {
               if (index == 0) {
+                final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    );
+                final subtitleStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.grey600,
+                    );
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              authState.userRole == 'PROVIDER'
-                                  ? 'Order Masuk'
-                                  : 'Pesanan Saya',
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${orders.length} pesanan',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: AppTheme.grey600),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.filter_list,
-                              size: 16,
-                              color: AppTheme.orange,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Semua',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.orange,
-                                fontWeight: FontWeight.w600,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compact = constraints.maxWidth < 360;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      authState.userRole == 'PROVIDER'
+                                          ? 'Order Masuk'
+                                          : 'Pesanan Saya',
+                                      style: titleStyle,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${filteredOrders.length} pesanan',
+                                      style: subtitleStyle,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: () => _openStatusFilter(context, ref),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.orange.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.filter_list,
+                                        size: 16,
+                                        color: AppTheme.orange,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        statusFilter == null
+                                            ? 'Semua'
+                                            : _statusLabel(statusFilter),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppTheme.orange,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 );
               }
-              final order = orders[index - 1];
+              final order = filteredOrders[index - 1];
               return _buildOrderCard(context, order);
             },
           ),
@@ -324,7 +410,7 @@ class MyOrdersPage extends ConsumerWidget {
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.only(left: 2, right: 2),
                       itemCount: order.attachments.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, i) {
                         final att = order.attachments[i];
                         final url = att.publicUrl ?? att.fileUrl ?? '';
@@ -336,7 +422,7 @@ class MyOrdersPage extends ConsumerWidget {
                             width: 120,
                             height: 100,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder: (_, _, _) => Container(
                               width: 120,
                               height: 100,
                               color: AppTheme.grey100,
@@ -415,4 +501,6 @@ class MyOrdersPage extends ConsumerWidget {
         return status;
     }
   }
+
+  String _statusLabel(String status) => _getStatusLabel(status);
 }

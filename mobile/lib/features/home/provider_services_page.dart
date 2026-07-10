@@ -582,6 +582,7 @@ class _ProviderCoverageDialogState
   int? _selectedKotaId;
   final Set<int> _selectedKecamatanIds = {};
   bool _isLoadingWilayah = false;
+  bool _isLoadingKecamatan = false;
   bool _isSaving = false;
 
   @override
@@ -626,12 +627,32 @@ class _ProviderCoverageDialogState
   }
 
   Future<void> _loadKecamatan(int kotaId) async {
-    final api = ref.read(apiServiceProvider);
-    final kecamatan = await api.getKecamatan(kotaId);
-    if (!mounted) return;
     setState(() {
-      _kecamatanList = kecamatan;
+      _isLoadingKecamatan = true;
     });
+
+    try {
+      final api = ref.read(apiServiceProvider);
+      final kecamatan = await api.getKecamatan(kotaId);
+      if (!mounted) return;
+      setState(() {
+        _kecamatanList = kecamatan;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _kecamatanList = [];
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal memuat kecamatan: $e')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingKecamatan = false;
+        });
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -658,91 +679,101 @@ class _ProviderCoverageDialogState
 
   @override
   Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.75;
     return AlertDialog(
       title: const Text('Atur Wilayah Layanan'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: _isLoadingWilayah
-            ? const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  DropdownButtonFormField<int?>(
-                    value: _selectedKotaId,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'Kota',
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    items: _kotaList
-                        .map(
-                          (kota) => DropdownMenuItem<int?>(
-                            value: (kota['id'] as num).toInt(),
-                            child: Text(kota['name']?.toString() ?? '-'),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 560, maxHeight: maxHeight),
+        child: SingleChildScrollView(
+          child: SizedBox(
+            width: double.maxFinite,
+            child: _isLoadingWilayah
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      DropdownButtonFormField<int?>(
+                        initialValue: _selectedKotaId,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Kota',
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
                           ),
-                        )
-                        .toList(),
-                    onChanged: (value) async {
-                      setState(() {
-                        _selectedKotaId = value;
-                        _selectedKecamatanIds.clear();
-                        _kecamatanList = [];
-                      });
-                      if (value != null) {
-                        await _loadKecamatan(value);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Pilih kecamatan yang dilayani',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 240,
-                    child: _selectedKotaId == null
-                        ? const Center(
-                            child: Text('Pilih kota terlebih dahulu'),
-                          )
-                        : _kecamatanList.isEmpty
-                        ? const Center(
-                            child: Text('Tidak ada kecamatan tersedia'),
-                          )
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: _kecamatanList.length,
-                            itemBuilder: (context, index) {
-                              final item = _kecamatanList[index];
-                              final id = (item['id'] as num).toInt();
+                        ),
+                        items: _kotaList
+                            .map(
+                              (kota) => DropdownMenuItem<int?>(
+                                value: (kota['id'] as num).toInt(),
+                                child: Text(kota['name']?.toString() ?? '-'),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) async {
+                          setState(() {
+                            _selectedKotaId = value;
+                            _selectedKecamatanIds.clear();
+                            _kecamatanList = [];
+                          });
+                          if (value != null) {
+                            await _loadKecamatan(value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Pilih kecamatan yang dilayani',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 240,
+                        child: _selectedKotaId == null
+                            ? const Center(
+                                child: Text('Pilih kota terlebih dahulu'),
+                              )
+                            : _isLoadingKecamatan
+                            ? const Center(child: CircularProgressIndicator())
+                            : _kecamatanList.isEmpty
+                            ? const Center(
+                                child: Text('Tidak ada kecamatan tersedia'),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: _kecamatanList.length,
+                                itemBuilder: (context, index) {
+                                  final item = _kecamatanList[index];
+                                  final id = (item['id'] as num).toInt();
                               return CheckboxListTile(
                                 value: _selectedKecamatanIds.contains(id),
-                                onChanged: (checked) {
-                                  setState(() {
-                                    if (checked == true) {
-                                      _selectedKecamatanIds.add(id);
-                                    } else {
-                                      _selectedKecamatanIds.remove(id);
-                                    }
-                                  });
+                                    onChanged: (checked) {
+                                      setState(() {
+                                        if (checked == true) {
+                                          _selectedKecamatanIds.add(id);
+                                        } else {
+                                          _selectedKecamatanIds.remove(id);
+                                        }
+                                      });
+                                    },
+                                    title: Text(
+                                      item['name']?.toString() ?? '-',
+                                    ),
+                                    dense: true,
+                                  );
                                 },
-                                title: Text(item['name']?.toString() ?? '-'),
-                                dense: true,
-                              );
-                            },
-                          ),
+                              ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+          ),
+        ),
       ),
       actions: [
         TextButton(
@@ -868,113 +899,119 @@ class _ProviderServiceDialogState extends ConsumerState<ProviderServiceDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.72;
     return AlertDialog(
       title: Text(widget.service == null ? 'Tambah Layanan' : 'Edit Layanan'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (widget.service == null)
-            FutureBuilder<List<ServiceCategory>>(
-              future: _categoriesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
+      content: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 560, maxHeight: maxHeight),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (widget.service == null)
+                FutureBuilder<List<ServiceCategory>>(
+                  future: _categoriesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
 
-                if (snapshot.hasError) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text('Gagal memuat kategori: ${snapshot.error}'),
-                  );
-                }
+                    if (snapshot.hasError) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text('Gagal memuat kategori: ${snapshot.error}'),
+                      );
+                    }
 
-                final categories = snapshot.data ?? [];
-                return DropdownButtonFormField<int>(
-                  initialValue: _selectedCategoryId,
-                  decoration: InputDecoration(
-                    labelText: 'Kategori',
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  items: categories
-                      .map(
-                        (category) => DropdownMenuItem<int>(
-                          value: category.id,
-                          child: Text(category.name),
+                    final categories = snapshot.data ?? [];
+                    return DropdownButtonFormField<int>(
+                      initialValue: _selectedCategoryId,
+                      decoration: InputDecoration(
+                        labelText: 'Kategori',
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
                         ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategoryId = value;
-                    });
+                      ),
+                      items: categories
+                          .map(
+                            (category) => DropdownMenuItem<int>(
+                              value: category.id,
+                              child: Text(category.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategoryId = value;
+                        });
+                      },
+                    );
                   },
-                );
-              },
-            ),
-          if (widget.service != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                children: [
-                  Text(
-                    'Kategori: ${widget.service?.categoryName ?? 'Tidak tersedia'}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+              if (widget.service != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Kategori: ${widget.service?.categoryName ?? 'Tidak tersedia'}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                ],
+                ),
+              TextField(
+                controller: _nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Nama Layanan',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
               ),
-            ),
-          TextField(
-            controller: _nameCtrl,
-            decoration: InputDecoration(
-              labelText: 'Nama Layanan',
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
+              const SizedBox(height: 12),
+              TextField(
+                controller: _priceCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Harga Dasar',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                keyboardType: TextInputType.number,
               ),
-            ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _unitCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Satuan Harga (contoh: per kunjungan)',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _priceCtrl,
-            decoration: InputDecoration(
-              labelText: 'Harga Dasar',
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
-              ),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _unitCtrl,
-            decoration: InputDecoration(
-              labelText: 'Satuan Harga (contoh: per kunjungan)',
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
       actions: [
         TextButton(

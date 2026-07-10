@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
+use App\Models\User;
 
 class ChatbotController extends Controller
 {
@@ -27,7 +28,7 @@ class ChatbotController extends Controller
     $userMessage = (string) $request->input('message');
 
     $lastOrder = Order::with(['payments', 'customer:id,name,email,phone', 'provider:id,name,email,phone'])
-      ->when($user->role === 'PROVIDER', fn($query) => $query->where('provider_id', $user->id))
+      ->when($user->role === 'PROVIDER', fn($query) => $query->whereIn('provider_id', $this->providerIdentifierSet($user)))
       ->when($user->role !== 'PROVIDER', fn($query) => $query->where('customer_id', $user->id))
       ->latest('created_at')
       ->first();
@@ -241,6 +242,17 @@ class ChatbotController extends Controller
       Log::warning('localDocReply failed', ['error' => $e->getMessage()]);
       return null;
     }
+  }
+
+  private function providerIdentifierSet(User $user): array
+  {
+    $ids = [$user->id];
+    $profileId = $user->providerProfile?->id;
+    if ($profileId) {
+      $ids[] = $profileId;
+    }
+
+    return array_values(array_unique(array_map('intval', $ids)));
   }
 
   private function buildSimpleDocAnswer(string $userMessage, array $sentences, ?Order $lastOrder): string

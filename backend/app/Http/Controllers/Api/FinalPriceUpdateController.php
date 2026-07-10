@@ -8,6 +8,7 @@ use App\Models\FinalPriceApproval;
 use App\Models\FinalPriceLog;
 use App\Models\Order;
 use App\Models\OrderStatusLog;
+use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,7 @@ class FinalPriceUpdateController extends Controller
             return $this->notFound('Order not found');
         }
 
-        if ($order->provider_id !== $user->id) {
+        if (!$this->isAssignedToCurrentProvider((int) $order->provider_id, $user)) {
             return $this->forbidden('Unauthorized');
         }
 
@@ -85,5 +86,21 @@ class FinalPriceUpdateController extends Controller
             Log::error('Final price submit error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return $this->internalServerError('Failed to submit final price');
         }
+    }
+
+    private function providerIdentifierSet(User $user): array
+    {
+        $ids = [$user->id];
+        $profileId = $user->providerProfile?->id;
+        if ($profileId) {
+            $ids[] = $profileId;
+        }
+
+        return array_values(array_unique(array_map('intval', $ids)));
+    }
+
+    private function isAssignedToCurrentProvider(int $providerIdentifier, User $user): bool
+    {
+        return in_array($providerIdentifier, $this->providerIdentifierSet($user), true);
     }
 }

@@ -228,7 +228,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                   controller: _searchCtrl,
                   label: 'Cari teknisi atau layanan',
                   hintText: 'Contoh: listrik, plumbing, AC',
-                  prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.orange),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppTheme.orange,
+                  ),
                   onChanged: (value) {
                     ref.read(searchQueryProvider.notifier).state = value;
                   },
@@ -244,38 +247,72 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             _buildSectionHeader(context, 'Langkah Mudah', null),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildStepCard(
-                      context,
-                      '1',
-                      'Pilih\nLayanan',
-                      Icons.category_rounded,
-                      const Color(0xFF2196F3),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStepCard(
-                      context,
-                      '2',
-                      'Pilih\nProvider',
-                      Icons.person_search_rounded,
-                      const Color(0xFFFF6B35),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStepCard(
-                      context,
-                      '3',
-                      'Buat\nOrder',
-                      Icons.receipt_long_rounded,
-                      const Color(0xFF4CAF50),
-                    ),
-                  ),
-                ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 380) {
+                    return Column(
+                      children: [
+                        _buildStepCard(
+                          context,
+                          '1',
+                          'Pilih\nLayanan',
+                          Icons.category_rounded,
+                          const Color(0xFF2196F3),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildStepCard(
+                          context,
+                          '2',
+                          'Pilih\nProvider',
+                          Icons.person_search_rounded,
+                          const Color(0xFFFF6B35),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildStepCard(
+                          context,
+                          '3',
+                          'Buat\nOrder',
+                          Icons.receipt_long_rounded,
+                          const Color(0xFF4CAF50),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: _buildStepCard(
+                          context,
+                          '1',
+                          'Pilih\nLayanan',
+                          Icons.category_rounded,
+                          const Color(0xFF2196F3),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStepCard(
+                          context,
+                          '2',
+                          'Pilih\nProvider',
+                          Icons.person_search_rounded,
+                          const Color(0xFFFF6B35),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStepCard(
+                          context,
+                          '3',
+                          'Buat\nOrder',
+                          Icons.receipt_long_rounded,
+                          const Color(0xFF4CAF50),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
 
@@ -323,9 +360,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
         children: [
           Text(
             'Filter Wilayah',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int?>(
@@ -400,144 +437,223 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
   }
 
   Widget _buildHeroBanner(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppTheme.navy, AppTheme.navyLight],
-        ),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.navy.withValues(alpha: 0.30),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Background decoration circles
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Positioned(
-            right: 30,
-            bottom: -30,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title row with badge
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '✦ Teknisi Terpercaya',
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    color: Colors.white70,
-                                    letterSpacing: 0.5,
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'TukangDekat',
-                            style: Theme.of(context).textTheme.headlineMedium
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.5,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: AppTheme.orange,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.orange.withValues(alpha: 0.40),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.home_repair_service_rounded,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
-                  ],
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 420;
+        final iconSize = compact ? 48.0 : 64.0;
+        final iconInnerSize = compact ? 26.0 : 32.0;
+        final padding = EdgeInsets.all(compact ? 18 : 24);
+        final titleStyle = compact
+            ? Theme.of(context).textTheme.headlineSmall
+            : Theme.of(context).textTheme.headlineMedium;
 
-                const SizedBox(height: 12),
-                Text(
-                  'Temukan teknisi terdekat dengan cepat dan aman. Pesan & pantau langsung dari aplikasi.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.80),
-                    height: 1.6,
+        return Container(
+          margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppTheme.navy, AppTheme.navyLight],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.navy.withValues(alpha: 0.30),
+                blurRadius: 28,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -20,
+                top: -20,
+                child: Container(
+                  width: compact ? 110 : 140,
+                  height: compact ? 110 : 140,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(height: 18),
-
-                // Feature chips
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+              ),
+              Positioned(
+                right: 30,
+                bottom: -30,
+                child: Container(
+                  width: compact ? 80 : 100,
+                  height: compact ? 80 : 100,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: padding,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildFeatureChip(Icons.verified_rounded, 'Terverifikasi'),
-                    _buildFeatureChip(Icons.payment_rounded, 'Bayar Mudah'),
-                    _buildFeatureChip(Icons.shield_rounded, 'Aman'),
+                    if (compact) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '✦ Teknisi Terpercaya',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: Colors.white70,
+                                          letterSpacing: 0.5,
+                                        ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'TukangDekat',
+                                  style: titleStyle?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            width: iconSize,
+                            height: iconSize,
+                            decoration: BoxDecoration(
+                              color: AppTheme.orange,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.orange.withValues(
+                                    alpha: 0.40,
+                                  ),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.home_repair_service_rounded,
+                              color: Colors.white,
+                              size: iconInnerSize,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '✦ Teknisi Terpercaya',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: Colors.white70,
+                                          letterSpacing: 0.5,
+                                        ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'TukangDekat',
+                                  style: titleStyle?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: iconSize,
+                            height: iconSize,
+                            decoration: BoxDecoration(
+                              color: AppTheme.orange,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.orange.withValues(
+                                    alpha: 0.40,
+                                  ),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.home_repair_service_rounded,
+                              color: Colors.white,
+                              size: iconInnerSize,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Text(
+                      'Temukan teknisi terdekat dengan cepat dan aman. Pesan & pantau langsung dari aplikasi.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.80),
+                        height: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildFeatureChip(
+                          Icons.verified_rounded,
+                          'Terverifikasi',
+                        ),
+                        _buildFeatureChip(Icons.payment_rounded, 'Bayar Mudah'),
+                        _buildFeatureChip(Icons.shield_rounded, 'Aman'),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                   ],
                 ),
-
-                const SizedBox(height: 8),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -797,11 +913,14 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
           ),
         ),
         const SizedBox(width: 10),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        Expanded(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
         ),
       ],
     );
@@ -828,8 +947,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
       error: (err, st) => Center(child: Text('Error: $err')),
       data: (providers) {
         // Safety filter: hanya tampilkan provider dengan user status ACTIVE
-        final activeProviders =
-            providers.where((p) => p.userStatus == 'ACTIVE').toList();
+        final activeProviders = providers
+            .where((p) => p.userStatus == 'ACTIVE')
+            .toList();
 
         if (activeProviders.isEmpty) {
           return _buildEmptyState(
@@ -876,8 +996,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
       error: (err, st) => Center(child: Text('Error: $err')),
       data: (providers) {
         // Safety filter: hanya tampilkan provider dengan user status ACTIVE
-        final activeProviders =
-            providers.where((p) => p.userStatus == 'ACTIVE').toList();
+        final activeProviders = providers
+            .where((p) => p.userStatus == 'ACTIVE')
+            .toList();
 
         if (activeProviders.isEmpty) {
           return _buildEmptyState(context, 'Tidak ada hasil pencarian');
@@ -939,157 +1060,303 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
         .join();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => ProviderDetailPage(
-                  providerId: provider.id,
-                  categoryId: categoryId,
-                ),
-              ),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Avatar
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [AppTheme.navy, AppTheme.navyLight],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 380;
 
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        provider.businessName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        provider.description ?? 'Belum ada deskripsi',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ProviderDetailPage(
+                      providerId: provider.id,
+                      categoryId: categoryId,
+                    ),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: compact
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.star_rounded,
-                                  size: 13,
-                                  color: Colors.amber,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [AppTheme.navy, AppTheme.navyLight],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  rating.toStringAsFixed(1),
-                                  style: const TextStyle(
-                                    color: Color(0xFFB8860B),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
+                                child: Center(
+                                  child: Text(
+                                    initials,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      provider.businessName,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      provider.description ??
+                                          'Belum ada deskripsi',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: (isBusy ? Colors.orange : Colors.green).withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              isBusy ? 'Sedang dipesan' : 'Tersedia',
-                              style: TextStyle(
-                                color: isBusy ? Colors.orange : Colors.green,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      size: 13,
+                                      color: Colors.amber,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      rating.toStringAsFixed(1),
+                                      style: const TextStyle(
+                                        color: Color(0xFFB8860B),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: (isBusy ? Colors.orange : Colors.green)
+                                      .withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  isBusy ? 'Sedang dipesan' : 'Tersedia',
+                                  style: TextStyle(
+                                    color: isBusy
+                                        ? Colors.orange
+                                        : Colors.green,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppTheme.orange.withValues(alpha: 0.10),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: AppTheme.orange,
+                                size: 15,
                               ),
                             ),
                           ),
                         ],
+                      )
+                    : Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [AppTheme.navy, AppTheme.navyLight],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Center(
+                              child: Text(
+                                initials,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  provider.businessName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  provider.description ?? 'Belum ada deskripsi',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.star_rounded,
+                                            size: 13,
+                                            color: Colors.amber,
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            rating.toStringAsFixed(1),
+                                            style: const TextStyle(
+                                              color: Color(0xFFB8860B),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            (isBusy
+                                                    ? Colors.orange
+                                                    : Colors.green)
+                                                .withValues(alpha: 0.10),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        isBusy ? 'Sedang dipesan' : 'Tersedia',
+                                        style: TextStyle(
+                                          color: isBusy
+                                              ? Colors.orange
+                                              : Colors.green,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: AppTheme.orange.withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: AppTheme.orange,
+                              size: 15,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-
-                // Arrow
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppTheme.orange.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: AppTheme.orange,
-                    size: 15,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

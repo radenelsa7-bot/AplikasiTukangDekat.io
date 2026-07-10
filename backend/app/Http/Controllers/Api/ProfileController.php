@@ -211,12 +211,13 @@ class ProfileController extends Controller
             return $this->forbidden('Only providers can access this resource');
         }
 
-        $orders = Order::where('provider_id', $user->id);
+        $providerIds = $this->providerIdentifierSet($user);
+        $orders = Order::whereIn('provider_id', $providerIds);
         $activeOrders = (clone $orders)->whereIn('status', ['CREATED', 'ACCEPTED', 'IN_PROGRESS'])->count();
         $completedOrders = (clone $orders)->whereIn('status', ['COMPLETED', 'CLOSED'])->count();
 
         $paidPayments = Payment::whereHas('order', function ($query) use ($user) {
-            $query->where('provider_id', $user->id);
+            $query->whereIn('provider_id', $this->providerIdentifierSet($user));
         })->where('status', 'PAID');
 
         $grossRevenue = (clone $paidPayments)->sum('amount');
@@ -238,5 +239,16 @@ class ProfileController extends Controller
             'completed_orders' => $completedOrders,
             'transactions' => $transactions,
         ], 'Provider dashboard retrieved successfully', 200);
+    }
+
+    private function providerIdentifierSet($user): array
+    {
+        $ids = [(int) $user->id];
+        $profileId = $user->providerProfile?->id;
+        if ($profileId) {
+            $ids[] = (int) $profileId;
+        }
+
+        return array_values(array_unique($ids));
     }
 }

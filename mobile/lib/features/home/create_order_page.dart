@@ -51,6 +51,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   int? _selectedKotaId;
   int? _selectedKecamatanId;
   bool _isLoadingWilayah = false;
+  bool _isLoadingKecamatan = false;
   List<XFile> _damagePhotos = [];
   String _damageLevel = 'LIGHT';
 
@@ -113,27 +114,6 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     _notesCtrl.dispose();
     _attachmentUrlsCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickImages() async {
-    try {
-      final images = await _imagePicker.pickMultiImage();
-      if (images.isNotEmpty) {
-        setState(() {
-          _selectedImages.addAll(images);
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Gagal memilih gambar')));
-    }
-  }
-
-  void _removeImageAt(int index) {
-    setState(() {
-      _selectedImages.removeAt(index);
-    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -201,21 +181,35 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   }
 
   Future<void> _loadKecamatan(int kotaId) async {
-    final api = ref.read(apiServiceProvider);
-    final kecamatan = await api.getKecamatan(kotaId);
-    if (!mounted) return;
-    final filteredKecamatan = _hasCoverageFilter
-        ? kecamatan.where((item) {
-            final id = (item['id'] as num).toInt();
-            return _coverageKecamatanIdsForKota(kotaId).contains(id);
-          }).toList()
-        : kecamatan;
-    setState(() {
-      _kecamatanList = filteredKecamatan;
-      _selectedKecamatanId = filteredKecamatan.isNotEmpty
-          ? (filteredKecamatan.first['id'] as num).toInt()
-          : null;
-    });
+    setState(() => _isLoadingKecamatan = true);
+    try {
+      final api = ref.read(apiServiceProvider);
+      final kecamatan = await api.getKecamatan(kotaId);
+      if (!mounted) return;
+      final filteredKecamatan = _hasCoverageFilter
+          ? kecamatan.where((item) {
+              final id = (item['id'] as num).toInt();
+              return _coverageKecamatanIdsForKota(kotaId).contains(id);
+            }).toList()
+          : kecamatan;
+      setState(() {
+        _kecamatanList = filteredKecamatan;
+        _selectedKecamatanId = filteredKecamatan.isNotEmpty
+            ? (filteredKecamatan.first['id'] as num).toInt()
+            : null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _kecamatanList = [];
+        _selectedKecamatanId = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memuat daftar kecamatan')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoadingKecamatan = false);
+    }
   }
 
   Future<void> _createOrder() async {
@@ -354,6 +348,8 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
         'provider_id': widget.providerId,
         'category_id': widget.categoryId,
         'provider_service_id': _selectedService?.id,
+        'kota_id': _selectedKotaId,
+        'kecamatan_id': _selectedKecamatanId,
         'schedule_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(
           DateTime(
             _selectedDate!.year,
@@ -570,28 +566,34 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                         },
                       ),
                       const SizedBox(height: 12),
-                      DropdownButtonFormField<int>(
-                        value: _selectedKecamatanId,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Kecamatan',
-                          prefixIcon: const Icon(Icons.map_outlined),
-                          errorText: state.fieldErrors['kecamatan_id'],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      if (_isLoadingKecamatan)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: LinearProgressIndicator(),
+                        )
+                      else
+                        DropdownButtonFormField<int>(
+                          value: _selectedKecamatanId,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: 'Kecamatan',
+                            prefixIcon: const Icon(Icons.map_outlined),
+                            errorText: state.fieldErrors['kecamatan_id'],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
+                          items: _kecamatanList.map((item) {
+                            final id = (item['id'] as num).toInt();
+                            return DropdownMenuItem<int>(
+                              value: id,
+                              child: Text(item['name']?.toString() ?? '-'),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() => _selectedKecamatanId = value);
+                          },
                         ),
-                        items: _kecamatanList.map((item) {
-                          final id = (item['id'] as num).toInt();
-                          return DropdownMenuItem<int>(
-                            value: id,
-                            child: Text(item['name']?.toString() ?? '-'),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() => _selectedKecamatanId = value);
-                        },
-                      ),
                     ],
                     const SizedBox(height: 16),
                     // Pilih Layanan

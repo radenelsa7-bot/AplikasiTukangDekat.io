@@ -37,21 +37,10 @@ class OrderController extends Controller
     public function createOrder(CreateOrderRequest $request)
     {
         $user = Auth::user();
-
-
         try {
             $validated = $request->validated();
 
-            // Validasi provider adalah user dengan role PROVIDER
-            $provider = User::where('id', $validated['provider_id'])
-                ->where('role', 'PROVIDER')
-                ->firstOrFail();
-
-            // Coverage area validation (per-provider)
-            // provider_coverages mengacu ke provider_profiles.user_id
-            $providerProfile = \App\Models\ProviderProfile::where('user_id', $provider->id)
-                ->where('is_active', true)
-                ->first();
+            [$provider, $providerProfile] = $this->resolveProviderAssignment($validated['provider_id']);
 
             if (!$providerProfile) {
                 return $this->validationError([
@@ -71,7 +60,7 @@ class OrderController extends Controller
                 ]);
             }
 
-            $result = DB::transaction(function () use ($validated, $user) {
+            $result = DB::transaction(function () use ($validated, $user, $provider, $providerProfile) {
                 $order = Order::create([
                     'order_code' => Order::generateCode(),
                     'customer_id' => $user->id,
@@ -250,7 +239,8 @@ class OrderController extends Controller
                 ->latest()
                 ->get();
         } elseif ($user->role === 'PROVIDER') {
-            $orders = Order::where('provider_id', $user->id)
+            $providerIds = $this->providerIdentifierSet($user);
+            $orders = Order::whereIn('provider_id', $providerIds)
                 ->with(['customer', 'payments'])
                 ->with('finalPriceApproval')
                 ->latest()
@@ -298,14 +288,13 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-
         $order = Order::with(['customer', 'payments'])->find($orderId);
 
         if (!$order) {
             return $this->notFound('Order not found');
         }
 
-        if ($order->provider_id !== $user->id) {
+        if (!$this->isAssignedToCurrentProvider($order->provider_id, $user)) {
             return $this->forbidden('Unauthorized');
         }
 
@@ -320,7 +309,7 @@ class OrderController extends Controller
                 if ($validated['action'] === 'accept') {
                     $oldStatus = $order->status;
                     $order->update(['status' => 'ACCEPTED']);
-                    $order->provider?->providerProfile?->update(['availability_status' => 'BUSY']);
+                    $this->refreshProviderAvailability($order->provider_id);
 
                     $otherOrders = Order::where('provider_id', $order->provider_id)
                         ->where('id', '!=', $order->id)
@@ -407,14 +396,13 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-
         $order = Order::with('payments')->find($orderId);
 
         if (!$order) {
             return $this->notFound('Order not found');
         }
 
-        if ($order->provider_id !== $user->id) {
+        if (!$this->isAssignedToCurrentProvider($order->provider_id, $user)) {
             return $this->forbidden('Unauthorized');
         }
 
@@ -461,14 +449,13 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-
         $order = Order::with('payments')->find($orderId);
 
         if (!$order) {
             return $this->notFound('Order not found');
         }
 
-        if ($order->provider_id !== $user->id) {
+        if (!$this->isAssignedToCurrentProvider($order->provider_id, $user)) {
             return $this->forbidden('Unauthorized');
         }
 
@@ -576,13 +563,64 @@ class OrderController extends Controller
 
     private function refreshProviderAvailability(int $providerId): void
     {
-        $hasActiveOrder = Order::where('provider_id', $providerId)
+        $providerProfile = $this->findProviderProfileByIdentifier($providerId);
+        if (!$providerProfile) {
+            return;
+        }
+
+        $providerIds = array_values(array_unique([
+            (int) $providerProfile->user_id,
+            (int) $providerProfile->id,
+        ]));
+
+        $hasActiveOrder = Order::whereIn('provider_id', $providerIds)
             ->whereIn('status', ['ACCEPTED', 'IN_PROGRESS'])
             ->exists();
 
-        User::find($providerId)?->providerProfile?->update([
+        $providerProfile?->update([
             'availability_status' => $hasActiveOrder ? 'BUSY' : 'AVAILABLE',
         ]);
+    }
+
+    private function findProviderProfileByIdentifier(int $providerId): ?\App\Models\ProviderProfile
+    {
+        $provider = User::where('id', $providerId)->where('role', 'PROVIDER')->first();
+        if ($provider?->providerProfile) {
+            return $provider->providerProfile;
+        }
+
+        return \App\Models\ProviderProfile::find($providerId);
+    }
+
+    private function resolveProviderAssignment(int $providerIdentifier): array
+    {
+        $provider = User::where('id', $providerIdentifier)->where('role', 'PROVIDER')->first();
+        if ($provider?->providerProfile) {
+            return [$provider, $provider->providerProfile];
+        }
+
+        $providerProfile = \App\Models\ProviderProfile::with('user')->find($providerIdentifier);
+        if ($providerProfile?->user && $providerProfile->user->role === 'PROVIDER') {
+            return [$providerProfile->user, $providerProfile];
+        }
+
+        throw new ModelNotFoundException('Provider not found');
+    }
+
+    private function providerIdentifierSet(User $user): array
+    {
+        $ids = [$user->id];
+        $profileId = $user->providerProfile?->id;
+        if ($profileId) {
+            $ids[] = $profileId;
+        }
+
+        return array_values(array_unique(array_map('intval', $ids)));
+    }
+
+    private function isAssignedToCurrentProvider(int $providerIdentifier, User $user): bool
+    {
+        return in_array($providerIdentifier, $this->providerIdentifierSet($user), true);
     }
 
     /**
