@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
-import '../auth/auth_controller.dart';
-import '../auth/login_page.dart';
 import 'admin_providers_page.dart';
 import 'admin_categories_page.dart';
 import 'admin_users_page.dart';
@@ -40,7 +38,6 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
     final isWide = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
@@ -94,7 +91,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppTheme.orange.withOpacity(0.15)
+                        ? AppTheme.orange.withValues(alpha: 0.15)
                         : null,
                     border: Border(
                       left: BorderSide(
@@ -370,7 +367,7 @@ class _DashboardOverview extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: item.color.withOpacity(0.1),
+                      color: item.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(item.icon, size: 12, color: item.color),
@@ -480,7 +477,7 @@ class _DashboardOverview extends ConsumerWidget {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.success.withOpacity(0.1),
+                color: AppTheme.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -523,7 +520,7 @@ class _DashboardOverview extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: entry.$2.withOpacity(0.1),
+        color: entry.$2.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(entry.$1, color: entry.$2, size: 20),
@@ -543,7 +540,7 @@ class _DashboardOverview extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

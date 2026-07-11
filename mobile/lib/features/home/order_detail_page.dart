@@ -4,11 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 import '../../core/models/order_model.dart';
+import '../../shared/widgets/location_map_preview.dart';
 import '../auth/auth_controller.dart';
 import 'order_providers.dart';
 
@@ -125,6 +129,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 _buildStatusHeader(context, order),
                 const SizedBox(height: 16),
                 _buildInfoCard(context, order),
+                const SizedBox(height: 16),
+                _buildTrackingCard(context, order),
                 const SizedBox(height: 16),
                 if (order.attachments.isNotEmpty)
                   _buildAttachmentsCard(context, order),
@@ -247,6 +253,43 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           ),
           if (order.notes != null && order.notes!.isNotEmpty)
             _buildInfoRow(Icons.note_outlined, 'Catatan', order.notes!),
+          if (order.damageDescription != null && order.damageDescription!.isNotEmpty)
+            _buildInfoRow(Icons.build_circle_outlined, 'Kondisi', order.damageDescription!),
+          if (order.queueNote != null && order.queueNote!.isNotEmpty)
+            _buildInfoRow(Icons.info_outline, 'Info Antrian', order.queueNote!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrackingCard(BuildContext context, OrderData order) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.grey200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.map_outlined, size: 18, color: AppTheme.navy),
+              const SizedBox(width: 8),
+              Text(
+                'Tracking Lokasi',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LocationMapPreview(
+            customerLatitude: order.customerLatitude,
+            customerLongitude: order.customerLongitude,
+            providerLatitude: order.providerLatitude,
+            providerLongitude: order.providerLongitude,
+          ),
         ],
       ),
     );
@@ -324,22 +367,38 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       await launch(url);
                     }
                   },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      url,
-                      width: 120,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 120,
-                        height: 100,
-                        color: AppTheme.grey100,
-                        child: const Icon(
-                          Icons.broken_image,
-                          color: AppTheme.grey600,
+                  child: SizedBox(
+                    width: 120,
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              url,
+                              width: 120,
+                              height: 76,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 120,
+                                height: 76,
+                                color: AppTheme.grey100,
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  color: AppTheme.grey600,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _attachmentPurposeLabel(att.purpose),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 10, color: AppTheme.grey600),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -349,6 +408,19 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         ],
       ),
     );
+  }
+
+  String _attachmentPurposeLabel(String? purpose) {
+    switch (purpose) {
+      case 'PROVIDER_INITIAL':
+        return 'Kondisi awal';
+      case 'PROVIDER_FINAL':
+        return 'Kondisi akhir';
+      case 'PROVIDER_RECEIPT':
+        return 'Kuitansi';
+      default:
+        return 'Kerusakan';
+    }
   }
 
   Widget _buildPricingCard(BuildContext context, OrderData order) {
@@ -398,6 +470,24 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               ),
             ],
           ),
+          if (order.estimatedPriceMin != null && order.estimatedPriceMax != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Range kondisi',
+                    style: TextStyle(color: AppTheme.grey600),
+                  ),
+                ),
+                Text(
+                  '${currencyFormat.format(order.estimatedPriceMin)} - ${currencyFormat.format(order.estimatedPriceMax)}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ],
           if (order.finalPrice != null) ...[
             const SizedBox(height: 10),
             const Divider(),
@@ -950,7 +1040,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       'ACCEPTED',
       'IN_PROGRESS',
     ].contains(order.status);
-    if (!cancellable) return const SizedBox.shrink();
+    final approvalPending =
+        order.status == 'COMPLETED' &&
+        order.finalPriceApprovalStatus == 'PENDING';
+    if (!cancellable && !approvalPending) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -979,24 +1072,83 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             ],
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.cancel_outlined, size: 18),
-              label: const Text('Batalkan Pesanan'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.danger,
-                side: const BorderSide(color: AppTheme.danger),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: actionState.isLoading
-                  ? null
-                  : () => _showCancelDialog(context, ref, order),
+          if (approvalPending) ...[
+            const Text(
+              'Provider sudah mengirim harga final. Setujui untuk menerbitkan tagihan pelunasan.',
+              style: TextStyle(fontSize: 13, color: AppTheme.grey600),
             ),
-          ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    label: const Text('Tolak'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.danger,
+                      side: const BorderSide(color: AppTheme.danger),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: actionState.isLoading
+                        ? null
+                        : () => _decideFinalPrice(
+                            context,
+                            ref,
+                            order,
+                            'reject',
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.check_rounded, size: 18),
+                    label: const Text('Setuju'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.success,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: actionState.isLoading
+                        ? null
+                        : () => _decideFinalPrice(
+                            context,
+                            ref,
+                            order,
+                            'approve',
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (cancellable) ...[
+            if (approvalPending) const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.cancel_outlined, size: 18),
+                label: const Text('Batalkan Pesanan'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.danger,
+                  side: const BorderSide(color: AppTheme.danger),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: actionState.isLoading
+                    ? null
+                    : () => _showCancelDialog(context, ref, order),
+              ),
+            ),
+          ],
           if (actionState.isLoading)
             const Padding(
               padding: EdgeInsets.only(top: 12),
@@ -1010,6 +1162,35 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _decideFinalPrice(
+    BuildContext context,
+    WidgetRef ref,
+    OrderData order,
+    String action,
+  ) async {
+    try {
+      final api = ref.read(apiServiceProvider);
+      await api.decideFinalPrice(orderId: order.id, action: action);
+      ref.invalidate(orderDetailProvider(order.id));
+      ref.invalidate(myOrdersProvider);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            action == 'approve'
+                ? 'Harga final disetujui. Tagihan pelunasan sudah dibuat.'
+                : 'Harga final ditolak.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memproses harga final: $e')),
+      );
+    }
   }
 
   void _showCancelDialog(BuildContext context, WidgetRef ref, OrderData order) {
@@ -1122,68 +1303,140 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     final controller = TextEditingController(
       text: order.estimatedPrice.toString(),
     );
+    final initialPhotos = <XFile>[];
+    final finalPhotos = <XFile>[];
+    final receiptPhotos = <XFile>[];
+    final picker = ImagePicker();
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Harga Final',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Masukkan harga akhir setelah pekerjaan selesai',
-              style: TextStyle(fontSize: 13, color: AppTheme.grey600),
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          Future<void> pickInto(List<XFile> target) async {
+            final images = await picker.pickMultiImage();
+            if (images.isNotEmpty) {
+              setDialogState(() => target.addAll(images));
+            }
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text(
+              'Harga Final',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                prefixText: 'Rp ',
-                hintText: '0',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Masukkan harga akhir dan laporan foto setelah pekerjaan selesai',
+                    style: TextStyle(fontSize: 13, color: AppTheme.grey600),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      prefixText: 'Rp ',
+                      hintText: '0',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildReportPicker('Foto kondisi awal', initialPhotos, () => pickInto(initialPhotos)),
+                  _buildReportPicker('Foto kondisi akhir', finalPhotos, () => pickInto(finalPhotos)),
+                  _buildReportPicker('Foto kuitansi pembelian', receiptPhotos, () => pickInto(receiptPhotos)),
+                ],
               ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final finalPrice = int.tryParse(controller.text) ?? 0;
+                  if (finalPrice <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Harga tidak valid')),
+                    );
+                    return;
+                  }
+                  if (initialPhotos.isEmpty || finalPhotos.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Foto kondisi awal dan akhir wajib diisi')),
+                    );
+                    return;
+                  }
+
+                  final success = await ref
+                      .read(orderActionControllerProvider.notifier)
+                      .completeOrder(
+                        order.id,
+                        finalPrice,
+                        initialConditionPhotos: await _toMultipart(initialPhotos),
+                        finalConditionPhotos: await _toMultipart(finalPhotos),
+                        receiptPhotos: await _toMultipart(receiptPhotos),
+                      );
+                  if (context.mounted) {
+                    Navigator.pop(ctx);
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Pekerjaan selesai!')),
+                      );
+                      ref.invalidate(orderDetailProvider(order.id));
+                    }
+                  }
+                },
+                child: const Text('Konfirmasi'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildReportPicker(String label, List<XFile> files, VoidCallback onPick) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$label (${files.length})',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final finalPrice = int.tryParse(controller.text) ?? 0;
-              if (finalPrice <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Harga tidak valid')),
-                );
-                return;
-              }
-              final success = await ref
-                  .read(orderActionControllerProvider.notifier)
-                  .completeOrder(order.id, finalPrice);
-              if (context.mounted) {
-                Navigator.pop(ctx);
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Pekerjaan selesai!')),
-                  );
-                  ref.invalidate(orderDetailProvider(order.id));
-                }
-              }
-            },
-            child: const Text('Konfirmasi'),
+          TextButton.icon(
+            onPressed: onPick,
+            icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+            label: const Text('Tambah'),
           ),
         ],
       ),
     );
+  }
+
+  Future<List<MultipartFile>> _toMultipart(List<XFile> files) async {
+    final result = <MultipartFile>[];
+    for (final file in files) {
+      final bytes = await file.readAsBytes();
+      final lower = file.name.toLowerCase();
+      final mime = lower.endsWith('.png') ? 'image/png' : 'image/jpeg';
+      result.add(
+        MultipartFile.fromBytes(
+          bytes,
+          filename: file.name,
+          contentType: MediaType.parse(mime),
+        ),
+      );
+    }
+    return result;
   }
 
   void _showReviewDialog(BuildContext context, WidgetRef ref, int orderId) {

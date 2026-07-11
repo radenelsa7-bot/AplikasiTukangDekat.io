@@ -31,13 +31,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      # === LANGKAH BARU DI SINI ===
+      # Menyalin landing.html menjadi index.html secara otomatis di server GitHub
+      - name: Duplicate landing.html to index.html
+        run: cp website/landing.html website/index.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          # Mengupload isi folder website yang sekarang sudah punya index.html di dalamnya
+          path: './website'
+          
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

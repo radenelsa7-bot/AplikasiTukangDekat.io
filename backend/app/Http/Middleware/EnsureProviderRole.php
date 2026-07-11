@@ -9,7 +9,11 @@ class EnsureProviderRole
 {
     public function handle(Request $request, Closure $next)
     {
-        if ($request->user()?->role !== 'PROVIDER') {
+        $user = $request->user();
+        $role = strtoupper((string) ($user?->role ?? ''));
+
+        // Temporary debug payload removed; keep middleware behavior stable.
+        if ($role !== 'PROVIDER') {
             return response()->json([
                 'success' => false,
                 'message' => 'Only providers can access this resource.',
@@ -21,3 +25,4 @@ class EnsureProviderRole
         return $next($request);
     }
 }
+

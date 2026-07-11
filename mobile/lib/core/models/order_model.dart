@@ -5,10 +5,20 @@ class OrderData {
   final int estimatedPrice;
   final int? finalPrice;
   final String address;
+  final double? customerLatitude;
+  final double? customerLongitude;
+  final double? providerLatitude;
+  final double? providerLongitude;
   final String? notes;
+  final String? damageLevel;
+  final String? damageDescription;
+  final int? estimatedPriceMin;
+  final int? estimatedPriceMax;
+  final String? queueNote;
   final String scheduleAt;
   final List<PaymentData> payments;
-  final List<OrderAttachmentData> attachments;
+  final String? finalPriceApprovalStatus;
+  final List<OrderAttachment> attachments;
 
   OrderData({
     required this.id,
@@ -17,10 +27,20 @@ class OrderData {
     required this.estimatedPrice,
     this.finalPrice,
     required this.address,
+    this.customerLatitude,
+    this.customerLongitude,
+    this.providerLatitude,
+    this.providerLongitude,
     this.notes,
+    this.damageLevel,
+    this.damageDescription,
+    this.estimatedPriceMin,
+    this.estimatedPriceMax,
+    this.queueNote,
     required this.scheduleAt,
     required this.payments,
-    required this.attachments,
+    this.finalPriceApprovalStatus,
+    this.attachments = const [],
   });
 
   factory OrderData.fromJson(Map<String, dynamic> json) {
@@ -31,41 +51,59 @@ class OrderData {
       estimatedPrice: json['estimated_price'] ?? 0,
       finalPrice: json['final_price'],
       address: json['address'] ?? '',
+      customerLatitude: double.tryParse(json['customer_latitude']?.toString() ?? ''),
+      customerLongitude: double.tryParse(json['customer_longitude']?.toString() ?? ''),
+      providerLatitude: double.tryParse(json['provider_latitude']?.toString() ?? ''),
+      providerLongitude: double.tryParse(json['provider_longitude']?.toString() ?? ''),
       notes: json['notes'],
+      damageLevel: json['damage_level'],
+      damageDescription: json['damage_description'],
+      estimatedPriceMin: json['estimated_price_min'],
+      estimatedPriceMax: json['estimated_price_max'],
+      queueNote: json['queue_note'],
       scheduleAt: json['schedule_at'] ?? '',
       payments:
           (json['payments'] as List?)
               ?.map((item) => PaymentData.fromJson(item))
               .toList() ??
           [],
+      finalPriceApprovalStatus: json['final_price_approval'] is Map
+          ? json['final_price_approval']['approval_status']?.toString()
+          : null,
       attachments:
           (json['attachments'] as List?)
-              ?.map((item) => OrderAttachmentData.fromJson(item))
+              ?.map((item) => OrderAttachment.fromJson(item))
               .toList() ??
           [],
     );
   }
 }
 
-class OrderAttachmentData {
+class OrderAttachment {
   final int id;
-  final String? fileUrl;
+  final int orderId;
+  final String type;
   final String? publicUrl;
-  final String? fileType;
+  final String? fileUrl;
+  final String? purpose;
 
-  OrderAttachmentData({
+  OrderAttachment({
     required this.id,
-    this.fileUrl,
+    required this.orderId,
+    required this.type,
     this.publicUrl,
-    this.fileType,
+    this.fileUrl,
+    this.purpose,
   });
 
-  factory OrderAttachmentData.fromJson(Map<String, dynamic> json) {
-    return OrderAttachmentData(
+  factory OrderAttachment.fromJson(Map<String, dynamic> json) {
+    return OrderAttachment(
       id: json['id'] ?? 0,
+      orderId: json['order_id'] ?? 0,
+      type: json['type'] ?? '',
+      publicUrl: json['public_url'],
       fileUrl: json['file_url'],
-      publicUrl: json['public_url'] ?? json['file_url'],
-      fileType: json['file_type'],
+      purpose: json['purpose'],
     );
   }
 }
@@ -122,26 +160,42 @@ class CreateOrderRequest {
   final int providerId;
   final int? categoryId;
   final int? providerServiceId;
+  final int kotaId;
+  final int kecamatanId;
   final String scheduleAt;
   final String address;
   final String? notes;
+  final String? damageLevel;
+  final String? damageDescription;
+  final int? estimatedPriceMin;
+  final int? estimatedPriceMax;
   final int? estimatedPrice;
   final List<String>? attachmentUrls;
+  final List<String>? attachmentPaths;
 
   CreateOrderRequest({
     required this.providerId,
     this.categoryId,
     this.providerServiceId,
+    required this.kotaId,
+    required this.kecamatanId,
     required this.scheduleAt,
     required this.address,
     this.notes,
+    this.damageLevel,
+    this.damageDescription,
+    this.estimatedPriceMin,
+    this.estimatedPriceMax,
     this.estimatedPrice,
     this.attachmentUrls,
+    this.attachmentPaths,
   });
 
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{
       'provider_id': providerId,
+      'kota_id': kotaId,
+      'kecamatan_id': kecamatanId,
       'schedule_at': scheduleAt,
       'address': address,
     };
@@ -154,6 +208,18 @@ class CreateOrderRequest {
     }
     if (notes != null) {
       data['notes'] = notes!;
+    }
+    if (damageLevel != null) {
+      data['damage_level'] = damageLevel!;
+    }
+    if (damageDescription != null) {
+      data['damage_description'] = damageDescription!;
+    }
+    if (estimatedPriceMin != null) {
+      data['estimated_price_min'] = estimatedPriceMin!;
+    }
+    if (estimatedPriceMax != null) {
+      data['estimated_price_max'] = estimatedPriceMax!;
     }
     if (estimatedPrice != null) {
       data['estimated_price'] = estimatedPrice!;

@@ -15,7 +15,7 @@ class MetricsEndpointTest extends TestCase
                 // No monitoring service dependency required for this stub.
             }
 
-            public function collect(int $windowMinutes = null): array
+            public function collect(?int $windowMinutes = null): array
             {
                 return [
                     'payout_attempts_total' => 2,
@@ -39,3 +39,4 @@ class MetricsEndpointTest extends TestCase
         $response->assertSee('tukangdekat_failed_payout_attempts_total 1');
     }
 }
+

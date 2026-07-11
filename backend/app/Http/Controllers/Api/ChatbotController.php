@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
+use App\Models\User;
 
 class ChatbotController extends Controller
 {
@@ -26,8 +27,11 @@ class ChatbotController extends Controller
     $user = $request->user();
     $userMessage = (string) $request->input('message');
 
-    // Fetch last order to provide context
-    $lastOrder = Order::where('customer_id', $user->id)->latest('created_at')->first();
+    $lastOrder = Order::with(['payments', 'customer:id,name,email,phone', 'provider:id,name,email,phone'])
+      ->when($user->role === 'PROVIDER', fn($query) => $query->whereIn('provider_id', $this->providerIdentifierSet($user)))
+      ->when($user->role !== 'PROVIDER', fn($query) => $query->where('customer_id', $user->id))
+      ->latest('created_at')
+      ->first();
 
     $reply = $this->tryGeminiReply($userMessage, $lastOrder);
 
@@ -240,6 +244,17 @@ class ChatbotController extends Controller
     }
   }
 
+  private function providerIdentifierSet(User $user): array
+  {
+    $ids = [$user->id];
+    $profileId = $user->providerProfile?->id;
+    if ($profileId) {
+      $ids[] = $profileId;
+    }
+
+    return array_values(array_unique(array_map('intval', $ids)));
+  }
+
   private function buildSimpleDocAnswer(string $userMessage, array $sentences, ?Order $lastOrder): string
   {
     $text = strtolower($userMessage);
@@ -290,6 +305,13 @@ Fitur lupa password akan membantu Anda membuat ulang kata sandi jika perlu.";
 2. Anda dapat melihat detail tagihan di halaman Pesanan Saya.
 3. Pembayaran dilakukan melalui QRIS.
 4. Setelah pembayaran diselesaikan, status tagihan akan berubah menjadi 'Lunas'.";
+    } elseif ($contains(['provider', 'penyedia', 'saldo', 'transaksi', 'laporan foto', 'foto awal', 'foto akhir', 'kuitansi'])) {
+      $reply = "Untuk provider TukangDekat:
+1. Order masuk tampil di menu Pesanan.
+2. Provider dapat menerima atau menolak order. Jika menerima satu order, order lain yang menunggu provider tersebut akan diarahkan mencari provider lain.
+3. Setelah DP pelanggan lunas, provider bisa mulai pekerjaan.
+4. Saat selesai, provider mengisi harga final dan mengunggah foto kondisi awal, foto kondisi akhir, serta foto kuitansi bila ada pembelian.
+5. Menu transaksi menampilkan saldo dan riwayat pembayaran yang sudah masuk.";
     } else {
       // Build a safer summary from relevant sentences without raw docs
       $summary = [];
@@ -619,6 +641,16 @@ Fitur lupa password akan membantu Anda membuat ulang kata sandi jika perlu.";
         . "3. Setelah pembayaran berhasil, status pembayaran akan berubah menjadi 'Sudah dibayar'.\n"
         . "4. Jika pesanan selesai, sistem akan membuat tagihan pelunasan sesuai final harga.\n"
         . "Jika status belum berubah beberapa saat setelah membayar, muat ulang halaman Detail Order.";
+      return $this->withOrderContext($reply, $lastOrder);
+    }
+
+    if ($mentions(['provider', 'penyedia', 'order masuk', 'mulai kerja', 'selesai pekerjaan', 'laporan foto', 'foto awal', 'foto akhir', 'kuitansi', 'saldo', 'transaksi'])) {
+      $reply = "Panduan provider TukangDekat:\n"
+        . "1. Cek order masuk di menu Pesanan dan pilih Terima atau Tolak.\n"
+        . "2. Jika menerima, status provider menjadi sedang dipesan agar pelanggan lain tahu provider tidak tersedia.\n"
+        . "3. Mulai pekerjaan setelah DP pelanggan terbayar.\n"
+        . "4. Saat pekerjaan selesai, unggah foto kondisi awal, foto kondisi akhir, dan foto kuitansi bila ada pembelian barang.\n"
+        . "5. Saldo dan transaksi dapat dilihat dari dashboard provider.";
       return $this->withOrderContext($reply, $lastOrder);
     }
 
