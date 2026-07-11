@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderStatusLog;
 use App\Models\Payment;
+use App\Models\User;
 use App\Services\PaymentGatewayService;
 use App\Services\PaymentFinanceService;
 use App\Services\N8nNotificationService;
@@ -94,6 +95,18 @@ class PaymentController extends Controller
             return $this->successResponse(['payment' => $payment], 'Payment already confirmed', 200);
         }
 
+        // Requirement: FINAL payment hanya bisa diproses setelah customer menyetujui harga akhir.
+        if (strtoupper((string) $payment->payment_type) === 'FINAL') {
+            $approval = \App\Models\FinalPriceApproval::where('order_id', $payment->order_id)
+                ->latest('id')
+                ->first();
+
+            if (!$approval || $approval->approval_status !== 'APPROVED') {
+                return $this->errorResponse('Customer approval for final price is required', 409);
+            }
+        }
+
+
         // Check Midtrans transaction status if using Midtrans
         if ($this->paymentGatewayService->driver() === 'midtrans') {
             $serverKey = (string) config('services.payments.midtrans_server_key', '');
@@ -170,6 +183,7 @@ class PaymentController extends Controller
                     'reason' => 'Payment confirmed by user',
                 ]);
             }
+
 
             DB::commit();
             return $this->successResponse(['payment' => $payment->fresh()], 'Payment confirmed', 200);
@@ -420,7 +434,7 @@ class PaymentController extends Controller
             return null;
         }
 
-        if ($order->customer_id === $user->id || $order->provider_id === $user->id) {
+        if ($order->customer_id === $user->id || $this->isCurrentProviderAssignedToOrder($order, $user)) {
             return null;
         }
 
@@ -443,10 +457,26 @@ class PaymentController extends Controller
         }
 
         $order = $payment->order;
-        if ($order && ($order->customer_id === $user->id || $order->provider_id === $user->id)) {
+        if ($order && ($order->customer_id === $user->id || $this->isCurrentProviderAssignedToOrder($order, $user))) {
             return null;
         }
 
         return response()->json(['message' => 'unauthorized'], 403);
+    }
+
+    private function providerIdentifierSet(User $user): array
+    {
+        $ids = [$user->id];
+        $profileId = $user->providerProfile?->id;
+        if ($profileId) {
+            $ids[] = $profileId;
+        }
+
+        return array_values(array_unique(array_map('intval', $ids)));
+    }
+
+    private function isCurrentProviderAssignedToOrder($order, User $user): bool
+    {
+        return in_array((int) $order->provider_id, $this->providerIdentifierSet($user), true);
     }
 }

@@ -14,6 +14,7 @@ class OrderAttachment extends Model
     'order_id',
     'file_url',
     'file_type',
+    'purpose',
   ];
 
   protected $appends = ['public_url'];

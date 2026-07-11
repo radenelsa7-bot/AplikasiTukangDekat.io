@@ -26,6 +26,8 @@ Route::prefix('auth')->group(function () {
 // Catalog routes (public)
 Route::prefix('catalog')->group(function () {
     Route::get('/categories', [CatalogController::class, 'getCategories'])->middleware('throttle:60,1');
+    Route::get('/wilayah/kota', [CatalogController::class, 'getKota'])->middleware('throttle:60,1');
+    Route::get('/wilayah/kota/{kotaId}/kecamatan', [CatalogController::class, 'getKecamatan'])->middleware('throttle:60,1');
     Route::get('/categories/{categoryId}/providers', [CatalogController::class, 'getProvidersByCategory'])->middleware('throttle:30,1');
     Route::get('/providers', [CatalogController::class, 'getProviders'])->middleware('throttle:60,1');
     Route::get('/providers/search', [CatalogController::class, 'searchProviders'])->middleware('throttle:30,1');
@@ -48,9 +50,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{orderId}/respond', [OrderController::class, 'respondToOrder'])->middleware(['throttle:10,1', 'role:provider']);
         Route::post('/{orderId}/start-work', [OrderController::class, 'startWork'])->middleware(['throttle:10,1', 'role:provider']);
         Route::post('/{orderId}/complete', [OrderController::class, 'completeOrder'])->middleware(['throttle:10,1', 'role:provider']);
+        Route::post('/{orderId}/final-price/submit', [App\Http\Controllers\Api\FinalPriceUpdateController::class, 'submit'])
+            ->middleware(['throttle:10,1', 'role:provider']);
         Route::post('/{orderId}/cancel', [OrderController::class, 'cancelOrder'])->middleware(['throttle:10,1', 'role:customer']);
         Route::post('/{orderId}/review', [ReviewController::class, 'createReview'])->middleware(['throttle:10,1', 'role:customer']);
+
+        // Customer menyetujui/tolak harga final sebelum pelunasan
+        Route::post('/{orderId}/final-price/approve', [App\Http\Controllers\Api\OrderFinalPriceController::class, 'decide'])
+            ->middleware(['throttle:10,1', 'role:customer']);
     });
+
 
     Route::prefix('payments')->group(function () {
         Route::get('/order/{orderId}', [PaymentController::class, 'getPayments'])->middleware('throttle:30,1');
@@ -105,8 +114,11 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('provider')->middleware('role:provider')->group(function () {
+        Route::get('/dashboard', [ProfileController::class, 'providerDashboard'])->middleware('throttle:20,1');
         Route::get('/profile', [ProfileController::class, 'getProviderProfile'])->middleware('throttle:10,1');
         Route::put('/profile', [ProfileController::class, 'updateProviderProfile'])->middleware('throttle:10,1');
+        Route::get('/coverage', [ProfileController::class, 'getProviderCoverage'])->middleware('throttle:10,1');
+        Route::put('/coverage', [ProfileController::class, 'updateProviderCoverage'])->middleware('throttle:10,1');
         Route::post('/services', [ProviderServiceController::class, 'store'])->middleware('throttle:10,1');
         Route::patch('/services/{id}', [ProviderServiceController::class, 'update'])->middleware('throttle:10,1');
     });
@@ -146,9 +158,11 @@ Route::get('/health', function () {
 });
 Route::post('/integrations/n8n/events', [N8nIntegrationController::class, 'dispatchEvent'])->middleware('throttle:30,1');
 Route::get(config('monitoring.metrics_path', '/metrics'), [MetricsController::class, 'show']);
+// Session-based user endpoints (web)
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
 Route::get('/user-session', function (Request $request) {
     return $request->user() ?: response()->json(['error' => 'Not authenticated'], 401);
 })->middleware('auth:sanctum');

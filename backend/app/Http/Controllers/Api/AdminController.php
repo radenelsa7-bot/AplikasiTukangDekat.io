@@ -202,12 +202,14 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:100|unique:service_categories,name',
+            'damage_severity' => 'sometimes|in:BERAT,SEDANG,RINGAN',
             'description' => 'nullable|string|max:500',
             'is_active' => 'boolean',
         ]);
 
         $category = ServiceCategory::create([
             'name' => $validated['name'],
+            'damage_severity' => $validated['damage_severity'] ?? 'SEDANG',
             'description' => $validated['description'] ?? '',
             'is_active' => $validated['is_active'] ?? true,
         ]);
@@ -224,6 +226,7 @@ class AdminController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:100|unique:service_categories,name,' . $categoryId,
+            'damage_severity' => 'sometimes|in:BERAT,SEDANG,RINGAN',
             'description' => 'nullable|string|max:500',
             'is_active' => 'sometimes|boolean',
         ]);

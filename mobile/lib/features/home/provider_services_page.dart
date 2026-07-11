@@ -6,9 +6,10 @@ import '../../core/models/provider_model.dart';
 import '../../core/services/api_service.dart';
 import 'catalog_providers.dart';
 
-final providerServicesControllerProvider = StateNotifierProvider<ProviderServicesController, ProviderServicesState>(
-  (ref) => ProviderServicesController(ref),
-);
+final providerServicesControllerProvider =
+    StateNotifierProvider<ProviderServicesController, ProviderServicesState>(
+      (ref) => ProviderServicesController(ref),
+    );
 
 final providerProfileProvider = FutureProvider<ProviderProfile>((ref) async {
   final api = ref.read(apiServiceProvider);
@@ -135,6 +136,28 @@ class ProviderServicesController extends StateNotifier<ProviderServicesState> {
       return false;
     }
   }
+
+  Future<bool> updateCoverage({
+    required int kotaId,
+    required List<int> kecamatanIds,
+  }) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final api = _ref.read(apiServiceProvider);
+      await api.updateProviderCoverage(
+        kotaId: kotaId,
+        kecamatanIds: kecamatanIds,
+      );
+      await refreshProfile();
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      return false;
+    }
+  }
 }
 
 class ProviderServicesPage extends ConsumerWidget {
@@ -153,13 +176,16 @@ class ProviderServicesPage extends ConsumerWidget {
             icon: const Icon(Icons.refresh),
             onPressed: controllerState.isLoading
                 ? null
-                : () => ref.read(providerServicesControllerProvider.notifier).refreshProfile(),
+                : () => ref
+                      .read(providerServicesControllerProvider.notifier)
+                      .refreshProfile(),
           ),
         ],
       ),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, st) => Center(child: Text('Gagal memuat profil provider: $err')),
+        error: (err, st) =>
+            Center(child: Text('Gagal memuat profil provider: $err')),
         data: (profile) {
           return Padding(
             padding: const EdgeInsets.all(16),
@@ -183,9 +209,8 @@ class ProviderServicesPage extends ConsumerWidget {
                             Expanded(
                               child: Text(
                                 profile.businessName,
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ),
                             IconButton(
@@ -194,14 +219,24 @@ class ProviderServicesPage extends ConsumerWidget {
                               onPressed: () async {
                                 final result = await showDialog<bool>(
                                   context: context,
-                                  builder: (_) => ProviderProfileDialog(profile: profile),
+                                  builder: (_) =>
+                                      ProviderProfileDialog(profile: profile),
                                 );
                                 if (result == true) {
                                   // refresh profile
-                                  await ref.read(providerServicesControllerProvider.notifier).refreshProfile();
+                                  await ref
+                                      .read(
+                                        providerServicesControllerProvider
+                                            .notifier,
+                                      )
+                                      .refreshProfile();
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Profil provider berhasil diperbarui')),
+                                    const SnackBar(
+                                      content: Text(
+                                        'Profil provider berhasil diperbarui',
+                                      ),
+                                    ),
                                   );
                                 }
                               },
@@ -209,10 +244,56 @@ class ProviderServicesPage extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        if (profile.description != null && profile.description!.isNotEmpty)
+                        if (profile.description != null &&
+                            profile.description!.isNotEmpty)
                           _buildInfoRow('Deskripsi', profile.description!),
                         _buildInfoRow('Area', profile.area ?? '-'),
                         _buildInfoRow('Alamat', profile.address ?? '-'),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Wilayah Layanan',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: () async {
+                                final result = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) =>
+                                      ProviderCoverageDialog(profile: profile),
+                                );
+                                if (result == true) {
+                                  await ref
+                                      .read(
+                                        providerServicesControllerProvider
+                                            .notifier,
+                                      )
+                                      .refreshProfile();
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Wilayah layanan berhasil diperbarui',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(
+                                Icons.edit_location_alt_outlined,
+                                size: 16,
+                              ),
+                              label: const Text('Atur'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        _buildCoveragePreview(profile.coverages),
                       ],
                     ),
                   ),
@@ -244,13 +325,23 @@ class ProviderServicesPage extends ConsumerWidget {
                             onPressed: () async {
                               final result = await showDialog<bool>(
                                 context: context,
-                                builder: (_) => ProviderServiceDialog(service: service),
+                                builder: (_) =>
+                                    ProviderServiceDialog(service: service),
                               );
                               if (result == true) {
-                                ref.read(providerServicesControllerProvider.notifier).refreshProfile();
+                                ref
+                                    .read(
+                                      providerServicesControllerProvider
+                                          .notifier,
+                                    )
+                                    .refreshProfile();
                                 if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Layanan berhasil diperbarui')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Layanan berhasil diperbarui',
+                                    ),
+                                  ),
                                 );
                               }
                             },
@@ -273,16 +364,19 @@ class ProviderServicesPage extends ConsumerWidget {
           );
           if (result == true) {
             if (!context.mounted) return;
-            ref.read(providerServicesControllerProvider.notifier).refreshProfile();
+            ref
+                .read(providerServicesControllerProvider.notifier)
+                .refreshProfile();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Layanan baru berhasil ditambahkan')),
+              const SnackBar(
+                content: Text('Layanan baru berhasil ditambahkan'),
+              ),
             );
           }
         },
         tooltip: 'Tambah Layanan',
         child: const Icon(Icons.add),
       ),
-      
     );
   }
 
@@ -294,15 +388,38 @@ class ProviderServicesPage extends ConsumerWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
           const SizedBox(height: 4),
           Text(value),
         ],
       ),
+    );
+  }
+
+  Widget _buildCoveragePreview(List<ProviderCoverage> coverages) {
+    final activeCoverages = coverages.where((c) => c.isActive).toList();
+    if (activeCoverages.isEmpty) {
+      return const Text(
+        'Belum ada wilayah layanan yang dipilih.',
+        style: TextStyle(color: Colors.black54, fontSize: 12),
+      );
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: activeCoverages
+          .map(
+            (coverage) => Chip(
+              label: Text(
+                coverage.kotaName != null && coverage.kotaName!.isNotEmpty
+                    ? '${coverage.kotaName} - ${coverage.kecamatanName}'
+                    : coverage.kecamatanName,
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -313,7 +430,8 @@ class ProviderProfileDialog extends ConsumerStatefulWidget {
   const ProviderProfileDialog({super.key, required this.profile});
 
   @override
-  ConsumerState<ProviderProfileDialog> createState() => _ProviderProfileDialogState();
+  ConsumerState<ProviderProfileDialog> createState() =>
+      _ProviderProfileDialogState();
 }
 
 class _ProviderProfileDialogState extends ConsumerState<ProviderProfileDialog> {
@@ -326,8 +444,12 @@ class _ProviderProfileDialogState extends ConsumerState<ProviderProfileDialog> {
   @override
   void initState() {
     super.initState();
-    _businessNameCtrl = TextEditingController(text: widget.profile.businessName);
-    _descriptionCtrl = TextEditingController(text: widget.profile.description ?? '');
+    _businessNameCtrl = TextEditingController(
+      text: widget.profile.businessName,
+    );
+    _descriptionCtrl = TextEditingController(
+      text: widget.profile.description ?? '',
+    );
     _areaCtrl = TextEditingController(text: widget.profile.area ?? '');
     _addressCtrl = TextEditingController(text: widget.profile.address ?? '');
   }
@@ -346,9 +468,13 @@ class _ProviderProfileDialogState extends ConsumerState<ProviderProfileDialog> {
     final controller = ref.read(providerServicesControllerProvider.notifier);
     final success = await controller.updateProfile(
       businessName: _businessNameCtrl.text.trim(),
-      description: _descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim(),
+      description: _descriptionCtrl.text.trim().isEmpty
+          ? null
+          : _descriptionCtrl.text.trim(),
       area: _areaCtrl.text.trim().isEmpty ? null : _areaCtrl.text.trim(),
-      address: _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
+      address: _addressCtrl.text.trim().isEmpty
+          ? null
+          : _addressCtrl.text.trim(),
     );
     setState(() => _isSaving = false);
     if (success && mounted) {
@@ -430,7 +556,239 @@ class _ProviderProfileDialogState extends ConsumerState<ProviderProfileDialog> {
         ),
         ElevatedButton(
           onPressed: _isSaving ? null : _saveProfile,
-          child: _isSaving ? const CircularProgressIndicator() : const Text('Simpan'),
+          child: _isSaving
+              ? const CircularProgressIndicator()
+              : const Text('Simpan'),
+        ),
+      ],
+    );
+  }
+}
+
+class ProviderCoverageDialog extends ConsumerStatefulWidget {
+  final ProviderProfile profile;
+
+  const ProviderCoverageDialog({super.key, required this.profile});
+
+  @override
+  ConsumerState<ProviderCoverageDialog> createState() =>
+      _ProviderCoverageDialogState();
+}
+
+class _ProviderCoverageDialogState
+    extends ConsumerState<ProviderCoverageDialog> {
+  List<Map<String, dynamic>> _kotaList = [];
+  List<Map<String, dynamic>> _kecamatanList = [];
+  int? _selectedKotaId;
+  final Set<int> _selectedKecamatanIds = {};
+  bool _isLoadingWilayah = false;
+  bool _isLoadingKecamatan = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadKota();
+  }
+
+  Future<void> _loadKota() async {
+    setState(() => _isLoadingWilayah = true);
+    try {
+      final api = ref.read(apiServiceProvider);
+      final kota = await api.getKota();
+      if (!mounted) return;
+      setState(() {
+        _kotaList = kota;
+        final activeCoverage = widget.profile.coverages
+            .where((c) => c.isActive)
+            .toList();
+        if (activeCoverage.isNotEmpty) {
+          _selectedKotaId = activeCoverage.first.kotaId;
+        }
+      });
+      if (_selectedKotaId != null) {
+        await _loadKecamatan(_selectedKotaId!);
+        _selectedKecamatanIds
+          ..clear()
+          ..addAll(
+            widget.profile.coverages
+                .where((c) => c.isActive && c.kotaId == _selectedKotaId)
+                .map((c) => c.kecamatanId),
+          );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal memuat wilayah: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoadingWilayah = false);
+    }
+  }
+
+  Future<void> _loadKecamatan(int kotaId) async {
+    setState(() {
+      _isLoadingKecamatan = true;
+    });
+
+    try {
+      final api = ref.read(apiServiceProvider);
+      final kecamatan = await api.getKecamatan(kotaId);
+      if (!mounted) return;
+      setState(() {
+        _kecamatanList = kecamatan;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _kecamatanList = [];
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal memuat kecamatan: $e')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingKecamatan = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _save() async {
+    if (_selectedKotaId == null || _selectedKecamatanIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih kota dan minimal satu kecamatan')),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    final success = await ref
+        .read(providerServicesControllerProvider.notifier)
+        .updateCoverage(
+          kotaId: _selectedKotaId!,
+          kecamatanIds: _selectedKecamatanIds.toList(),
+        );
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+    if (success) {
+      Navigator.of(context).pop(true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.75;
+    return AlertDialog(
+      title: const Text('Atur Wilayah Layanan'),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 560, maxHeight: maxHeight),
+        child: SingleChildScrollView(
+          child: SizedBox(
+            width: double.maxFinite,
+            child: _isLoadingWilayah
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      DropdownButtonFormField<int?>(
+                        initialValue: _selectedKotaId,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Kota',
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        items: _kotaList
+                            .map(
+                              (kota) => DropdownMenuItem<int?>(
+                                value: (kota['id'] as num).toInt(),
+                                child: Text(kota['name']?.toString() ?? '-'),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) async {
+                          setState(() {
+                            _selectedKotaId = value;
+                            _selectedKecamatanIds.clear();
+                            _kecamatanList = [];
+                          });
+                          if (value != null) {
+                            await _loadKecamatan(value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Pilih kecamatan yang dilayani',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 240,
+                        child: _selectedKotaId == null
+                            ? const Center(
+                                child: Text('Pilih kota terlebih dahulu'),
+                              )
+                            : _isLoadingKecamatan
+                            ? const Center(child: CircularProgressIndicator())
+                            : _kecamatanList.isEmpty
+                            ? const Center(
+                                child: Text('Tidak ada kecamatan tersedia'),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: _kecamatanList.length,
+                                itemBuilder: (context, index) {
+                                  final item = _kecamatanList[index];
+                                  final id = (item['id'] as num).toInt();
+                              return CheckboxListTile(
+                                value: _selectedKecamatanIds.contains(id),
+                                    onChanged: (checked) {
+                                      setState(() {
+                                        if (checked == true) {
+                                          _selectedKecamatanIds.add(id);
+                                        } else {
+                                          _selectedKecamatanIds.remove(id);
+                                        }
+                                      });
+                                    },
+                                    title: Text(
+                                      item['name']?.toString() ?? '-',
+                                    ),
+                                    dense: true,
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          onPressed: _isSaving ? null : _save,
+          child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Simpan'),
         ),
       ],
     );
@@ -443,7 +801,8 @@ class ProviderServiceDialog extends ConsumerStatefulWidget {
   const ProviderServiceDialog({super.key, this.service});
 
   @override
-  ConsumerState<ProviderServiceDialog> createState() => _ProviderServiceDialogState();
+  ConsumerState<ProviderServiceDialog> createState() =>
+      _ProviderServiceDialogState();
 }
 
 class _ProviderServiceDialogState extends ConsumerState<ProviderServiceDialog> {
@@ -459,7 +818,9 @@ class _ProviderServiceDialogState extends ConsumerState<ProviderServiceDialog> {
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.service?.name ?? '');
-    _priceCtrl = TextEditingController(text: widget.service?.basePrice.toString() ?? '');
+    _priceCtrl = TextEditingController(
+      text: widget.service?.basePrice.toString() ?? '',
+    );
     _unitCtrl = TextEditingController(text: widget.service?.priceUnit ?? '');
     if (widget.service == null) {
       _categoriesFuture = _loadCategories();
@@ -497,13 +858,16 @@ class _ProviderServiceDialogState extends ConsumerState<ProviderServiceDialog> {
     if (name.isEmpty || price <= 0) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nama layanan dan harga harus diisi dengan benar')),
+        const SnackBar(
+          content: Text('Nama layanan dan harga harus diisi dengan benar'),
+        ),
       );
       setState(() => _isSaving = false);
       return;
     }
 
-    final selectedCategoryId = widget.service?.categoryId ?? _selectedCategoryId;
+    final selectedCategoryId =
+        widget.service?.categoryId ?? _selectedCategoryId;
     if (selectedCategoryId == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -535,115 +899,119 @@ class _ProviderServiceDialogState extends ConsumerState<ProviderServiceDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.72;
     return AlertDialog(
       title: Text(widget.service == null ? 'Tambah Layanan' : 'Edit Layanan'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (widget.service == null)
-            FutureBuilder<List<ServiceCategory>>(
-              future: _categoriesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
+      content: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 560, maxHeight: maxHeight),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (widget.service == null)
+                FutureBuilder<List<ServiceCategory>>(
+                  future: _categoriesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
 
-                if (snapshot.hasError) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text('Gagal memuat kategori: ${snapshot.error}'),
-                  );
-                }
+                    if (snapshot.hasError) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text('Gagal memuat kategori: ${snapshot.error}'),
+                      );
+                    }
 
-                final categories = snapshot.data ?? [];
-                return DropdownButtonFormField<int>(
-                  initialValue: _selectedCategoryId,
-                  decoration: InputDecoration(
-                    labelText: 'Kategori',
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  items: categories
-                      .map(
-                        (category) => DropdownMenuItem<int>(
-                          value: category.id,
-                          child: Text(category.name),
+                    final categories = snapshot.data ?? [];
+                    return DropdownButtonFormField<int>(
+                      initialValue: _selectedCategoryId,
+                      decoration: InputDecoration(
+                        labelText: 'Kategori',
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
                         ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategoryId = value;
-                    });
+                      ),
+                      items: categories
+                          .map(
+                            (category) => DropdownMenuItem<int>(
+                              value: category.id,
+                              child: Text(category.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategoryId = value;
+                        });
+                      },
+                    );
                   },
-                );
-              },
-            ),
-          if (widget.service != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                children: [
-                  Text(
-                    'Kategori: ${widget.service?.categoryName ?? 'Tidak tersedia'}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                ),
+              if (widget.service != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Kategori: ${widget.service?.categoryName ?? 'Tidak tersedia'}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                ],
+                ),
+              TextField(
+                controller: _nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Nama Layanan',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
               ),
-            ),
-          TextField(
-            controller: _nameCtrl,
-            decoration: InputDecoration(
-              labelText: 'Nama Layanan',
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
+              const SizedBox(height: 12),
+              TextField(
+                controller: _priceCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Harga Dasar',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                keyboardType: TextInputType.number,
               ),
-            ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _unitCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Satuan Harga (contoh: per kunjungan)',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _priceCtrl,
-            decoration: InputDecoration(
-              labelText: 'Harga Dasar',
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
-              ),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _unitCtrl,
-            decoration: InputDecoration(
-              labelText: 'Satuan Harga (contoh: per kunjungan)',
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
       actions: [
         TextButton(
@@ -652,7 +1020,9 @@ class _ProviderServiceDialogState extends ConsumerState<ProviderServiceDialog> {
         ),
         ElevatedButton(
           onPressed: _isSaving ? null : _save,
-          child: _isSaving ? const CircularProgressIndicator() : const Text('Simpan'),
+          child: _isSaving
+              ? const CircularProgressIndicator()
+              : const Text('Simpan'),
         ),
       ],
     );
