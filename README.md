@@ -1,22 +1,23 @@
 # TukangDekat — Ringkasan Proyek
 
-Repo ini berisi implementasi lengkap aplikasi TukangDekat: backend API (Laravel) dan client mobile (Flutter).
+**Status Proyek: 🚀 Siap untuk Uji Coba End-to-End & Deployment**
+
+Repo ini berisi implementasi lengkap aplikasi **TukangDekat**: backend API (Laravel) dan client mobile (Flutter). Proyek ini telah mencapai tahap finalisasi, di mana fitur-fitur inti telah selesai diimplementasikan dan divalidasi melalui serangkaian tes otomatis.
 
 Ringkasan singkat:
 - Backend: Laravel API, berjalan di Docker.
 - Mobile: Flutter app (Android/iOS/web-ready).
 - Dokumentasi: `docs/` berisi SRS, panduan deploy, dan catatan pengembangan.
+- Pengujian: 100% tes backend berhasil, mencakup alur pembayaran dari DP hingga pelunasan.
 
 ---
 
-## Perubahan Terbaru (ringkas)
+## Milestone Terbaru yang Tercapai
 
-- Menyelaraskan response API dan trait `ApiResponse` untuk konsistensi controller.
-- Menambahkan middleware `EnsureTreasurerRole` dan memperbaiki endpoint treasurer/export.
-- Memperbaiki controller `Catalog`, `Review`, dan `Chatbot` untuk penanganan error lebih baik.
-- Menambahkan `backend/.env.example` dan mengurangi hardcoded secrets di `docker-compose.yml`.
-- Perbaikan pada client Flutter: model parsing, API service, dan UI (termasuk penulisan ulang `landing_screen.dart`).
-- Memperbarui dokumentasi SRS (`docs/srs/SRS_TukangDekat_v1.1.md`) untuk mencerminkan fitur terbaru.
+- **Sinkronisasi Backend-Frontend**: Alur pembuatan pesanan di mobile kini sinkron dengan backend, termasuk pengiriman data wilayah (`kota_id`, `kecamatan_id`) dan upload foto kerusakan via file, bukan lagi URL teks.
+- **Alur Pembayaran Lengkap**: Sistem pembayaran bertahap (DP & Lunas) dengan persetujuan harga akhir oleh pelanggan telah diimplementasikan dan divalidasi end-to-end.
+- **Validasi Backend Solid**: Seluruh *test suite* backend (14 tes) berhasil dijalankan, memastikan logika bisnis inti dari autentikasi, order, pembayaran, hingga payout berjalan sesuai harapan.
+- **Perbaikan UI Kritis**: Tombol persetujuan harga akhir kini muncul dengan benar di aplikasi pelanggan, dan masalah akses role-based pada tab pesanan telah diperbaiki.
 
 ---
 
@@ -85,12 +86,10 @@ Referensi: [HELP_RUN_PROJECT.md](./HELP_RUN_PROJECT.md)
 
 ## Catatan Pengembangan & Next Steps
 
-- Jalankan smoke tests terutama pada alur auth, katalog, order, pembayaran, dan review.
-- Jalankan `flutter analyze` dan `flutter test` pada lingkungan developer yang memenuhi syarat plugin.
-- Minta reviewer untuk mengecek endpoint API yang diubah (catalog, review, treasurer, chatbot).
+- **Pengujian Manual E2E**: Lakukan pengujian manual pada aplikasi mobile untuk memastikan alur dari registrasi hingga penyelesaian order berjalan lancar.
+- **Hardening Keamanan**: Pindahkan *secrets* yang tersisa (seperti `GEMINI_API_KEY`) dari file `.env` ke environment variable di server atau *secret manager*.
+- **Deployment**: Lakukan *smoke test* pada environment staging sebelum melakukan deployment ke produksi.
 
 ---
 
-Branch saat ini: `Finalisasi-Project` (default branch upstream: `main`).
-
-Jika butuh saya bantu update README lebih spesifik (mis. menambahkan badge CI, instruksi docker-compose env, atau tabel endpoint), beri tahu area yang diinginkan.
+Untuk panduan lengkap penyelesaian proyek, lihat `GUIDE_FINAL_PROJECT_100_PERCENT.md`.

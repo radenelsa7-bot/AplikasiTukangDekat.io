@@ -12,11 +12,64 @@ final categoriesProvider = FutureProvider<List<ServiceCategory>>((ref) async {
   return response.data;
 });
 
-// Providers by category
+class ProviderCatalogQuery {
+  final int categoryId;
+  final int? kotaId;
+  final int? kecamatanId;
+
+  const ProviderCatalogQuery({
+    required this.categoryId,
+    this.kotaId,
+    this.kecamatanId,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    return other is ProviderCatalogQuery &&
+        other.categoryId == categoryId &&
+        other.kotaId == kotaId &&
+        other.kecamatanId == kecamatanId;
+  }
+
+  @override
+  int get hashCode => Object.hash(categoryId, kotaId, kecamatanId);
+}
+
+class ProviderSearchQuery {
+  final String query;
+  final int? kotaId;
+  final int? kecamatanId;
+
+  const ProviderSearchQuery({
+    required this.query,
+    this.kotaId,
+    this.kecamatanId,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    return other is ProviderSearchQuery &&
+        other.query == query &&
+        other.kotaId == kotaId &&
+        other.kecamatanId == kecamatanId;
+  }
+
+  @override
+  int get hashCode => Object.hash(query, kotaId, kecamatanId);
+}
+
+// Providers by category and optional location
 final providersByCategoryProvider =
-    FutureProvider.family<List<ProviderProfile>, int>((ref, categoryId) async {
+    FutureProvider.family<List<ProviderProfile>, ProviderCatalogQuery>((
+      ref,
+      query,
+    ) async {
       final apiService = ref.read(apiServiceProvider);
-      final response = await apiService.getProvidersByCategory(categoryId);
+      final response = await apiService.getProvidersByCategory(
+        query.categoryId,
+        kotaId: query.kotaId,
+        kecamatanId: query.kecamatanId,
+      );
       return response.data;
     });
 
@@ -40,10 +93,17 @@ final providerReviewsProvider = FutureProvider.family<ReviewsResponse, int>((
 
 // Search providers
 final searchProvidersProvider =
-    FutureProvider.family<List<ProviderProfile>, String>((ref, query) async {
-      if (query.isEmpty) return [];
+    FutureProvider.family<List<ProviderProfile>, ProviderSearchQuery>((
+      ref,
+      query,
+    ) async {
+      if (query.query.isEmpty) return [];
       final apiService = ref.read(apiServiceProvider);
-      final response = await apiService.searchProviders(query);
+      final response = await apiService.searchProviders(
+        query.query,
+        kotaId: query.kotaId,
+        kecamatanId: query.kecamatanId,
+      );
       return response.data;
     });
 
