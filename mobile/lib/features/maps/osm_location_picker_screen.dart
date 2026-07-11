@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme/app_theme.dart';
 import '../../shared/widgets/app_button.dart';
@@ -45,6 +46,7 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
   double? _latitude;
   double? _longitude;
   String _address = '';
+  late final TextEditingController _addressController;
 
   bool _isLoadingLocation = false;
   String? _error;
@@ -60,6 +62,13 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
     _latitude = widget.initialLat;
     _longitude = widget.initialLng;
     _address = widget.initialAddress ?? '';
+    _addressController = TextEditingController(text: _address);
+  }
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    super.dispose();
   }
 
   Future<void> _getCurrentLocation() async {
@@ -112,6 +121,7 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
         _latitude = position.latitude;
         _longitude = position.longitude;
         _address = 'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
+        _addressController.text = _address;
         _isLoadingLocation = false;
       });
 
@@ -125,7 +135,7 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
     }
   }
 
-  void _openGoogleMaps() {
+  Future<void> _openGoogleMaps() async {
     if (_latitude == null || _longitude == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Ambil lokasi terlebih dahulu')),
@@ -133,16 +143,18 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
       return;
     }
 
-    // Tetap pakai eksternal google maps sebagai shortcut.
     final uri = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=$_latitude,$_longitude',
     );
 
-    // Untuk flutter_map murni OSM, kita tidak butuh ini, tapi tombol tetap ada.
-    // (menghindari dependency url_launcher di proses ini)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(uri.toString())),
-    );
+    if (!await canLaunchUrl(uri)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak bisa membuka Google Maps.')),
+      );
+      return;
+    }
+
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   void _confirmLocation() {
@@ -209,6 +221,7 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
                     _latitude = latLng.latitude;
                     _longitude = latLng.longitude;
                     _address = 'Lat: ${latLng.latitude.toStringAsFixed(6)}, Lng: ${latLng.longitude.toStringAsFixed(6)}';
+                    _addressController.text = _address;
                   });
                 },
               ),
@@ -282,6 +295,7 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
+                  controller: _addressController,
                   decoration: InputDecoration(
                     labelText: 'Alamat Lengkap',
                     hintText: 'Tulis alamat lengkap...',
@@ -291,7 +305,6 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
                     ),
                   ),
                   maxLines: 2,
-                  controller: TextEditingController(text: _address),
                   onChanged: (v) => _address = v,
                 ),
                 const SizedBox(height: 16),
