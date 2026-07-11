@@ -1,27 +1,21 @@
-# TODO - Finalisasi & Hardening AP (feature/backend-api-hardening)
+# TODO - Finalisasi Backend & Fitur
 
-## Checklist (prioritas)
+## Backend (Berjalan)
+- [x] Perbaikan Manajemen Sesi (Login) — refresh tidak logout otomatis
 
-### 1) Webhook security & idempotency + transaksi
-- [x] Update `PaymentGatewayService@verifyWebhook()` menjadi fail-closed (webhook_secret kosong => reject) untuk driver non-midtrans.
-- [ ] Tambah idempotency guard untuk webhook replay (prefer simpan last_external_transaction_id/processed markers di `payments`).
-- [ ] Bungkus logic multi-write di `PaymentController@webhookPaymentCallback` dengan `DB::transaction()` dan hanya apply settlement/close order saat transisi status relevan (non-PAID -> PAID).
+## Backend (Belum Mulai)
+- [ ] Perancangan Ulang Skema Database (Migrasi)
+  - [x] Tambah tabel/kolom Wilayah: Kota/Kecamatan/Kode Pos
+  - [ ] Tambah Kategori Kerusakan: Berat/Sedang/Ringan
+  - [ ] Tambah Status Pembayaran: DP/Lunas
+  - [ ] Tambah log Harga Akhir (audit & relasi)
 
-
-### 2) State transition guards & transaksi di Order flow
-- [ ] Tambah guard status pada `OrderController@respondToOrder/startWork/completeOrder` (mis. respon hanya sekali, startWork hanya dari ACCEPTED, completeOrder hanya dari IN_PROGRESS).
-- [ ] Bungkus multi-write di `createOrder`, `respondToOrder` (refund updates), dan `completeOrder` dengan `DB::transaction()`.
-- [ ] Hardening perhitungan final amount di `completeOrder` (hindari null dereference).
-
-### 3) Rate limiting & abuse protection
-- [ ] Tambah throttle konsisten ke endpoint yang rawan abuse (generateQRIS, createReview, getPaymentStatus bila perlu).
-- [ ] Verifikasi konfigurasi throttle agar tidak mengganggu gateway webhook.
-
-### 4) Export safety (Treasurer)
-- [ ] Hardening export csv/xls: batasi jumlah baris atau implement chunked/stream export untuk menghindari memory blow.
-- [ ] Pastikan sanitasi XML untuk XLS tetap konsisten.
-
-### 5) Testing & verification
-- [ ] Tambah/extend tests untuk webhook invalid signature + replay idempotency.
-- [ ] Jalankan `php artisan test` dan perbaiki yang gagal.
+- [ ] Penerapan RBAC (routing/controller) — intensif
+- [ ] Sistem Notifikasi real-time
+- [ ] Alur Pembayaran bertahap DP & Lunas + persetujuan harga akhir
+- [ ] Coverage area restriction
+- [ ] Fitur Cari Vendor
+- [ ] Sistem Antrian provider
+- [ ] Integrasi Maps
+- [ ] Laporan pekerjaan provider (kwitansi & foto)
 

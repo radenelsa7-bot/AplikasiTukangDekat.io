@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
+import '../home/order_detail_page.dart';
 
 class ChatbotScreen extends ConsumerStatefulWidget {
   const ChatbotScreen({super.key});
@@ -13,7 +14,7 @@ class ChatbotScreen extends ConsumerStatefulWidget {
 class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   final TextEditingController _ctrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
-  final List<Map<String, String>> _messages = [];
+  final List<Map<String, dynamic>> _messages = [];
   bool _isLoading = false;
 
   @override
@@ -23,6 +24,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
       'from': 'bot',
       'text':
           'Halo! Saya asisten TukangDekat. Ada yang bisa saya bantu?\n\nAnda bisa bertanya tentang:\n• Status pesanan\n• Informasi pembayaran\n• Cara memesan jasa\n• Pembatalan pesanan',
+      'actions': [],
     });
   }
 
@@ -57,10 +59,12 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
     try {
       final api = ref.read(apiServiceProvider);
-      final reply = await api.sendChatbotMessage(text);
+      final resp = await api.sendChatbotMessage(text);
       if (!mounted) return;
+      final replyText = resp['reply']?.toString() ?? '';
+      final actions = resp['actions'] is List ? resp['actions'] as List : [];
       setState(() {
-        _messages.add({'from': 'bot', 'text': reply});
+        _messages.add({'from': 'bot', 'text': replyText, 'actions': actions});
       });
     } catch (e) {
       if (!mounted) return;
@@ -129,7 +133,15 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                 }
                 final m = _messages[index];
                 final isUser = m['from'] == 'user';
-                return _buildMessageBubble(m['text'] ?? '', isUser);
+                return Column(
+                  crossAxisAlignment: isUser
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
+                  children: [
+                    _buildMessageBubble(m, isUser),
+                    if (!isUser) _buildBotActions(m),
+                  ],
+                );
               },
             ),
           ),
@@ -139,7 +151,8 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     );
   }
 
-  Widget _buildMessageBubble(String text, bool isUser) {
+  Widget _buildMessageBubble(Map<String, dynamic> message, bool isUser) {
+    final text = message['text']?.toString() ?? '';
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -173,6 +186,130 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
             height: 1.4,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBotActions(Map<String, dynamic> message) {
+    final actions = message['actions'];
+    if (actions == null || actions is! List || actions.isEmpty)
+      return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, left: 12, right: 12),
+      child: Wrap(
+        spacing: 8,
+        children: actions.map<Widget>((a) {
+          final label = a['label']?.toString() ?? 'Aksi';
+          final type = a['type']?.toString() ?? '';
+          final payload = a['payload'];
+          return ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.navy,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              final api = ref.read(apiServiceProvider);
+              try {
+                if (type == 'generate_qris') {
+                  final pid = (payload is Map)
+                      ? (payload['payment_id'] ??
+                            payload['paymentId'] ??
+                            payload['payment'] ??
+                            null)
+                      : null;
+                  final oid = (payload is Map)
+                      ? (payload['order_id'] ?? payload['orderId'] ?? null)
+                      : null;
+
+                  if (oid != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => OrderDetailPage(
+                          orderId: int.tryParse(oid.toString()) ?? 0,
+                          autoOpenQris: true,
+                          autoPaymentId: pid != null
+                              ? int.tryParse(pid.toString()) ?? null
+                              : null,
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (pid != null) {
+                    // If only payment id is provided and no order id, generate QRIS directly as fallback
+                    final q = await api.generateQRIS(
+                      int.tryParse(pid.toString()) ?? 0,
+                    );
+                    final url =
+                        q['checkout_url'] ??
+                        q['checkoutUrl'] ??
+                        q['checkout'] ??
+                        q.toString();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('QRIS dibuat: $url')),
+                    );
+                    return;
+                  }
+                }
+
+                if (type == 'open_order') {
+                  final oid = (payload is Map)
+                      ? (payload['order_id'] ?? payload['orderId'] ?? null)
+                      : null;
+                  if (oid != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => OrderDetailPage(
+                          orderId: int.tryParse(oid.toString()) ?? 0,
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final info = payload is Map && payload['order_code'] != null
+                      ? 'Order: ' + payload['order_code'].toString()
+                      : payload?.toString() ?? '';
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('$label — $info')));
+                  return;
+                }
+
+                if (type == 'view_payment') {
+                  final oid = (payload is Map)
+                      ? (payload['order_id'] ?? payload['orderId'] ?? null)
+                      : null;
+                  if (oid != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => OrderDetailPage(
+                          orderId: int.tryParse(oid.toString()) ?? 0,
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                }
+
+                // Default behavior
+                final info = payload is Map && payload['order_code'] != null
+                    ? 'Order: ' + payload['order_code'].toString()
+                    : payload?.toString() ?? '';
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('$label — $info')));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Gagal menjalankan aksi: $label')),
+                );
+              }
+            },
+            child: Text(label),
+          );
+        }).toList(),
       ),
     );
   }
