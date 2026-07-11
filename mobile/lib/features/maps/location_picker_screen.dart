@@ -81,13 +81,14 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() {
-            _error = 'Izin lokasi ditolak.';
-            _isLoadingLocation = false;
-          });
-          return;
-        }
+      }
+
+      if (permission == LocationPermission.denied) {
+        setState(() {
+          _error = 'Izin lokasi ditolak.';
+          _isLoadingLocation = false;
+        });
+        return;
       }
 
       if (permission == LocationPermission.deniedForever) {
@@ -110,8 +111,8 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
         _isLoadingLocation = false;
       });
 
-      if (_mapController != null) {
-        await _mapController!.animateCamera(
+      if (_mapController != null && _selectedLatLng != null) {
+        await _mapController!.moveCamera(
           CameraUpdate.newLatLng(_selectedLatLng!),
         );
       }
@@ -192,7 +193,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                         ),
                       ),
                   },
-                  myLocationEnabled: false,
+                  myLocationEnabled: true,
                   myLocationButtonEnabled: true,
                   zoomControlsEnabled: true,
                   mapToolbarEnabled: false,
@@ -380,4 +381,5 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     );
   }
 }
+
 

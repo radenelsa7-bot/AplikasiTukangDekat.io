@@ -88,6 +88,31 @@ class GoogleMapsPreview extends StatelessWidget {
       );
     }
 
+    if (bounds.isEmpty) {
+      return SizedBox(
+        height: 190,
+        width: double.infinity,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: ColoredBox(
+            color: Colors.grey.shade200,
+            child: const Center(
+              child: Text(
+                'Lokasi titik pemesanan belum disetel',
+                style: TextStyle(
+                  color: AppTheme.grey600,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final shouldMoveCamera = bounds.isNotEmpty;
+
     return SizedBox(
       height: 190,
       width: double.infinity,
@@ -103,13 +128,19 @@ class GoogleMapsPreview extends StatelessWidget {
           myLocationButtonEnabled: true,
           zoomControlsEnabled: false,
           mapToolbarEnabled: false,
-          onMapCreated: (controller) {
-            if (bounds.length >= 2) {
-              final b = _computeLatLngBounds(bounds);
-              controller
-                  .animateCamera(CameraUpdate.newLatLngBounds(b, 40));
-            } else {
-              // single marker: keep initial camera
+          onMapCreated: (controller) async {
+            // Jika ada 2 titik, fit-in. Jika 1 titik, pindahkan kamera ke titik tersebut.
+            if (shouldMoveCamera) {
+              if (bounds.length >= 2) {
+                final b = _computeLatLngBounds(bounds);
+                await controller.animateCamera(
+                  CameraUpdate.newLatLngBounds(b, 40),
+                );
+              } else {
+                await controller.moveCamera(
+                  CameraUpdate.newLatLng(bounds.first),
+                );
+              }
             }
           },
         ),
