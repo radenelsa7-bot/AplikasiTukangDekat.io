@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 
-import 'google_maps_preview.dart';
+import 'osm_map_preview.dart' as osm;
 
-
-class LocationMapPreview extends StatelessWidget {
+/// Wrapper kompatibilitas nama lama.
+/// Mengganti implementasi internal ke OSM (flutter_map).
+class GoogleMapsPreview extends StatelessWidget {
   final double? customerLatitude;
   final double? customerLongitude;
   final double? providerLatitude;
   final double? providerLongitude;
+
   final String customerLabel;
   final String providerLabel;
 
-  const LocationMapPreview({
+  const GoogleMapsPreview({
     super.key,
     this.customerLatitude,
     this.customerLongitude,
@@ -23,7 +25,7 @@ class LocationMapPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GoogleMapsPreview(
+    return osm.OsmMapPreview(
       customerLatitude: customerLatitude,
       customerLongitude: customerLongitude,
       providerLatitude: providerLatitude,

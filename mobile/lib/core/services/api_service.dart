@@ -161,10 +161,18 @@ class ApiService {
     }
   }
 
-  Future<ProvidersResponse> getProvidersByCategory(int categoryId) async {
+  Future<ProvidersResponse> getProvidersByCategory(
+    int categoryId, {
+    int? kotaId,
+    int? kecamatanId,
+  }) async {
     try {
+      final params = <String, dynamic>{};
+      if (kotaId != null) params['kota_id'] = kotaId;
+      if (kecamatanId != null) params['kecamatan_id'] = kecamatanId;
       final response = await dio.get(
         '/api/catalog/categories/$categoryId/providers',
+        queryParameters: params,
       );
       return ProvidersResponse.fromJson(response.data);
     } catch (e) {
@@ -187,11 +195,18 @@ class ApiService {
     }
   }
 
-  Future<ProvidersResponse> searchProviders(String query) async {
+  Future<ProvidersResponse> searchProviders(
+    String query, {
+    int? kotaId,
+    int? kecamatanId,
+  }) async {
     try {
+      final params = <String, dynamic>{'q': query};
+      if (kotaId != null) params['kota_id'] = kotaId;
+      if (kecamatanId != null) params['kecamatan_id'] = kecamatanId;
       final response = await dio.get(
         '/api/catalog/providers/search',
-        queryParameters: {'q': query},
+        queryParameters: params,
       );
       return ProvidersResponse.fromJson(response.data);
     } catch (e) {
@@ -219,6 +234,34 @@ class ApiService {
 
       final response = await dio.post('/api/orders', data: payload);
       return OrderData.fromJson(response.data['data']);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<OrderData> createOrderWithFiles(
+    Map<String, dynamic> fields,
+    List<MultipartFile> files,
+  ) async {
+    try {
+      final form = FormData();
+      fields.forEach((k, v) {
+        if (v != null) form.fields.add(MapEntry(k, v.toString()));
+      });
+      for (var f in files) {
+        form.files.add(MapEntry('files[]', f));
+      }
+      final response = await dio.post('/api/orders', data: form);
+      return OrderData.fromJson(response.data['data']);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getProviderDashboard() async {
+    try {
+      final response = await dio.get('/api/provider/dashboard');
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
     } catch (e) {
       rethrow;
     }
@@ -303,6 +346,24 @@ class ApiService {
       if (longitude != null) data['longitude'] = longitude;
 
       final response = await dio.put('/api/provider/profile', data: data);
+      return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateProviderCoverage({
+    required int kotaId,
+    required List<int> kecamatanIds,
+  }) async {
+    try {
+      final response = await dio.put(
+        '/api/provider/coverage',
+        data: {
+          'kota_id': kotaId,
+          'kecamatan_ids': kecamatanIds,
+        },
+      );
       return Map<String, dynamic>.from(response.data['data'] ?? {});
     } catch (e) {
       rethrow;
@@ -814,7 +875,10 @@ class ApiService {
         queryParameters: queryParameters,
         options: Options(responseType: ResponseType.bytes),
       );
-      return Uint8List.fromList(response.data);
+      if (response.data is Uint8List) {
+        return response.data as Uint8List;
+      }
+      return Uint8List.fromList(List<int>.from(response.data));
     } catch (e) {
       rethrow;
     }
@@ -850,4 +914,3 @@ final apiServiceProvider = Provider<ApiService>((ref) {
   final dio = ref.watch(dioProvider);
   return ApiService(dio: dio);
 });
-

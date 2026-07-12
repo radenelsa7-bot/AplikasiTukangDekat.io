@@ -1,10 +1,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Location permission (dibutuhkan untuk fitur maps/lokasi) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Untuk perangkat Android modern, opsional namun aman jika nanti butuh background -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
     <application
         android:label="TukangDekat"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
+        <!-- Google Maps API key (isi value dengan API key kamu) -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyC7P8VOaA5TCA9ZFWZ-dV0qrtDvIGxB3O4" />
+
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -45,3 +59,4 @@
         </intent>
     </queries>
 </manifest>
+

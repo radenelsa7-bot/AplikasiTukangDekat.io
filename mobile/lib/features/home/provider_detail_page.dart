@@ -35,83 +35,178 @@ class ProviderDetailPage extends ConsumerWidget {
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 40,
-                              child: const Icon(Icons.person, size: 40),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final compact = constraints.maxWidth < 420;
+                        final statusChip = Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isBusy
+                                ? Colors.orange.shade50
+                                : Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            isBusy ? 'Sedang dipesan' : 'Tersedia',
+                            style: TextStyle(
+                              color: isBusy
+                                  ? Colors.orange.shade800
+                                  : Colors.green.shade700,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
+                          ),
+                        );
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (compact)
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    provider.businessName,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleLarge,
-                                  ),
-                                  const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      const Icon(
-                                        Icons.star,
-                                        size: 16,
-                                        color: Colors.amber,
+                                      const CircleAvatar(
+                                        radius: 34,
+                                        child: Icon(Icons.person, size: 34),
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        provider.avgRating.toStringAsFixed(1),
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium,
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              provider.businessName,
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.titleLarge,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 6,
+                                              crossAxisAlignment:
+                                                  WrapCrossAlignment.center,
+                                              children: [
+                                                Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.star,
+                                                      size: 16,
+                                                      color: Colors.amber,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      provider.avgRating
+                                                          .toStringAsFixed(1),
+                                                      style: Theme.of(
+                                                        context,
+                                                      ).textTheme.bodyMedium,
+                                                    ),
+                                                  ],
+                                                ),
+                                                if (provider.isVerified)
+                                                  Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(
+                                                        Icons.verified,
+                                                        size: 16,
+                                                        color: Colors.green,
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        'Terverifikasi',
+                                                        style: Theme.of(
+                                                          context,
+                                                        ).textTheme.bodySmall,
+                                                      ),
+                                                    ],
+                                                  ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  if (provider.isVerified)
-                                    Row(
+                                  const SizedBox(height: 10),
+                                  statusChip,
+                                ],
+                              )
+                            else
+                              Row(
+                                children: [
+                                  const CircleAvatar(
+                                    radius: 40,
+                                    child: Icon(Icons.person, size: 40),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(
-                                          Icons.verified,
-                                          size: 16,
-                                          color: Colors.green,
-                                        ),
-                                        const SizedBox(width: 4),
                                         Text(
-                                          'Terverifikasi',
+                                          provider.businessName,
                                           style: Theme.of(
                                             context,
-                                          ).textTheme.bodySmall,
+                                          ).textTheme.titleLarge,
                                         ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.star,
+                                              size: 16,
+                                              color: Colors.amber,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              provider.avgRating
+                                                  .toStringAsFixed(1),
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium,
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        if (provider.isVerified)
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.verified,
+                                                size: 16,
+                                                color: Colors.green,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Terverifikasi',
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall,
+                                              ),
+                                            ],
+                                          ),
+                                        const SizedBox(height: 8),
+                                        statusChip,
                                       ],
-                                    ),
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      color: isBusy ? Colors.orange.shade50 : Colors.green.shade50,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      isBusy ? 'Sedang dipesan' : 'Tersedia',
-                                      style: TextStyle(
-                                        color: isBusy ? Colors.orange.shade800 : Colors.green.shade700,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
                           ],
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -127,6 +222,31 @@ class ProviderDetailPage extends ConsumerWidget {
                 _buildInfoRow('Area', provider.area ?? '-'),
                 _buildInfoRow('Alamat', provider.address ?? '-'),
                 const SizedBox(height: 12),
+                if (provider.coverages.isNotEmpty) ...[
+                  Text(
+                    'Wilayah Layanan',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: provider.coverages
+                        .where((coverage) => coverage.isActive)
+                        .map(
+                          (coverage) => Chip(
+                            label: Text(
+                              coverage.kotaName != null &&
+                                      coverage.kotaName!.isNotEmpty
+                                  ? '${coverage.kotaName} - ${coverage.kecamatanName}'
+                                  : coverage.kecamatanName,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 LocationMapPreview(
                   providerLatitude: provider.latitude,
                   providerLongitude: provider.longitude,
@@ -268,19 +388,27 @@ class ProviderDetailPage extends ConsumerWidget {
                       onPressed: () {
                         if (isBusy) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Provider sedang dipesan pelanggan lain. Anda tetap bisa membuat antrian, tetapi provider mungkin mengarahkan ke penyedia lain.')),
+                            const SnackBar(
+                              content: Text(
+                                'Provider sedang dipesan pelanggan lain. Anda tetap bisa membuat antrian, tetapi provider mungkin mengarahkan ke penyedia lain.',
+                              ),
+                            ),
                           );
                         }
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => CreateOrderPage(
-                              providerId: providerId,
+                              providerId: provider.userId ?? providerId,
                               categoryId: categoryId,
                               services: provider.services,
+                              coverages: provider.coverages,
                             ),
                           ),
                         );
                       },
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                      ),
                       child: const Text('Pesan Sekarang'),
                     ),
                   ),

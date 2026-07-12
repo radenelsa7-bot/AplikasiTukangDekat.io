@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Order;
 
+use App\Models\ProviderProfile;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,6 +12,30 @@ class CreateOrderRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()?->role === 'CUSTOMER';
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $providerId = $this->input('provider_id');
+        if (!is_numeric($providerId)) {
+            return;
+        }
+
+        $existingProviderUser = User::where('id', (int) $providerId)
+            ->where('role', 'PROVIDER')
+            ->first();
+        if ($existingProviderUser) {
+            return;
+        }
+
+        // Backward compatibility: some older clients may still send provider_profile.id.
+        // Normalize that to the actual provider user_id so validation and order assignment stay consistent.
+        $providerProfile = ProviderProfile::with('user')->find((int) $providerId);
+        if ($providerProfile?->user && $providerProfile->user->role === 'PROVIDER') {
+            $this->merge([
+                'provider_id' => $providerProfile->user->id,
+            ]);
+        }
     }
 
     public function rules(): array

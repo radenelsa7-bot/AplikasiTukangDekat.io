@@ -117,6 +117,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', [ProfileController::class, 'providerDashboard'])->middleware('throttle:20,1');
         Route::get('/profile', [ProfileController::class, 'getProviderProfile'])->middleware('throttle:10,1');
         Route::put('/profile', [ProfileController::class, 'updateProviderProfile'])->middleware('throttle:10,1');
+        Route::get('/coverage', [ProfileController::class, 'getProviderCoverage'])->middleware('throttle:10,1');
+        Route::put('/coverage', [ProfileController::class, 'updateProviderCoverage'])->middleware('throttle:10,1');
         Route::post('/services', [ProviderServiceController::class, 'store'])->middleware('throttle:10,1');
         Route::patch('/services/{id}', [ProviderServiceController::class, 'update'])->middleware('throttle:10,1');
     });

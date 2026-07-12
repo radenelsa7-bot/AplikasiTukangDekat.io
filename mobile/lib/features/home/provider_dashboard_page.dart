@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
@@ -135,7 +136,39 @@ class _DashboardContentState extends State<_DashboardContent> {
                 child: _QuickAction(
                   icon: Icons.receipt_long_rounded,
                   label: 'Pesanan',
-                  onTap: widget.onOpenOrders,
+                  onTap: () async {
+                    // Provider wajib aktifkan GPS saat menerima pesanan.
+                    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                    if (!serviceEnabled) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Lokasi wajib aktif untuk menerima pesanan (GPS tidak aktif).'),
+                          backgroundColor: AppTheme.danger,
+                        ),
+                      );
+                      return;
+                    }
+
+                    var permission = await Geolocator.checkPermission();
+                    if (permission == LocationPermission.denied) {
+                      permission = await Geolocator.requestPermission();
+                    }
+
+                    if (!context.mounted) return;
+                    if (permission == LocationPermission.denied ||
+                        permission == LocationPermission.deniedForever) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Lokasi wajib aktif untuk menerima pesanan (izin lokasi belum diberikan).'),
+                          backgroundColor: AppTheme.danger,
+                        ),
+                      );
+                      return;
+                    }
+
+                    widget.onOpenOrders();
+                  },
                 ),
               ),
               const SizedBox(width: 10),

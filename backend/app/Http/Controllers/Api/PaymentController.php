@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderStatusLog;
 use App\Models\Payment;
+use App\Models\User;
 use App\Services\PaymentGatewayService;
 use App\Services\PaymentFinanceService;
 use App\Services\N8nNotificationService;
@@ -433,7 +434,7 @@ class PaymentController extends Controller
             return null;
         }
 
-        if ($order->customer_id === $user->id || $order->provider_id === $user->id) {
+        if ($order->customer_id === $user->id || $this->isCurrentProviderAssignedToOrder($order, $user)) {
             return null;
         }
 
@@ -456,10 +457,26 @@ class PaymentController extends Controller
         }
 
         $order = $payment->order;
-        if ($order && ($order->customer_id === $user->id || $order->provider_id === $user->id)) {
+        if ($order && ($order->customer_id === $user->id || $this->isCurrentProviderAssignedToOrder($order, $user))) {
             return null;
         }
 
         return response()->json(['message' => 'unauthorized'], 403);
+    }
+
+    private function providerIdentifierSet(User $user): array
+    {
+        $ids = [$user->id];
+        $profileId = $user->providerProfile?->id;
+        if ($profileId) {
+            $ids[] = $profileId;
+        }
+
+        return array_values(array_unique(array_map('intval', $ids)));
+    }
+
+    private function isCurrentProviderAssignedToOrder($order, User $user): bool
+    {
+        return in_array((int) $order->provider_id, $this->providerIdentifierSet($user), true);
     }
 }

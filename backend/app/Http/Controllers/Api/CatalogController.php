@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceCategory;
 use App\Models\ProviderProfile;
+use App\Models\Order;
 use App\Models\WilayahKecamatan;
 use App\Models\WilayahKota;
+use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
@@ -43,8 +45,8 @@ class CatalogController extends Controller
      */
     public function getProviders(Request $request)
     {
-        $providers = ProviderProfile::where('is_verified', true)
-            ->with(['user', 'services.category'])
+        $providers = $this->buildProviderQuery($request)
+            ->with(['user', 'services.category', 'coverages.kecamatan.kota'])
             ->get();
 
         return $this->success($this->withAvailability($providers), 'Providers retrieved');
@@ -53,7 +55,7 @@ class CatalogController extends Controller
     /**
      * Get providers berdasarkan category
      */
-    public function getProvidersByCategory($categoryId)
+    public function getProvidersByCategory(Request $request, $categoryId)
     {
         $category = ServiceCategory::find($categoryId);
 
@@ -61,13 +63,17 @@ class CatalogController extends Controller
             return $this->notFound('Category not found');
         }
 
-        $providers = ProviderProfile::whereHas('services', function ($query) use ($categoryId) {
-            $query->where('category_id', $categoryId)->where('is_active', true);
-        })
-            ->where('is_verified', true)
-            ->with(['services' => function ($query) use ($categoryId) {
+        $providers = $this->buildProviderQuery($request)
+            ->whereHas('services', function ($query) use ($categoryId) {
                 $query->where('category_id', $categoryId)->where('is_active', true);
-            }])
+            })
+            ->with([
+                'services' => function ($query) use ($categoryId) {
+                    $query->where('category_id', $categoryId)->where('is_active', true);
+                },
+                'user',
+                'coverages.kecamatan.kota',
+            ])
             ->get();
 
         return $this->success($this->withAvailability($providers), 'Providers retrieved');
@@ -80,7 +86,7 @@ class CatalogController extends Controller
     {
         $provider = ProviderProfile::with(['services' => function ($query) {
             $query->where('is_active', true);
-        }, 'user'])->find($providerId);
+        }, 'user', 'coverages.kecamatan.kota'])->find($providerId);
 
         if (!$provider) {
             return $this->notFound('Provider not found');
@@ -100,7 +106,7 @@ class CatalogController extends Controller
             return $this->error('Query parameter q is required.', 400);
         }
 
-        $providers = ProviderProfile::where('is_verified', true)
+        $providers = $this->buildProviderQuery($request)
             ->where(function ($q) use ($query) {
                 $q->where('business_name', 'like', "%$query%")
                     ->orWhere('area', 'like', "%$query%")
@@ -108,10 +114,33 @@ class CatalogController extends Controller
                         $userQ->where('name', 'like', "%$query%");
                     });
             })
-            ->with('services')
+            ->with(['services', 'user', 'coverages.kecamatan.kota'])
             ->get();
 
         return $this->success($this->withAvailability($providers), 'Providers found');
+    }
+
+    private function buildProviderQuery(Request $request): Builder
+    {
+        $kotaId = $request->integer('kota_id') ?: null;
+        $kecamatanId = $request->integer('kecamatan_id') ?: null;
+
+        return ProviderProfile::query()
+            ->where('is_verified', true)
+            ->whereHas('user', function ($query) {
+                $query->where('status', 'ACTIVE');
+            })
+            ->when($kecamatanId, function (Builder $query) use ($kecamatanId) {
+                $query->whereHas('coverages', function ($coverageQuery) use ($kecamatanId) {
+                    $coverageQuery->where('is_active', true)
+                        ->where('kecamatan_id', $kecamatanId);
+                });
+            })
+            ->when(!$kecamatanId && $kotaId, function (Builder $query) use ($kotaId) {
+                $query->whereHas('coverages.kecamatan', function ($districtQuery) use ($kotaId) {
+                    $districtQuery->where('kota_id', $kotaId);
+                });
+            });
     }
 
     private function withAvailability($providers)
