@@ -875,7 +875,10 @@ class ApiService {
         queryParameters: queryParameters,
         options: Options(responseType: ResponseType.bytes),
       );
-      return Uint8List.fromList(response.data);
+      if (response.data is Uint8List) {
+        return response.data as Uint8List;
+      }
+      return Uint8List.fromList(List<int>.from(response.data));
     } catch (e) {
       rethrow;
     }
