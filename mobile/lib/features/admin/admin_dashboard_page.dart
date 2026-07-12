@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
+import '../auth/auth_controller.dart';
+import '../auth/login_page.dart';
+import 'admin_providers_page.dart';
 import 'admin_categories_page.dart';
 import 'admin_orders_page.dart';
 import 'admin_providers_page.dart';
@@ -40,8 +43,34 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     final isWide = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
+      backgroundColor: AppTheme.cream,
+      appBar: _buildAppBar(context),
       backgroundColor: AppTheme.navyLight,
       body: isWide ? _buildWideLayout() : _buildNarrowLayout(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return AppBar(
+      title: const Text('Admin Dashboard'),
+      elevation: 0,
+      backgroundColor: AppTheme.navy,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.logout_rounded),
+          tooltip: 'Logout',
+          onPressed: () => _onLogout(context),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _onLogout(BuildContext context) async {
+    await ref.read(authControllerProvider.notifier).logout();
+    if (!context.mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
     );
   }
 
@@ -135,17 +164,17 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 
   Widget _buildHorizontalNav() {
     return Container(
-      height: 56,
+      height: 62,
       color: AppTheme.navyLight,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _menuItems.length,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         itemBuilder: (context, i) {
           final item = _menuItems[i];
           final isSelected = _selectedIndex == i;
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: ChoiceChip(
               label: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -153,21 +182,22 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                   Icon(
                     item.icon,
                     size: 16,
-                    color: isSelected ? Colors.white : Colors.white60,
+                    color: isSelected ? Colors.white : Colors.white70,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Text(
                     item.label,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white60,
-                      fontSize: 12,
+                      color: isSelected ? Colors.white : Colors.white70,
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
                 ],
               ),
               selected: isSelected,
               selectedColor: AppTheme.orange,
-              backgroundColor: Colors.transparent,
+              backgroundColor: AppTheme.navy.withOpacity(0.18),
               side: BorderSide.none,
               onSelected: (_) => setState(() => _selectedIndex = i),
             ),
