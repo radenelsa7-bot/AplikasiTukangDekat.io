@@ -1,9 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+
 import '../../core/services/api_service.dart';
 
 import '../../core/models/order_model.dart';
 import '../../core/models/review_model.dart';
+
+
+final myOrdersStatusFilterProvider = StateProvider<String?>((ref) => null);
 
 // My orders provider
 final myOrdersProvider = FutureProvider<List<OrderData>>((ref) async {
@@ -163,6 +168,35 @@ class OrderActionController extends StateNotifier<OrderActionState> {
 
   Future<bool> respondToOrder(int orderId, String action) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
+
+    // Jika provider mau menerima order, wajib cek lokasi provider.
+    if (action == 'accept') {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage:
+              'Lokasi wajib aktif untuk menerima pesanan (GPS tidak aktif).',
+        );
+        return false;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage:
+              'Lokasi wajib aktif untuk menerima pesanan (izin lokasi belum diberikan).',
+        );
+        return false;
+      }
+    }
+
     try {
       final apiService = _ref.read(apiServiceProvider);
       await apiService.respondToOrder(orderId: orderId, action: action);
@@ -192,7 +226,8 @@ class OrderActionController extends StateNotifier<OrderActionState> {
         if (data is Map<String, dynamic> && data['message'] != null) {
           errorMsg = data['message'].toString();
         } else {
-          errorMsg = 'DP harus dibayar terlebih dahulu sebelum memulai pekerjaan';
+          errorMsg =
+              'DP harus dibayar terlebih dahulu sebelum memulai pekerjaan';
         }
       }
       state = state.copyWith(isLoading: false, errorMessage: errorMsg);

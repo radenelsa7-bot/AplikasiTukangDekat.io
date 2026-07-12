@@ -34,6 +34,42 @@ class ProviderService {
   }
 }
 
+class ProviderCoverage {
+  final int id;
+  final int kecamatanId;
+  final String kecamatanName;
+  final int? kotaId;
+  final String? kotaName;
+  final bool isActive;
+
+  ProviderCoverage({
+    required this.id,
+    required this.kecamatanId,
+    required this.kecamatanName,
+    this.kotaId,
+    this.kotaName,
+    required this.isActive,
+  });
+
+  factory ProviderCoverage.fromJson(Map<String, dynamic> json) {
+    final kecamatan = json['kecamatan'];
+    final kota = kecamatan is Map<String, dynamic> ? kecamatan['kota'] : null;
+
+    return ProviderCoverage(
+      id: json['id'] ?? 0,
+      kecamatanId: json['kecamatan_id'] ?? 0,
+      kecamatanName: kecamatan is Map<String, dynamic>
+          ? kecamatan['name']?.toString() ?? ''
+          : '',
+      kotaId: kecamatan is Map<String, dynamic>
+          ? (kecamatan['kota_id'] is num ? (kecamatan['kota_id'] as num).toInt() : int.tryParse(kecamatan['kota_id']?.toString() ?? ''))
+          : null,
+      kotaName: kota is Map<String, dynamic> ? kota['name']?.toString() : null,
+      isActive: json['is_active'] ?? false,
+    );
+  }
+}
+
 class ProviderProfile {
   final int id;
   final int? userId;
@@ -47,6 +83,7 @@ class ProviderProfile {
   final bool isVerified;
   final double avgRating;
   final List<ProviderService> services;
+  final List<ProviderCoverage> coverages;
   final String userStatus; // User account status: ACTIVE, SUSPENDED, INACTIVE
   final String availabilityStatus;
 
@@ -63,6 +100,7 @@ class ProviderProfile {
     required this.isVerified,
     required this.avgRating,
     required this.services,
+    this.coverages = const [],
     this.userStatus = 'ACTIVE',
     this.availabilityStatus = 'AVAILABLE',
   });
@@ -87,6 +125,11 @@ class ProviderProfile {
       services:
           (json['services'] as List?)
               ?.map((item) => ProviderService.fromJson(item))
+              .toList() ??
+          [],
+      coverages:
+          (json['coverages'] as List?)
+              ?.map((item) => ProviderCoverage.fromJson(Map<String, dynamic>.from(item)))
               .toList() ??
           [],
       userStatus: userStatus,
