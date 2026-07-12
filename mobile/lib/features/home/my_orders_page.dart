@@ -9,9 +9,6 @@ import 'order_detail_page.dart';
 class MyOrdersPage extends ConsumerWidget {
   const MyOrdersPage({super.key});
 
-  void _resetFilter(WidgetRef ref) {
-    ref.read(myOrdersStatusFilterProvider.notifier).state = null;
-  }
 
 
   Future<void> _openStatusFilter(BuildContext context, WidgetRef ref) async {
