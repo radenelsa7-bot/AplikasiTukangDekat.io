@@ -6,7 +6,9 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\ProviderProfile;
 use App\Models\ProviderService;
+use App\Models\ServiceCategory;
 use Illuminate\Support\Facades\Hash;
+
 
 class ProviderSeeder extends Seeder
 {
@@ -29,7 +31,7 @@ class ProviderSeeder extends Seeder
           'area' => 'Bojongloa Kaler',
           'address' => 'Jl. Merdeka No. 123',
         ],
-        'category_ids' => [1],
+        'category_ids' => ['Listrik'],
       ],
       [
         'user' => [
@@ -43,7 +45,7 @@ class ProviderSeeder extends Seeder
           'area' => 'Bojongloa Kaler',
           'address' => 'Jl. Ahmad Yani No. 456',
         ],
-        'category_ids' => [2],
+        'category_ids' => ['Plumbing'],
       ],
       [
         'user' => [
@@ -57,7 +59,7 @@ class ProviderSeeder extends Seeder
           'area' => 'Bojongloa Kaler',
           'address' => 'Jl. Sudirman No. 789',
         ],
-        'category_ids' => [3],
+        'category_ids' => ['AC'],
       ],
     ];
 
@@ -87,11 +89,17 @@ class ProviderSeeder extends Seeder
       );
 
       // Create or update services to keep them active
-      foreach ($categoryIds as $categoryId) {
+      foreach ($categoryIds as $categoryName) {
+        $category = ServiceCategory::where('name', $categoryName)->first();
+        if (!$category) {
+          // If categories haven't been seeded (or name mismatch), skip to avoid FK violation
+          continue;
+        }
+
         ProviderService::updateOrCreate(
           [
             'provider_profile_id' => $profile->id,
-            'category_id' => $categoryId,
+            'category_id' => $category->id,
             'name' => 'Service Standard',
           ],
           [

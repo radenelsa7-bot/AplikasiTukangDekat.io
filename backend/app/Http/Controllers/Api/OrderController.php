@@ -60,7 +60,7 @@ class OrderController extends Controller
                 ]);
             }
 
-            $result = DB::transaction(function () use ($validated, $user, $provider, $providerProfile) {
+            $result = DB::transaction(function () use ($request, $validated, $user, $provider, $providerProfile) {
                 $order = Order::create([
                     'order_code' => Order::generateCode(),
                     'customer_id' => $user->id,

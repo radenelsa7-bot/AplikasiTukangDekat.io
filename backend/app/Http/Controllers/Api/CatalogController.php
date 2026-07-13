@@ -127,6 +127,7 @@ class CatalogController extends Controller
 
         return ProviderProfile::query()
             ->where('is_verified', true)
+            ->where('is_active', true)
             ->whereHas('user', function ($query) {
                 $query->where('status', 'ACTIVE');
             })

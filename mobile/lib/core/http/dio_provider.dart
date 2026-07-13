@@ -16,8 +16,9 @@ final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
       baseUrl: ApiConfig.baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
+      sendTimeout: const Duration(seconds: 60),
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -31,9 +32,7 @@ final dioProvider = Provider<Dio>((ref) {
   }
 
   // Add retry interceptor for rate limiting (429/409 errors)
-  dio.interceptors.add(
-    RetryOnConnectionChangeInterceptor(dio: dio),
-  );
+  dio.interceptors.add(RetryOnConnectionChangeInterceptor(dio: dio));
 
   _sharedDio = dio;
   return dio;
@@ -83,7 +82,7 @@ class RetryOnConnectionChangeInterceptor extends Interceptor {
     // Retry on 429 (Too Many Requests) or 409 (Conflict) up to 3 times
     if ((statusCode == 429 || statusCode == 409) && _retryCount < _maxRetries) {
       _retryCount++;
-      
+
       // Exponential backoff: 500ms, 1s, 2s
       final delayMs = _baseDelay.inMilliseconds * (_retryCount);
       await Future.delayed(Duration(milliseconds: delayMs));
@@ -94,10 +93,7 @@ class RetryOnConnectionChangeInterceptor extends Interceptor {
           options.path,
           data: options.data,
           queryParameters: options.queryParameters,
-          options: Options(
-            method: options.method,
-            headers: options.headers,
-          ),
+          options: Options(method: options.method, headers: options.headers),
         );
         return handler.resolve(response);
       } catch (e) {

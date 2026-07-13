@@ -8,7 +8,6 @@ import '../auth/login_page.dart';
 import 'admin_providers_page.dart';
 import 'admin_categories_page.dart';
 import 'admin_orders_page.dart';
-import 'admin_providers_page.dart';
 import 'admin_reports_page.dart';
 import 'admin_transactions_page.dart';
 import 'admin_users_page.dart';
@@ -45,7 +44,6 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     return Scaffold(
       backgroundColor: AppTheme.cream,
       appBar: _buildAppBar(context),
-      backgroundColor: AppTheme.navyLight,
       body: isWide ? _buildWideLayout() : _buildNarrowLayout(),
     );
   }
