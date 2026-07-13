@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -14,7 +15,7 @@ import '../../core/models/order_model.dart';
 import '../../core/models/provider_model.dart';
 import '../../app/theme/app_theme.dart';
 import '../auth/auth_controller.dart';
-import '../maps/location_picker_screen.dart' show LocationPickerScreen;
+import '../maps/location_picker_screen.dart' show LocationPickerScreen, LocationResult;
 
 
 
@@ -666,7 +667,37 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                     const SizedBox(height: 8),
         OutlinedButton.icon(
                       onPressed: () async {
-                        final result = await Navigator.of(context).push(
+                        // CUSTOMER wajib aktifkan lokasi sebelum memilih titik pemesanan
+                        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                        if (!serviceEnabled) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Lokasi GPS tidak aktif. Silakan aktifkan GPS untuk melanjutkan.'),
+                              backgroundColor: AppTheme.danger,
+                            ),
+                          );
+                          return;
+                        }
+
+                        var permission = await Geolocator.checkPermission();
+                        if (permission == LocationPermission.denied) {
+                          permission = await Geolocator.requestPermission();
+                        }
+
+                        if (!context.mounted) return;
+                        if (permission == LocationPermission.denied ||
+                            permission == LocationPermission.deniedForever) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Izin lokasi belum diberikan. Silakan aktifkan untuk melanjutkan.'),
+                              backgroundColor: AppTheme.danger,
+                            ),
+                          );
+                          return;
+                        }
+
+                        final result = await Navigator.of(context).push<LocationResult>(
                           MaterialPageRoute(
                             builder: (_) => const LocationPickerScreen(),
                           ),

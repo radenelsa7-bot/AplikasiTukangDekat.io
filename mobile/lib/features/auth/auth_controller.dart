@@ -174,7 +174,10 @@ class AuthController extends StateNotifier<AuthState> {
     } on DioException catch (e) {
       String errorMsg;
       if (e.type == DioExceptionType.connectionError ||
-          e.type == DioExceptionType.connectionTimeout) {
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.unknown) {
         final url = ApiConfig.baseUrl;
         errorMsg =
             'Tidak bisa terhubung ke server ($url). Pastikan:\n'
@@ -184,10 +187,14 @@ class AuthController extends StateNotifier<AuthState> {
         debugPrint('[Login] Connection failed to: $url');
         debugPrint('[Login] Error: ${e.message}');
       } else {
-        errorMsg =
-            e.response?.data['email']?[0] ??
-            e.response?.data['message'] ??
-            'Login gagal';
+        final responseData = e.response?.data;
+        if (responseData is Map<String, dynamic>) {
+          errorMsg = responseData['email']?[0] ??
+              responseData['message'] ??
+              'Login gagal';
+        } else {
+          errorMsg = 'Login gagal';
+        }
       }
       state = state.copyWith(isLoading: false, errorMessage: errorMsg);
       return false;
