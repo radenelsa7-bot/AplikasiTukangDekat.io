@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_page.dart';
 import 'admin_providers_page.dart';
 import 'admin_categories_page.dart';
-import 'admin_users_page.dart';
 import 'admin_orders_page.dart';
-import 'admin_transactions_page.dart';
+import 'admin_providers_page.dart';
 import 'admin_reports_page.dart';
+import 'admin_transactions_page.dart';
+import 'admin_users_page.dart';
 
-final adminDashboardProvider = FutureProvider<Map<String, dynamic>>((
-  ref,
-) async {
+final adminDashboardProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final api = ref.read(apiServiceProvider);
   return api.getAdminDashboard();
 });
@@ -45,6 +45,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     return Scaffold(
       backgroundColor: AppTheme.cream,
       appBar: _buildAppBar(context),
+      backgroundColor: AppTheme.navyLight,
       body: isWide ? _buildWideLayout() : _buildNarrowLayout(),
     );
   }
@@ -78,7 +79,11 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       children: [
         _buildSidebar(),
         Expanded(
-          child: Column(children: [Expanded(child: _buildContent())]),
+          child: Column(
+            children: [
+              Expanded(child: _buildContent()),
+            ],
+          ),
         ),
       ],
     );
@@ -107,24 +112,24 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
             final i = entry.key;
             final item = entry.value;
             final isSelected = _selectedIndex == i;
+
             return Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: () => setState(() => _selectedIndex = i),
+                splashColor: AppTheme.orange.withValues(alpha: 0.35),
+                highlightColor: AppTheme.orange.withValues(alpha: 0.18),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.orange.withValues(alpha: 0.15)
-                        : null,
+                    color:
+                        isSelected ? AppTheme.orange.withValues(alpha: 0.15) : null,
                     border: Border(
                       left: BorderSide(
-                        color: isSelected
-                            ? AppTheme.orange
-                            : Colors.transparent,
+                        color: isSelected ? AppTheme.orange : Colors.transparent,
                         width: 3,
                       ),
                     ),
@@ -141,9 +146,8 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                         item.label,
                         style: TextStyle(
                           color: isSelected ? AppTheme.orange : Colors.white70,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.normal,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.normal,
                           fontSize: 14,
                         ),
                       ),
@@ -367,9 +371,9 @@ class _DashboardOverview extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 900
-            ? 4
-            : (constraints.maxWidth > 600 ? 3 : 2);
+        final crossAxisCount =
+            constraints.maxWidth > 900 ? 4 : (constraints.maxWidth > 600 ? 3 : 2);
+
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -446,6 +450,7 @@ class _DashboardOverview extends ConsumerWidget {
         ),
       );
     }
+
     return Card(
       margin: EdgeInsets.zero,
       child: ListView.separated(
@@ -492,6 +497,7 @@ class _DashboardOverview extends ConsumerWidget {
         ),
       );
     }
+
     return Card(
       margin: EdgeInsets.zero,
       child: ListView.separated(
@@ -544,6 +550,7 @@ class _DashboardOverview extends ConsumerWidget {
       'CLOSED': (Icons.lock, AppTheme.grey600),
       'CANCELLED': (Icons.cancel, AppTheme.danger),
     };
+
     final entry = map[status] ?? (Icons.help, AppTheme.grey400);
     return Container(
       padding: const EdgeInsets.all(8),
@@ -564,6 +571,7 @@ class _DashboardOverview extends ConsumerWidget {
       'CLOSED': AppTheme.grey600,
       'CANCELLED': AppTheme.danger,
     };
+
     final color = colorMap[status] ?? AppTheme.grey400;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -597,5 +605,7 @@ class _StatItem {
   final String value;
   final IconData icon;
   final Color color;
+
   const _StatItem(this.label, this.value, this.icon, this.color);
 }
+
