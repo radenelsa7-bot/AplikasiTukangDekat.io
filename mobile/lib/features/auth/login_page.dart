@@ -16,6 +16,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  bool _showPassword = false;
 
   @override
   void dispose() {
@@ -38,12 +39,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
-    } else {
-      final errorMsg =
-          ref.read(authControllerProvider).errorMessage ?? 'Login gagal';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
-      );
     }
   }
 
@@ -246,7 +241,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 label: 'Password',
                 hint: 'Masukkan password Anda',
                 icon: Icons.lock_outline,
-                obscureText: true,
+                obscureText: !_showPassword,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _showPassword ? Icons.visibility_off : Icons.visibility,
+                    color: const Color(0xFFFF8C42),
+                  ),
+                  onPressed: () => setState(() => _showPassword = !_showPassword),
+                ),
                 validator: (v) {
                   final value = v ?? '';
                   if (value.isEmpty) return 'Password wajib diisi';
@@ -337,13 +339,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Text(
-                    state.errorMessage!,
-                    style: const TextStyle(
-                      color: Color(0xFFE74C3C),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        state.errorMessage!,
+                        style: const TextStyle(
+                          color: Color(0xFFE74C3C),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: state.isLoading ? null : _login,
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF0F3460),
+                          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        child: const Text('Coba Lagi'),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -360,6 +376,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     required String hint,
     required IconData icon,
     bool obscureText = false,
+    Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
     return Column(
@@ -382,6 +399,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             hintText: hint,
             hintStyle: const TextStyle(color: Color(0xFFB8B8B8)),
             prefixIcon: Icon(icon, color: const Color(0xFFFF8C42), size: 20),
+            suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
