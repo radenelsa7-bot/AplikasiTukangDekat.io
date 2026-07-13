@@ -1,5 +1,5 @@
 /// Non-web implementation: saves file using path_provider (used for Android/iOS/desktop).
-library download_helper_io;
+library;
 
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';

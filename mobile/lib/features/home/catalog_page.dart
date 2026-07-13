@@ -342,7 +342,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int?>(
-            value: _selectedKotaId,
+            initialValue: _selectedKotaId,
             isExpanded: true,
             decoration: InputDecoration(
               labelText: 'Kota',
@@ -378,7 +378,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int?>(
-            value: _selectedKecamatanId,
+            initialValue: _selectedKecamatanId,
             isExpanded: true,
             decoration: InputDecoration(
               labelText: 'Kecamatan',

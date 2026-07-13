@@ -200,7 +200,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
               ),
               selected: isSelected,
               selectedColor: AppTheme.orange,
-              backgroundColor: AppTheme.navy.withOpacity(0.18),
+              backgroundColor: AppTheme.navy.withValues(alpha: 0.18),
               side: BorderSide.none,
               onSelected: (_) => setState(() => _selectedIndex = i),
             ),
