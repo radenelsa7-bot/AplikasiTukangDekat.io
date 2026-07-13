@@ -605,8 +605,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                                 isPaid
                                     ? 'Lunas'
                                     : (isCancelled
-                                          ? 'Dibatalkan'
-                                          : 'Belum Dibayar'),
+                                        ? 'Dibatalkan'
+                                        : 'Belum Dibayar'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: statusColor,
@@ -626,14 +626,13 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       ),
                     ],
                   ),
+                  // FIX: Show payment button for unpaid final payments when order is COMPLETED
+                  // and final price is approved (for CUSTOMER) or when payment is UNPAID/PENDING
                   if (!isPaid &&
                       (payment.status == 'UNPAID' ||
                           payment.status == 'PENDING') &&
-                      ![
-                        'CANCELLED',
-                        'CLOSED',
-                        'COMPLETED',
-                      ].contains(order.status)) ...[
+                      (order.status != 'CANCELLED' &&
+                          order.status != 'CLOSED')) ...[
                     const SizedBox(height: 12),
                     Builder(
                       builder: (ctx) {
@@ -643,7 +642,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                             width: double.infinity,
                             child: ElevatedButton.icon(
                               icon: const Icon(Icons.qr_code_2, size: 18),
-                              label: const Text('Bayar Sekarang'),
+                              label: Text(payment.paymentType == 'DP' 
+                                  ? 'Bayar DP Sekarang' 
+                                  : 'Bayar Pelunasan Sekarang'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.success,
                                 foregroundColor: Colors.white,
@@ -897,6 +898,30 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           ),
           const SizedBox(height: 16),
           if (order.status == 'CREATED') ...[
+            // Show error message if GPS check failed
+            if (actionState.errorMessage != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.danger.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.danger.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: AppTheme.danger, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        actionState.errorMessage!,
+                        style: const TextStyle(color: AppTheme.danger, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -916,11 +941,16 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                         final success = await ref
                             .read(orderActionControllerProvider.notifier)
                             .respondToOrder(order.id, 'accept');
-                        if (success && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Order diterima!')),
-                          );
-                          ref.invalidate(orderDetailProvider(order.id));
+                        if (context.mounted) {
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Order diterima!')),
+                            );
+                            ref.invalidate(orderDetailProvider(order.id));
+                          } else {
+                            // Error message is already shown via actionState.errorMessage
+                            ref.invalidate(orderActionControllerProvider);
+                          }
                         }
                       },
               ),

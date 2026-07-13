@@ -60,8 +60,7 @@ class OsmMapPreview extends StatelessWidget {
       );
     }
 
-    // Jika belum ada koordinat, tampilkan loading agar UX konsisten
-    // (parent bertugas mengirim koordinat saat ready).
+    // FIX: If no coordinates, show error message instead of infinite loading
     if (points.isEmpty) {
       return SizedBox(
         height: 250,
@@ -69,9 +68,35 @@ class OsmMapPreview extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
           child: ColoredBox(
-            color: Colors.grey.shade200,
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
+            color: Colors.grey.shade100,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.location_off,
+                    size: 48,
+                    color: AppTheme.grey400,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Lokasi belum tersedia',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.grey600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Silakan tunggu atau refresh halaman',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.grey600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -145,4 +170,3 @@ class OsmMapPreview extends StatelessWidget {
     );
   }
 }
-

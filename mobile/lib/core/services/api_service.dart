@@ -239,17 +239,27 @@ class ApiService {
     }
   }
 
+  // FIX: Renamed to use proper field names matching backend validation
   Future<OrderData> createOrderWithFiles(
     Map<String, dynamic> fields,
     List<MultipartFile> files,
   ) async {
     try {
       final form = FormData();
+      // FIX: Handle both scalar and array fields properly
       fields.forEach((k, v) {
-        if (v != null) form.fields.add(MapEntry(k, v.toString()));
+        if (v == null) return;
+        if (v is List) {
+          for (var item in v) {
+            form.fields.add(MapEntry('$k[]', item.toString()));
+          }
+        } else {
+          form.fields.add(MapEntry(k, v.toString()));
+        }
       });
+      // FIX: Use 'damage_photos[]' instead of 'files[]' to match backend validation
       for (var f in files) {
-        form.files.add(MapEntry('files[]', f));
+        form.files.add(MapEntry('damage_photos[]', f));
       }
       final response = await dio.post('/api/orders', data: form);
       return OrderData.fromJson(response.data['data']);
