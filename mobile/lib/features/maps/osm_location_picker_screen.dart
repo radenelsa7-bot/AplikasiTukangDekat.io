@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -7,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme/app_theme.dart';
 import '../../shared/widgets/app_button.dart';
-import '../../shared/widgets/app_text_field.dart';
+import 'location_address_helper.dart';
 
 class LocationResult {
   final double latitude;
@@ -49,6 +50,7 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
   late final TextEditingController _addressController;
 
   bool _isLoadingLocation = false;
+  bool _isResolvingAddress = false;
   String? _error;
 
   LatLng? get _selectedLatLng =>
@@ -120,12 +122,11 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
       setState(() {
         _latitude = position.latitude;
         _longitude = position.longitude;
-        _address = 'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
-        _addressController.text = _address;
         _isLoadingLocation = false;
       });
 
       _mapController.move(selected, 15);
+       await _resolveAddress(position.latitude, position.longitude);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -135,6 +136,55 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
     }
   }
 
+  /// Reverse-geocode koordinat menjadi alamat asli via OpenStreetMap Nominatim.
+  /// Jika gagal, tetap gunakan koordinat sebagai fallback.
+  Future<void> _resolveAddress(double lat, double lng) async {
+    final fallback =
+        'Lat: ${lat.toStringAsFixed(6)}, Lng: ${lng.toStringAsFixed(6)}';
+    setState(() {
+      _isResolvingAddress = true;
+      _address = fallback;
+      _addressController.text = fallback;
+    });
+    try {
+      final response = await Dio().get(
+        'https://nominatim.openstreetmap.org/reverse',
+        queryParameters: {
+          'format': 'jsonv2',
+          'lat': lat,
+          'lon': lng,
+          'zoom': 18,
+          'addressdetails': 1,
+          'accept-language': 'id',
+        },
+        options: Options(
+          headers: {
+            'User-Agent': 'TukangDekatApp/1.0 (https://tukangdekat.app)',
+          },
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      );
+      final data = response.data;
+      final display = data is Map ? data['display_name']?.toString() : null;
+      if (!mounted) return;
+      setState(() {
+        final resolvedAddress = buildReadableLocationAddress(
+          lat: lat,
+          lng: lng,
+          geocodingData: data is Map ? Map<String, dynamic>.from(data) : null,
+          displayName: display,
+        );
+        _address = resolvedAddress;
+        _addressController.text = resolvedAddress;
+        _isResolvingAddress = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isResolvingAddress = false);
+    }
+  }
+ 
   Future<void> _openGoogleMaps() async {
     if (_latitude == null || _longitude == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -220,9 +270,8 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
                   setState(() {
                     _latitude = latLng.latitude;
                     _longitude = latLng.longitude;
-                    _address = 'Lat: ${latLng.latitude.toStringAsFixed(6)}, Lng: ${latLng.longitude.toStringAsFixed(6)}';
-                    _addressController.text = _address;
                   });
+                   _resolveAddress(latLng.latitude, latLng.longitude);
                 },
               ),
               children: [
@@ -271,10 +320,22 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '$_latitude, $_longitude',
+                          _isResolvingAddress
+                            ? 'Mencari alamat...'
+                            : (_address.isNotEmpty
+                                  ? _address
+                                  : '$_latitude, $_longitude'),
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
+                                         if (_isResolvingAddress) ...[
+                      const SizedBox(width: 8),
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ],
                   ],
                 ),
               ),
