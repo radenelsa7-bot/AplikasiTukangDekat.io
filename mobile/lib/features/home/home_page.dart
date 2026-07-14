@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../app/theme/app_theme.dart';
 import '../../config/api_config.dart';
 import '../auth/auth_controller.dart';
@@ -42,9 +43,18 @@ class _HomePageState extends ConsumerState<HomePage> {
     final isProvider = state.userRole == 'PROVIDER';
     final bottomItems = isProvider
         ? const [
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
-            BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Pesanan'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Akun'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_rounded),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_rounded),
+              label: 'Pesanan',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded),
+              label: 'Akun',
+            ),
           ]
         : _customerBottomItems;
     final pages = isProvider
@@ -61,7 +71,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             const MyOrdersPage(),
             _buildAccountTab(context, ref, state),
           ];
-
 
     return DefaultTabController(
       length: 1,
@@ -87,40 +96,42 @@ class _HomePageState extends ConsumerState<HomePage> {
         : state.userEmail ?? 'N/A';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24.w),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [AppTheme.navy, AppTheme.navyLight],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.navy.withValues(alpha: 0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+              borderRadius: BorderRadius.circular(20.r),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.navy.withValues(alpha: 0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(3),
+                  padding: EdgeInsets.all(3.w),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: AppTheme.orange, width: 2),
                   ),
                   child: CircleAvatar(
-                    radius: 36,
+                    radius: 36.r,
                     backgroundColor: Colors.white12,
-                    backgroundImage: state.userProfilePhotoPath != null && state.userProfilePhotoPath!.isNotEmpty
+                    backgroundImage:
+                        state.userProfilePhotoPath != null &&
+                            state.userProfilePhotoPath!.isNotEmpty
                         ? NetworkImage(
                             '${ApiConfig.baseUrl}/api/storage/${state.userProfilePhotoPath}',
                           )
@@ -128,7 +139,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     // Fix crash: CircleAvatar mensyaratkan salah satu dari:
                     // - backgroundImage != null
                     // - onBackgroundImageError == null
-                    onBackgroundImageError: (state.userProfilePhotoPath != null &&
+                    onBackgroundImageError:
+                        (state.userProfilePhotoPath != null &&
                             state.userProfilePhotoPath!.isNotEmpty)
                         ? (_, _) {}
                         : null,
@@ -141,16 +153,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                         : null,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         displayName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: 18.sp,
                           fontWeight: FontWeight.bold,
                         ),
                         maxLines: 2,
@@ -160,16 +172,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                       if (state.userFullName?.isNotEmpty == true)
                         Text(
                           state.userEmail ?? '',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white60,
-                            fontSize: 13,
+                            fontSize: 13.sp,
                           ),
                         ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6.h),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 4.h,
                         ),
                         decoration: BoxDecoration(
                           color: AppTheme.orange.withValues(alpha: 0.2),
@@ -177,9 +189,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                         child: Text(
                           state.userRole ?? 'N/A',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppTheme.orange,
-                            fontSize: 11,
+                            fontSize: 11.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -190,11 +202,11 @@ class _HomePageState extends ConsumerState<HomePage> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.h),
           Material(
             color: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               side: const BorderSide(color: AppTheme.grey200),
             ),
             clipBehavior: Clip.antiAlias,

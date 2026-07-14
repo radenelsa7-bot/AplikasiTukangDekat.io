@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
@@ -210,11 +211,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             _buildHeroBanner(context),
 
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(18.r),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.07),
@@ -240,22 +241,21 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
 
             // ── Langkah Mudah ────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
               child: _buildLocationFilters(context),
             ),
             _buildSectionHeader(context, 'Langkah Mudah', null),
 
             // Refactor: GridView agar 3 kartu berjajar rapi horizontal
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: SizedBox(
-                height: 132,
+                height: 132.h,
                 child: GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: 3,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
@@ -296,18 +296,17 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             _buildSectionHeader(context, 'Kategori Layanan', null),
             _buildCategories(context, ref, selectedCategory),
 
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: searchQuery.isNotEmpty
                   ? _buildSearchResults(context, ref)
                   : selectedCategory != null
-                      ? _buildProvidersByCategory(
-                          context, ref, selectedCategory)
-                      : _buildSuggestedProviders(context, ref),
+                  ? _buildProvidersByCategory(context, ref, selectedCategory)
+                  : _buildSuggestedProviders(context, ref),
             ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
             if (_showFooter) const _CatalogFooter(),
           ],
         ),
@@ -318,17 +317,17 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
   // ─── Hero Banner ──────────────────────────────────────────────────────────
   Widget _buildLocationFilters(BuildContext context) {
     if (_isLoadingWilayah) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: LinearProgressIndicator(minHeight: 3),
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 8.h),
+        child: const LinearProgressIndicator(minHeight: 3),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18.r),
         border: Border.all(color: Colors.grey.withValues(alpha: 0.12)),
       ),
       child: Column(
@@ -336,11 +335,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
         children: [
           Text(
             'Filter Wilayah',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           DropdownButtonFormField<int?>(
             initialValue: _selectedKotaId,
             isExpanded: true,
@@ -348,7 +347,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
               labelText: 'Kota',
               prefixIcon: const Icon(Icons.location_city),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
               ),
             ),
             items: [
@@ -376,7 +375,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
               _refreshCatalogData();
             },
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           DropdownButtonFormField<int?>(
             initialValue: _selectedKecamatanId,
             isExpanded: true,
@@ -384,7 +383,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
               labelText: 'Kecamatan',
               prefixIcon: const Icon(Icons.map_outlined),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
               ),
             ),
             items: [
@@ -520,8 +519,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.orange
-                                      .withValues(alpha: 0.40),
+                                  color: AppTheme.orange.withValues(
+                                    alpha: 0.40,
+                                  ),
                                   blurRadius: 16,
                                   offset: const Offset(0, 6),
                                 ),
@@ -583,8 +583,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.orange
-                                      .withValues(alpha: 0.40),
+                                  color: AppTheme.orange.withValues(
+                                    alpha: 0.40,
+                                  ),
                                   blurRadius: 16,
                                   offset: const Offset(0, 6),
                                 ),
@@ -603,9 +604,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                     Text(
                       'Temukan teknisi terdekat dengan cepat dan aman. Pesan & pantau langsung dari aplikasi.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.80),
-                            height: 1.6,
-                          ),
+                        color: Colors.white.withValues(alpha: 0.80),
+                        height: 1.6,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     Wrap(
@@ -670,9 +671,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
           Text(
             title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
-                ),
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
+            ),
           ),
           if (action != null)
             Container(
@@ -735,9 +736,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.3,
-                ),
+              fontWeight: FontWeight.w700,
+              height: 1.3,
+            ),
           ),
         ],
       ),
@@ -887,9 +888,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
           child: Text(
             label,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -920,7 +921,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             .toList();
 
         if (activeProviders.isEmpty) {
-          return _buildEmptyState(context, 'Tidak ada provider di kategori ini');
+          return _buildEmptyState(
+            context,
+            'Tidak ada provider di kategori ini',
+          );
         }
 
         return Column(
@@ -1098,7 +1102,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      provider.description ?? 'Belum ada deskripsi',
+                                      provider.description ??
+                                          'Belum ada deskripsi',
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -1158,7 +1163,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                                 child: Text(
                                   isBusy ? 'Sedang dipesan' : 'Tersedia',
                                   style: TextStyle(
-                                    color: isBusy ? Colors.orange : Colors.green,
+                                    color: isBusy
+                                        ? Colors.orange
+                                        : Colors.green,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1242,7 +1249,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.amber.withValues(alpha: 0.12),
+                                        color: Colors.amber.withValues(
+                                          alpha: 0.12,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
@@ -1271,14 +1280,19 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: (isBusy ? Colors.orange : Colors.green)
-                                            .withValues(alpha: 0.10),
+                                        color:
+                                            (isBusy
+                                                    ? Colors.orange
+                                                    : Colors.green)
+                                                .withValues(alpha: 0.10),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         isBusy ? 'Sedang dipesan' : 'Tersedia',
                                         style: TextStyle(
-                                          color: isBusy ? Colors.orange : Colors.green,
+                                          color: isBusy
+                                              ? Colors.orange
+                                              : Colors.green,
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -1327,4 +1341,3 @@ class _CatalogFooter extends StatelessWidget {
     );
   }
 }
-

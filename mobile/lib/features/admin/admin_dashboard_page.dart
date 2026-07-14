@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme/app_theme.dart';
@@ -12,7 +13,9 @@ import 'admin_reports_page.dart';
 import 'admin_transactions_page.dart';
 import 'admin_users_page.dart';
 
-final adminDashboardProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final adminDashboardProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   final api = ref.read(apiServiceProvider);
   return api.getAdminDashboard();
 });
@@ -77,11 +80,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       children: [
         _buildSidebar(),
         Expanded(
-          child: Column(
-            children: [
-              Expanded(child: _buildContent()),
-            ],
-          ),
+          child: Column(children: [Expanded(child: _buildContent())]),
         ),
       ],
     );
@@ -98,14 +97,14 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 
   Widget _buildSidebar() {
     return Container(
-      width: 220,
+      width: 220.w,
       decoration: const BoxDecoration(
         color: AppTheme.navy,
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
       ),
       child: Column(
         children: [
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           ..._menuItems.asMap().entries.map((entry) {
             final i = entry.key;
             final item = entry.value;
@@ -118,19 +117,19 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                 splashColor: AppTheme.orange.withValues(alpha: 0.35),
                 highlightColor: AppTheme.orange.withValues(alpha: 0.18),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 12.h,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        isSelected ? AppTheme.orange.withValues(alpha: 0.15) : null,
                     color: isSelected
                         ? AppTheme.orange.withValues(alpha: 0.15)
                         : null,
                     border: Border(
                       left: BorderSide(
-                        color: isSelected ? AppTheme.orange : Colors.transparent,
+                        color: isSelected
+                            ? AppTheme.orange
+                            : Colors.transparent,
                         width: 3,
                       ),
                     ),
@@ -140,16 +139,17 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                       Icon(
                         item.icon,
                         color: isSelected ? AppTheme.orange : Colors.white60,
-                        size: 20,
+                        size: 20.sp,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12.w),
                       Text(
                         item.label,
                         style: TextStyle(
                           color: isSelected ? AppTheme.orange : Colors.white70,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
-                          fontSize: 14,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                          fontSize: 14.sp,
                         ),
                       ),
                     ],
@@ -165,33 +165,35 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 
   Widget _buildHorizontalNav() {
     return Container(
-      height: 62,
+      height: 62.h,
       color: AppTheme.navyLight,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _menuItems.length,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
         itemBuilder: (context, i) {
           final item = _menuItems[i];
           final isSelected = _selectedIndex == i;
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: EdgeInsets.symmetric(horizontal: 4.w),
             child: ChoiceChip(
               label: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     item.icon,
-                    size: 16,
+                    size: 16.sp,
                     color: isSelected ? Colors.white : Colors.white70,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6.w),
                   Text(
                     item.label,
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.white70,
-                      fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontSize: 13.sp,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                     ),
                   ),
                 ],
@@ -280,29 +282,38 @@ class _DashboardOverview extends ConsumerWidget {
           onRefresh: () async => ref.refresh(adminDashboardProvider),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Ringkasan',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 22.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
                 _buildStatsGrid(stats),
-                const SizedBox(height: 28),
-                const Text(
+                SizedBox(height: 28.h),
+                Text(
                   'Pesanan Terbaru',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 _buildRecentOrders(recentOrders),
-                const SizedBox(height: 28),
-                const Text(
+                SizedBox(height: 28.h),
+                Text(
                   'Pembayaran Terbaru',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 _buildRecentPayments(recentPayments),
               ],
             ),
@@ -372,8 +383,9 @@ class _DashboardOverview extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount =
-            constraints.maxWidth > 900 ? 4 : (constraints.maxWidth > 600 ? 3 : 2);
+        final crossAxisCount = constraints.maxWidth > 900
+            ? 4
+            : (constraints.maxWidth > 600 ? 3 : 2);
 
         return GridView.builder(
           shrinkWrap: true,
@@ -388,25 +400,24 @@ class _DashboardOverview extends ConsumerWidget {
           itemBuilder: (context, index) {
             final item = items[index];
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
                 border: Border.all(color: AppTheme.grey200),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: EdgeInsets.all(4.w),
                     decoration: BoxDecoration(
                       color: item.color.withValues(alpha: 0.1),
-                      color: item.color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
-                    child: Icon(item.icon, size: 12, color: item.color),
+                    child: Icon(item.icon, size: 12.sp, color: item.color),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,7 +426,7 @@ class _DashboardOverview extends ConsumerWidget {
                         Text(
                           item.value,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
                             color: item.color,
                           ),
@@ -424,8 +435,8 @@ class _DashboardOverview extends ConsumerWidget {
                         ),
                         Text(
                           item.label,
-                          style: const TextStyle(
-                            fontSize: 8,
+                          style: TextStyle(
+                            fontSize: 8.sp,
                             color: AppTheme.grey600,
                           ),
                           maxLines: 1,
@@ -514,7 +525,6 @@ class _DashboardOverview extends ConsumerWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AppTheme.success.withValues(alpha: 0.1),
-                color: AppTheme.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -559,7 +569,6 @@ class _DashboardOverview extends ConsumerWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: entry.$2.withValues(alpha: 0.1),
-        color: entry.$2.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(entry.$1, color: entry.$2, size: 20),
@@ -580,7 +589,6 @@ class _DashboardOverview extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -613,4 +621,3 @@ class _StatItem {
 
   const _StatItem(this.label, this.value, this.icon, this.color);
 }
-

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
@@ -10,7 +11,9 @@ final allProvidersProvider = FutureProvider<List<ProviderProfile>>((ref) async {
   return response.data;
 });
 
-final pendingProvidersProvider = FutureProvider<List<ProviderProfile>>((ref) async {
+final pendingProvidersProvider = FutureProvider<List<ProviderProfile>>((
+  ref,
+) async {
   final api = ref.read(apiServiceProvider);
   final response = await api.getPendingProviders();
   return response.data;
@@ -23,7 +26,8 @@ class AdminProvidersPage extends ConsumerStatefulWidget {
   ConsumerState<AdminProvidersPage> createState() => _AdminProvidersPageState();
 }
 
-class _AdminProvidersPageState extends ConsumerState<AdminProvidersPage> with SingleTickerProviderStateMixin {
+class _AdminProvidersPageState extends ConsumerState<AdminProvidersPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -58,10 +62,7 @@ class _AdminProvidersPageState extends ConsumerState<AdminProvidersPage> with Si
         Expanded(
           child: TabBarView(
             controller: _tabController,
-            children: [
-              _PendingProvidersList(),
-              _AllProvidersList(),
-            ],
+            children: [_PendingProvidersList(), _AllProvidersList()],
           ),
         ),
       ],
@@ -82,7 +83,10 @@ class _PendingProvidersList extends ConsumerWidget {
           children: [
             Text('Error: $err'),
             const SizedBox(height: 8),
-            ElevatedButton(onPressed: () => ref.refresh(pendingProvidersProvider), child: const Text('Coba Lagi')),
+            ElevatedButton(
+              onPressed: () => ref.refresh(pendingProvidersProvider),
+              child: const Text('Coba Lagi'),
+            ),
           ],
         ),
       ),
@@ -92,9 +96,16 @@ class _PendingProvidersList extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.verified, size: 64, color: AppTheme.success.withValues(alpha: 0.3)),
+                Icon(
+                  Icons.verified,
+                  size: 64,
+                  color: AppTheme.success.withValues(alpha: 0.3),
+                ),
                 const SizedBox(height: 12),
-                const Text('Semua provider sudah diverifikasi', style: TextStyle(color: AppTheme.grey600)),
+                const Text(
+                  'Semua provider sudah diverifikasi',
+                  style: TextStyle(color: AppTheme.grey600),
+                ),
               ],
             ),
           );
@@ -132,7 +143,10 @@ class _AllProvidersList extends ConsumerWidget {
           children: [
             Text('Error: $err'),
             const SizedBox(height: 8),
-            ElevatedButton(onPressed: () => ref.refresh(allProvidersProvider), child: const Text('Coba Lagi')),
+            ElevatedButton(
+              onPressed: () => ref.refresh(allProvidersProvider),
+              child: const Text('Coba Lagi'),
+            ),
           ],
         ),
       ),
@@ -181,19 +195,29 @@ class _ProviderCardState extends ConsumerState<_ProviderCard> {
   Future<void> _verify() async {
     setState(() => _isLoading = true);
     try {
-      await ref.read(apiServiceProvider).updateProviderVerification(
-        providerId: widget.provider.id,
-        isVerified: true,
-      );
+      await ref
+          .read(apiServiceProvider)
+          .updateProviderVerification(
+            providerId: widget.provider.id,
+            isVerified: true,
+          );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Provider berhasil diverifikasi'), backgroundColor: AppTheme.success),
+          const SnackBar(
+            content: Text('Provider berhasil diverifikasi'),
+            backgroundColor: AppTheme.success,
+          ),
         );
       }
       widget.onAction();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e'), backgroundColor: AppTheme.danger));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal: $e'),
+            backgroundColor: AppTheme.danger,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -204,14 +228,20 @@ class _ProviderCardState extends ConsumerState<_ProviderCard> {
     final isVerified = widget.provider.isVerified;
     setState(() => _isLoading = true);
     try {
-      await ref.read(apiServiceProvider).updateProviderVerification(
-        providerId: widget.provider.id,
-        isVerified: !isVerified,
-      );
+      await ref
+          .read(apiServiceProvider)
+          .updateProviderVerification(
+            providerId: widget.provider.id,
+            isVerified: !isVerified,
+          );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isVerified ? 'Provider dibatalkan verifikasinya' : 'Provider berhasil diverifikasi'),
+            content: Text(
+              isVerified
+                  ? 'Provider dibatalkan verifikasinya'
+                  : 'Provider berhasil diverifikasi',
+            ),
             backgroundColor: isVerified ? AppTheme.warning : AppTheme.success,
           ),
         );
@@ -219,7 +249,12 @@ class _ProviderCardState extends ConsumerState<_ProviderCard> {
       widget.onAction();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e'), backgroundColor: AppTheme.danger));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal: $e'),
+            backgroundColor: AppTheme.danger,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -230,46 +265,66 @@ class _ProviderCardState extends ConsumerState<_ProviderCard> {
   Widget build(BuildContext context) {
     final p = widget.provider;
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12.h),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 CircleAvatar(
-                  radius: 24,
+                  radius: 24.r,
                   backgroundColor: AppTheme.navy.withValues(alpha: 0.1),
                   child: Text(
-                    (p.businessName.isNotEmpty ? p.businessName[0] : 'P').toUpperCase(),
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navy),
+                    (p.businessName.isNotEmpty ? p.businessName[0] : 'P')
+                        .toUpperCase(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.navy,
+                      fontSize: 16.sp,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(p.businessName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                      const SizedBox(height: 2),
-                      Text(p.ownerName ?? 'Pemilik tidak diketahui', style: const TextStyle(fontSize: 13, color: AppTheme.grey600)),
+                      Text(
+                        p.businessName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        p.ownerName ?? 'Pemilik tidak diketahui',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: AppTheme.grey600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 _buildStatusChip(p.isVerified),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 if (p.area != null) _buildInfoChip(Icons.location_on, p.area!),
-                _buildInfoChip(Icons.star, 'Rating: ${p.avgRating.toStringAsFixed(1)}'),
+                _buildInfoChip(
+                  Icons.star,
+                  'Rating: ${p.avgRating.toStringAsFixed(1)}',
+                ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Row(
               children: [
                 if (widget.showVerifyButton)
@@ -277,18 +332,32 @@ class _ProviderCardState extends ConsumerState<_ProviderCard> {
                     child: ElevatedButton.icon(
                       onPressed: _isLoading ? null : _verify,
                       icon: _isLoading
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.verified, size: 18),
+                          ? SizedBox(
+                              width: 16.w,
+                              height: 16.h,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Icon(Icons.verified, size: 18.sp),
                       label: const Text('Verifikasi'),
-                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.success),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.success,
+                      ),
                     ),
                   )
                 else ...[
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _isLoading ? null : _toggleStatus,
-                      icon: Icon(p.isVerified ? Icons.block : Icons.verified, size: 18),
-                      label: Text(p.isVerified ? 'Batalkan Verifikasi' : 'Verifikasi'),
+                      icon: Icon(
+                        p.isVerified ? Icons.block : Icons.verified,
+                        size: 18.sp,
+                      ),
+                      label: Text(
+                        p.isVerified ? 'Batalkan Verifikasi' : 'Verifikasi',
+                      ),
                     ),
                   ),
                 ],
@@ -302,15 +371,17 @@ class _ProviderCardState extends ConsumerState<_ProviderCard> {
 
   Widget _buildStatusChip(bool isVerified) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: (isVerified ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: (isVerified ? AppTheme.success : AppTheme.warning).withValues(
+          alpha: 0.1,
+        ),
+        borderRadius: BorderRadius.circular(12.r),
       ),
       child: Text(
         isVerified ? 'Terverifikasi' : 'Pending',
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 11.sp,
           fontWeight: FontWeight.w600,
           color: isVerified ? AppTheme.success : AppTheme.warning,
         ),
@@ -320,17 +391,20 @@ class _ProviderCardState extends ConsumerState<_ProviderCard> {
 
   Widget _buildInfoChip(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: AppTheme.grey100,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppTheme.grey600),
-          const SizedBox(width: 4),
-          Text(text, style: const TextStyle(fontSize: 12, color: AppTheme.grey600)),
+          Icon(icon, size: 14.sp, color: AppTheme.grey600),
+          SizedBox(width: 4.w),
+          Text(
+            text,
+            style: TextStyle(fontSize: 12.sp, color: AppTheme.grey600),
+          ),
         ],
       ),
     );

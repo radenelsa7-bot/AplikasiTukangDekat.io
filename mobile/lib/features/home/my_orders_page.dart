@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../../app/theme/app_theme.dart';
 import '../auth/auth_controller.dart';
@@ -8,8 +9,6 @@ import 'order_detail_page.dart';
 
 class MyOrdersPage extends ConsumerWidget {
   const MyOrdersPage({super.key});
-
-
 
   Future<void> _openStatusFilter(BuildContext context, WidgetRef ref) async {
     final current = ref.read(myOrdersStatusFilterProvider);
@@ -69,12 +68,12 @@ class MyOrdersPage extends ConsumerWidget {
       ),
       error: (err, st) => Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: EdgeInsets.all(32.w),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20.w),
                 decoration: BoxDecoration(
                   color: AppTheme.danger.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
@@ -118,12 +117,12 @@ class MyOrdersPage extends ConsumerWidget {
         if (filteredOrders.isEmpty) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(32.w),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24.w),
                     decoration: BoxDecoration(
                       color: AppTheme.orange.withValues(alpha: 0.08),
                       shape: BoxShape.circle,
@@ -136,7 +135,7 @@ class MyOrdersPage extends ConsumerWidget {
                       color: AppTheme.orange,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.h),
                   Text(
                     statusFilter != null
                         ? 'Tidak Ada Hasil Filter'
@@ -168,23 +167,21 @@ class MyOrdersPage extends ConsumerWidget {
           color: AppTheme.orange,
           onRefresh: () async => ref.refresh(myOrdersProvider),
           child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+            padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 24.h),
             itemCount: filteredOrders.length + 1,
             itemBuilder: (context, index) {
               if (index == 0) {
-                final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    );
-                final subtitleStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.grey600,
-                    );
+                final titleStyle = Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold);
+                final subtitleStyle = Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppTheme.grey600);
 
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: EdgeInsets.only(bottom: 16.h),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      final compact = constraints.maxWidth < 360;
-
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -201,7 +198,7 @@ class MyOrdersPage extends ConsumerWidget {
                                           : 'Pesanan Saya',
                                       style: titleStyle,
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: 4.h),
                                     Text(
                                       '${filteredOrders.length} pesanan',
                                       style: subtitleStyle,
@@ -211,7 +208,7 @@ class MyOrdersPage extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
+                          SizedBox(height: 10.h),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -221,12 +218,14 @@ class MyOrdersPage extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(20),
                                 onTap: () => _openStatusFilter(context, ref),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w,
+                                    vertical: 6.h,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.orange.withValues(alpha: 0.1),
+                                    color: AppTheme.orange.withValues(
+                                      alpha: 0.1,
+                                    ),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Row(
@@ -237,13 +236,13 @@ class MyOrdersPage extends ConsumerWidget {
                                         size: 16,
                                         color: AppTheme.orange,
                                       ),
-                                      const SizedBox(width: 4),
+                                      SizedBox(width: 4.w),
                                       Text(
                                         statusFilter == null
                                             ? 'Semua'
                                             : _statusLabel(statusFilter),
-                                        style: const TextStyle(
-                                          fontSize: 12,
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
                                           color: AppTheme.orange,
                                           fontWeight: FontWeight.w600,
                                         ),

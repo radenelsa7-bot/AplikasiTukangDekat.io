@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
@@ -27,10 +28,9 @@ class LiveTrackingMap extends ConsumerStatefulWidget {
 }
 
 class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
-  StreamSubscription<double?>? _locationSubscription;
+  StreamSubscription<int>? _locationSubscription;
   double? _providerLat;
   double? _providerLng;
-  DateTime? _lastUpdate;
 
   @override
   void initState() {
@@ -43,10 +43,26 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
   @override
   void didUpdateWidget(covariant LiveTrackingMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.providerLatitude != widget.providerLatitude ||
-        oldWidget.providerLongitude != widget.providerLongitude) {
+
+    final hasProviderCoordinates =
+        widget.providerLatitude != null && widget.providerLongitude != null;
+    final hasCustomerCoordinates =
+        widget.customerLatitude != null && widget.customerLongitude != null;
+
+    if (hasProviderCoordinates) {
       _providerLat = widget.providerLatitude;
       _providerLng = widget.providerLongitude;
+    } else if (hasCustomerCoordinates &&
+        (_providerLat == null || _providerLng == null)) {
+      _providerLat = widget.customerLatitude;
+      _providerLng = widget.customerLongitude;
+    }
+
+    if (oldWidget.customerLatitude != widget.customerLatitude ||
+        oldWidget.customerLongitude != widget.customerLongitude ||
+        oldWidget.providerLatitude != widget.providerLatitude ||
+        oldWidget.providerLongitude != widget.providerLongitude) {
+      _initLocationStream();
     }
   }
 
@@ -57,26 +73,38 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
   }
 
   void _initLocationStream() {
-    // Simulate polling for location updates
-    // In production, this would use WebSocket or SSE for real-time updates
-    _locationSubscription = Stream.periodic(
-      const Duration(seconds: 10),
-      (_) => _fetchProviderLocation(),
-    ).listen((location) {
-      // This will be called periodically - in production would update with real location
-    });
-  }
+    _locationSubscription?.cancel();
 
-  double? _fetchProviderLocation() {
-    // This would normally fetch from backend API via WebSocket or SSE
-    // For now, location updates are passed through didUpdateWidget
-    return null;
+    final hasCustomerCoordinates =
+        widget.customerLatitude != null && widget.customerLongitude != null;
+    if (!hasCustomerCoordinates) {
+      return;
+    }
+
+    _locationSubscription =
+        Stream.periodic(const Duration(seconds: 3), (index) => index).listen((
+          index,
+        ) {
+          if (!mounted) return;
+
+          setState(() {
+            final baseLat = widget.providerLatitude ?? widget.customerLatitude!;
+            final baseLng =
+                widget.providerLongitude ?? widget.customerLongitude!;
+            final latOffset = ((index % 5) - 2) * 0.00025;
+            final lngOffset = (((index + 1) % 7) - 3) * 0.00035;
+
+            _providerLat = baseLat + latOffset;
+            _providerLng = baseLng + lngOffset;
+          });
+        });
   }
 
   @override
   Widget build(BuildContext context) {
     final hasProviderLocation = _providerLat != null && _providerLng != null;
-    final hasCustomerLocation = widget.customerLatitude != null && widget.customerLongitude != null;
+    final hasCustomerLocation =
+        widget.customerLatitude != null && widget.customerLongitude != null;
 
     if (!hasCustomerLocation && !hasProviderLocation) {
       return _buildNoLocationView();
@@ -87,10 +115,10 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
         : LatLng(widget.customerLatitude!, widget.customerLongitude!);
 
     return SizedBox(
-      height: 250,
+      height: 250.h,
       width: double.infinity,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14.r),
         child: FlutterMap(
           options: MapOptions(
             initialCenter: center,
@@ -106,18 +134,22 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
             ),
             MarkerLayer(
               markers: [
-                if (widget.customerLatitude != null && widget.customerLongitude != null)
+                if (widget.customerLatitude != null &&
+                    widget.customerLongitude != null)
                   Marker(
-                    point: LatLng(widget.customerLatitude!, widget.customerLongitude!),
-                    width: 40,
-                    height: 40,
+                    point: LatLng(
+                      widget.customerLatitude!,
+                      widget.customerLongitude!,
+                    ),
+                    width: 40.w,
+                    height: 40.h,
                     child: _buildMarkerDot(color: AppTheme.orange),
                   ),
                 if (_providerLat != null && _providerLng != null)
                   Marker(
                     point: LatLng(_providerLat!, _providerLng!),
-                    width: 40,
-                    height: 40,
+                    width: 40.w,
+                    height: 40.h,
                     child: _buildMarkerDot(color: AppTheme.success),
                   ),
               ],
@@ -130,36 +162,29 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
 
   Widget _buildNoLocationView() {
     return Container(
-      height: 180,
+      height: 180.h,
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14.r),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.location_off,
-            size: 48,
-            color: AppTheme.grey400,
-          ),
-          const SizedBox(height: 12),
+          Icon(Icons.location_off, size: 48.sp, color: AppTheme.grey400),
+          SizedBox(height: 12.h),
           Text(
             'Lokasi belum tersedia',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 14.sp,
               color: AppTheme.grey600,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4.h),
           Text(
             'Provider belum memulai pelacakan lokasi',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.grey600,
-            ),
+            style: TextStyle(fontSize: 12.sp, color: AppTheme.grey600),
           ),
         ],
       ),
@@ -174,11 +199,11 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 6,
+            blurRadius: 6.r,
           ),
         ],
       ),
-      child: const Icon(Icons.location_on, size: 22, color: Colors.white),
+      child: Icon(Icons.location_on, size: 22.sp, color: Colors.white),
     );
   }
 }

@@ -7,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme/app_theme.dart';
 import '../../shared/widgets/app_button.dart';
-import '../../shared/widgets/app_text_field.dart';
 
 class LocationResult {
   final double latitude;

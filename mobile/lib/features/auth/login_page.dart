@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'auth_controller.dart';
 import 'auth_state.dart';
 import '../home/home_page.dart';
@@ -67,13 +68,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Widget _buildMobileLayout(AuthState state) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Logo Section
           _buildLogoSection(),
-          const SizedBox(height: 48),
+          SizedBox(height: 48.h),
           // Form Section
           _buildFormSection(state),
         ],
@@ -87,13 +88,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         // Left - Form Section
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 40),
+            padding: EdgeInsets.symmetric(horizontal: 60.w, vertical: 40.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _buildLogoSection(),
-                const SizedBox(height: 60),
+                SizedBox(height: 60.h),
                 _buildFormSection(state),
               ],
             ),
@@ -114,26 +115,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _buildDecorativeIllustration(),
-                const SizedBox(height: 40),
-                const Text(
+                SizedBox(height: 40.h),
+                Text(
                   'Teknisi Terpercaya\nUntuk Rumah Anda',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 28.sp,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                SizedBox(height: 16.h),
+                Text(
                   'Solusi cepat dan aman untuk\nkebutuhan teknisi rumah Anda',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFFE8DCC8),
+                    fontSize: 14.sp,
+                    color: const Color(0xFFE8DCC8),
                     height: 1.5,
                   ),
                 ),
@@ -149,8 +151,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Column(
       children: [
         Container(
-          width: 80,
-          height: 80,
+          width: 80.w,
+          height: 80.w,
           decoration: BoxDecoration(
             color: const Color(0xFF0F3460),
             borderRadius: BorderRadius.circular(16),
@@ -180,7 +182,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         Text(
           'TukangDekat',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -189,11 +191,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           'Layanan Teknisi Terpercaya',
           style: TextStyle(
-            fontSize: 12,
-            color: Color(0xFFD4A574),
+            fontSize: 12.sp,
+            color: const Color(0xFFD4A574),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -217,7 +219,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           'Silakan login dengan email dan password Anda',
           style: TextStyle(fontSize: 14, color: Color(0xFF7A7A7A)),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32.h),
         Form(
           key: _formKey,
           child: Column(
@@ -247,7 +249,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     _showPassword ? Icons.visibility_off : Icons.visibility,
                     color: const Color(0xFFFF8C42),
                   ),
-                  onPressed: () => setState(() => _showPassword = !_showPassword),
+                  onPressed: () =>
+                      setState(() => _showPassword = !_showPassword),
                 ),
                 validator: (v) {
                   final value = v ?? '';
@@ -355,7 +358,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         onPressed: state.isLoading ? null : _login,
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF0F3460),
-                          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                          textStyle: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         child: const Text('Coba Lagi'),
                       ),

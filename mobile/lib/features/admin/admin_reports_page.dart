@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
@@ -58,7 +59,10 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
       final api = ref.read(apiServiceProvider);
       final params = <String, dynamic>{'export': format};
       if (_dateRange != null) {
-        params['start_date'] = _dateRange!.start.toIso8601String().substring(0, 10);
+        params['start_date'] = _dateRange!.start.toIso8601String().substring(
+          0,
+          10,
+        );
         params['end_date'] = _dateRange!.end.toIso8601String().substring(0, 10);
       }
 
@@ -90,29 +94,29 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Laporan Keuangan',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 4),
-          const Text(
+          SizedBox(height: 4.h),
+          Text(
             'Ringkasan transaksi per periode (fungsi bendahara)',
-            style: TextStyle(fontSize: 13, color: AppTheme.grey600),
+            style: TextStyle(fontSize: 13.sp, color: AppTheme.grey600),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           _buildFilters(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           _buildExportButtons(),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.h),
           if (_isLoading)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(),
+                padding: EdgeInsets.all(32.w),
+                child: const CircularProgressIndicator(),
               ),
             ),
           if (_error != null)
@@ -148,7 +152,7 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.w),
         child: Wrap(
           spacing: 12,
           runSpacing: 12,
@@ -195,12 +199,12 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
                   _loadReport();
                 }
               },
-              icon: const Icon(Icons.calendar_today, size: 16),
+              icon: Icon(Icons.calendar_today, size: 16.sp),
               label: Text(
                 _dateRange != null
                     ? '${_dateRange!.start.toString().substring(0, 10)} - ${_dateRange!.end.toString().substring(0, 10)}'
                     : 'Pilih Periode',
-                style: const TextStyle(fontSize: 13),
+                style: TextStyle(fontSize: 13.sp),
               ),
             ),
             if (_dateRange != null)
@@ -223,14 +227,14 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
       children: [
         ElevatedButton.icon(
           onPressed: _isLoading ? null : () => _exportReport('csv'),
-          icon: const Icon(Icons.file_download, size: 18),
+          icon: Icon(Icons.file_download, size: 18.sp),
           label: const Text('Export CSV'),
           style: ElevatedButton.styleFrom(backgroundColor: AppTheme.success),
         ),
         const SizedBox(width: 8),
         ElevatedButton.icon(
           onPressed: _isLoading ? null : () => _exportReport('xls'),
-          icon: const Icon(Icons.file_download, size: 18),
+          icon: Icon(Icons.file_download, size: 18.sp),
           label: const Text('Export Excel'),
           style: ElevatedButton.styleFrom(backgroundColor: AppTheme.info),
         ),

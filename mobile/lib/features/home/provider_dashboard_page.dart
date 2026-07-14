@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -7,7 +8,9 @@ import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 import 'provider_services_page.dart';
 
-final providerDashboardProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final providerDashboardProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   return ref.read(apiServiceProvider).getProviderDashboard();
 });
 
@@ -24,21 +27,34 @@ class ProviderDashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(providerDashboardProvider);
-    final currency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
+    final currency = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp',
+      decimalDigits: 0,
+    );
 
     return RefreshIndicator(
       color: AppTheme.orange,
       onRefresh: () async => ref.refresh(providerDashboardProvider.future),
       child: dashboard.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.orange)),
-        error: (err, st) => ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            const SizedBox(height: 120),
-            const Icon(Icons.error_outline, size: 48, color: AppTheme.danger),
-            const SizedBox(height: 12),
-            Text('Gagal memuat dashboard provider: $err', textAlign: TextAlign.center),
-          ],
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppTheme.orange),
+        ),
+        error: (err, st) => SingleChildScrollView(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: 120.h),
+              Icon(Icons.error_outline, size: 48.sp, color: AppTheme.danger),
+              SizedBox(height: 12.h),
+              Text(
+                'Gagal memuat dashboard provider: $err',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14.sp),
+              ),
+            ],
+          ),
         ),
         data: (data) {
           final balance = int.tryParse(data['balance']?.toString() ?? '0') ?? 0;
@@ -99,127 +115,178 @@ class _DashboardContentState extends State<_DashboardContent> {
         }
         return false;
       },
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.navy,
-              borderRadius: BorderRadius.circular(18),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(16.w, 18.h, 16.w, 24.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: AppTheme.navy,
+                borderRadius: BorderRadius.circular(18.r),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Saldo Provider',
+                    style: TextStyle(color: Colors.white70, fontSize: 12.sp),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    widget.currency.format(widget.balance),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 14.h),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _MetricChip(
+                        label: 'Order aktif',
+                        value: '${widget.activeOrders}',
+                      ),
+                      _MetricChip(
+                        label: 'Selesai',
+                        value: '${widget.completedOrders}',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            SizedBox(height: 16.h),
+            Row(
               children: [
-                const Text('Saldo Provider', style: TextStyle(color: Colors.white70)),
-                const SizedBox(height: 8),
-                Text(
-                  widget.currency.format(widget.balance),
-                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.receipt_long_rounded,
+                    label: 'Pesanan',
+                    onTap: () async {
+                      // Provider wajib aktifkan GPS saat menerima pesanan.
+                      final serviceEnabled =
+                          await Geolocator.isLocationServiceEnabled();
+                      if (!serviceEnabled) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Lokasi wajib aktif untuk menerima pesanan (GPS tidak aktif).',
+                            ),
+                            backgroundColor: AppTheme.danger,
+                          ),
+                        );
+                        return;
+                      }
+
+                      var permission = await Geolocator.checkPermission();
+                      if (permission == LocationPermission.denied) {
+                        permission = await Geolocator.requestPermission();
+                      }
+
+                      if (!context.mounted) return;
+                      if (permission == LocationPermission.denied ||
+                          permission == LocationPermission.deniedForever) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Lokasi wajib aktif untuk menerima pesanan (izin lokasi belum diberikan).',
+                            ),
+                            backgroundColor: AppTheme.danger,
+                          ),
+                        );
+                        return;
+                      }
+
+                      widget.onOpenOrders();
+                    },
+                  ),
                 ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _MetricChip(label: 'Order aktif', value: '${widget.activeOrders}'),
-                    _MetricChip(label: 'Selesai', value: '${widget.completedOrders}'),
-                  ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.build_rounded,
+                    label: 'Layanan',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ProviderServicesPage(),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.person_rounded,
+                    label: 'Akun',
+                    onTap: widget.onOpenAccount,
+                  ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _QuickAction(
-                  icon: Icons.receipt_long_rounded,
-                  label: 'Pesanan',
-                  onTap: () async {
-                    // Provider wajib aktifkan GPS saat menerima pesanan.
-                    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-                    if (!serviceEnabled) {
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Lokasi wajib aktif untuk menerima pesanan (GPS tidak aktif).'),
-                          backgroundColor: AppTheme.danger,
-                        ),
-                      );
-                      return;
-                    }
-
-                    var permission = await Geolocator.checkPermission();
-                    if (permission == LocationPermission.denied) {
-                      permission = await Geolocator.requestPermission();
-                    }
-
-                    if (!context.mounted) return;
-                    if (permission == LocationPermission.denied ||
-                        permission == LocationPermission.deniedForever) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Lokasi wajib aktif untuk menerima pesanan (izin lokasi belum diberikan).'),
-                          backgroundColor: AppTheme.danger,
-                        ),
-                      );
-                      return;
-                    }
-
-                    widget.onOpenOrders();
-                  },
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _QuickAction(
-                  icon: Icons.build_rounded,
-                  label: 'Layanan',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProviderServicesPage()),
+            SizedBox(height: 20.h),
+            Text(
+              'Transaksi Terbaru',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10.h),
+            if (widget.transactions.isEmpty)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 28.h),
+                child: Center(
+                  child: Text(
+                    'Belum ada transaksi masuk',
+                    style: TextStyle(fontSize: 13.sp),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _QuickAction(
-                  icon: Icons.person_rounded,
-                  label: 'Akun',
-                  onTap: widget.onOpenAccount,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Transaksi Terbaru',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          if (widget.transactions.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 28),
-              child: Center(child: Text('Belum ada transaksi masuk')),
-            )
-          else
-            ...widget.transactions.map((item) {
-              final tx = Map<String, dynamic>.from(item);
-              final amount = int.tryParse(tx['provider_payout']?.toString() ?? tx['amount']?.toString() ?? '0') ?? 0;
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFE8F5E9),
-                  child: Icon(Icons.payments_outlined, color: AppTheme.success),
-                ),
-                title: Text(tx['payment_type']?.toString() ?? 'Pembayaran'),
-                subtitle: Text(tx['status']?.toString() ?? '-'),
-                trailing: Text(widget.currency.format(amount), style: const TextStyle(fontWeight: FontWeight.bold)),
-              );
-            }),
-          const SizedBox(height: 24),
-          if (_showFooter) const _DashboardFooter(),
-        ],
+              )
+            else
+              ...widget.transactions.map((item) {
+                final tx = Map<String, dynamic>.from(item);
+                final amount =
+                    int.tryParse(
+                      tx['provider_payout']?.toString() ??
+                          tx['amount']?.toString() ??
+                          '0',
+                    ) ??
+                    0;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFE8F5E9),
+                    child: Icon(
+                      Icons.payments_outlined,
+                      color: AppTheme.success,
+                    ),
+                  ),
+                  title: Text(
+                    tx['payment_type']?.toString() ?? 'Pembayaran',
+                    style: TextStyle(fontSize: 13.sp),
+                  ),
+                  subtitle: Text(
+                    tx['status']?.toString() ?? '-',
+                    style: TextStyle(fontSize: 12.sp),
+                  ),
+                  trailing: Text(
+                    widget.currency.format(amount),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                );
+              }),
+            SizedBox(height: 24.h),
+            if (_showFooter) const _DashboardFooter(),
+          ],
+        ),
       ),
     );
   }
@@ -234,12 +301,19 @@ class _MetricChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(10.r),
       ),
-      child: Text('$label: $value', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+      child: Text(
+        '$label: $value',
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: 11.sp,
+        ),
+      ),
     );
   }
 }
@@ -249,7 +323,11 @@ class _QuickAction extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _QuickAction({required this.icon, required this.label, required this.onTap});
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -257,7 +335,7 @@ class _QuickAction extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: EdgeInsets.symmetric(vertical: 16.h),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -265,9 +343,12 @@ class _QuickAction extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(icon, color: AppTheme.orange),
-            const SizedBox(height: 6),
-            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            Icon(icon, color: AppTheme.orange, size: 22.sp),
+            SizedBox(height: 6.h),
+            Text(
+              label,
+              style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
+            ),
           ],
         ),
       ),
@@ -280,11 +361,14 @@ class _DashboardFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'TukangDekat Provider - kelola pesanan, laporan, dan transaksi dari satu tempat.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: AppTheme.grey600, fontSize: 12),
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: Text(
+          'TukangDekat Provider - kelola pesanan, laporan, dan transaksi dari satu tempat.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppTheme.grey600, fontSize: 12.sp),
+        ),
       ),
     );
   }

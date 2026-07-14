@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
@@ -12,7 +13,8 @@ class AdminTransactionsPage extends ConsumerStatefulWidget {
   const AdminTransactionsPage({super.key});
 
   @override
-  ConsumerState<AdminTransactionsPage> createState() => _AdminTransactionsPageState();
+  ConsumerState<AdminTransactionsPage> createState() =>
+      _AdminTransactionsPageState();
 }
 
 class _AdminTransactionsPageState extends ConsumerState<AdminTransactionsPage> {
@@ -30,18 +32,47 @@ class _AdminTransactionsPageState extends ConsumerState<AdminTransactionsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Monitoring Transaksi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              const Text(
+                'Monitoring Transaksi',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 12),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('Semua', _statusFilter == null, () => setState(() => _statusFilter = null)),
-                    _buildFilterChip('Lunas', _statusFilter == 'PAID', () => setState(() => _statusFilter = 'PAID')),
-                    _buildFilterChip('Pending', _statusFilter == 'PENDING', () => setState(() => _statusFilter = 'PENDING')),
+                    _buildFilterChip(
+                      'Semua',
+                      _statusFilter == null,
+                      () => setState(() => _statusFilter = null),
+                    ),
+                    _buildFilterChip(
+                      'Lunas',
+                      _statusFilter == 'PAID',
+                      () => setState(() => _statusFilter = 'PAID'),
+                    ),
+                    _buildFilterChip(
+                      'Pending',
+                      _statusFilter == 'PENDING',
+                      () => setState(() => _statusFilter = 'PENDING'),
+                    ),
                     const SizedBox(width: 12),
-                    _buildFilterChip('DP', _typeFilter == 'DP', () => setState(() => _typeFilter = _typeFilter == 'DP' ? null : 'DP')),
-                    _buildFilterChip('Final', _typeFilter == 'FINAL', () => setState(() => _typeFilter = _typeFilter == 'FINAL' ? null : 'FINAL')),
+                    _buildFilterChip(
+                      'DP',
+                      _typeFilter == 'DP',
+                      () => setState(
+                        () => _typeFilter = _typeFilter == 'DP' ? null : 'DP',
+                      ),
+                    ),
+                    _buildFilterChip(
+                      'Final',
+                      _typeFilter == 'FINAL',
+                      () => setState(
+                        () => _typeFilter = _typeFilter == 'FINAL'
+                            ? null
+                            : 'FINAL',
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -57,20 +88,30 @@ class _AdminTransactionsPageState extends ConsumerState<AdminTransactionsPage> {
                 children: [
                   Text('Error: $err'),
                   const SizedBox(height: 8),
-                  ElevatedButton(onPressed: () => ref.refresh(adminPaymentsProvider), child: const Text('Coba Lagi')),
+                  ElevatedButton(
+                    onPressed: () => ref.refresh(adminPaymentsProvider),
+                    child: const Text('Coba Lagi'),
+                  ),
                 ],
               ),
             ),
             data: (data) {
               final summary = Map<String, dynamic>.from(data['summary'] ?? {});
               final allPayments = List<Map<String, dynamic>>.from(
-                (data['payments'] as List?)?.map((e) => Map<String, dynamic>.from(e)) ?? [],
+                (data['payments'] as List?)?.map(
+                      (e) => Map<String, dynamic>.from(e),
+                    ) ??
+                    [],
               );
 
               // Filter locally
               final payments = allPayments.where((p) {
-                if (_statusFilter != null && p['status'] != _statusFilter) return false;
-                if (_typeFilter != null && p['payment_type'] != _typeFilter) return false;
+                if (_statusFilter != null && p['status'] != _statusFilter) {
+                  return false;
+                }
+                if (_typeFilter != null && p['payment_type'] != _typeFilter) {
+                  return false;
+                }
                 return true;
               }).toList();
 
@@ -78,16 +119,29 @@ class _AdminTransactionsPageState extends ConsumerState<AdminTransactionsPage> {
                 onRefresh: () async => ref.refresh(adminPaymentsProvider),
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildSummaryCards(summary),
-                      const SizedBox(height: 16),
-                      Text('Daftar Transaksi (${payments.length})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Daftar Transaksi (${payments.length})',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
                       if (payments.isEmpty)
-                        const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('Tidak ada transaksi')))),
+                        Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(24.w),
+                            child: const Center(
+                              child: Text('Tidak ada transaksi'),
+                            ),
+                          ),
+                        ),
                       ...payments.map((p) => _TransactionCard(payment: p)),
                     ],
                   ),
@@ -102,13 +156,21 @@ class _AdminTransactionsPageState extends ConsumerState<AdminTransactionsPage> {
 
   Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
     return Padding(
-      padding: const EdgeInsets.only(right: 6),
+      padding: EdgeInsets.only(right: 6.w),
       child: ChoiceChip(
-        label: Text(label, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : AppTheme.grey600)),
+        label: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: isSelected ? Colors.white : AppTheme.grey600,
+          ),
+        ),
         selected: isSelected,
         selectedColor: AppTheme.orange,
         backgroundColor: Colors.white,
-        side: BorderSide(color: isSelected ? Colors.transparent : AppTheme.grey200),
+        side: BorderSide(
+          color: isSelected ? Colors.transparent : AppTheme.grey200,
+        ),
         onSelected: (_) => onTap(),
       ),
     );
@@ -119,42 +181,79 @@ class _AdminTransactionsPageState extends ConsumerState<AdminTransactionsPage> {
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
         final items = [
-          ('Total Pendapatan', _formatCurrency(summary['total_amount']), AppTheme.success, Icons.account_balance_wallet),
-          ('Total DP', _formatCurrency(summary['total_dp']), AppTheme.info, Icons.payment),
-          ('Total Pelunasan', _formatCurrency(summary['total_final']), AppTheme.warning, Icons.payments),
-          ('Jumlah Transaksi', '${summary['total_transactions'] ?? 0}', AppTheme.navy, Icons.receipt),
+          (
+            'Total Pendapatan',
+            _formatCurrency(summary['total_amount']),
+            AppTheme.success,
+            Icons.account_balance_wallet,
+          ),
+          (
+            'Total DP',
+            _formatCurrency(summary['total_dp']),
+            AppTheme.info,
+            Icons.payment,
+          ),
+          (
+            'Total Pelunasan',
+            _formatCurrency(summary['total_final']),
+            AppTheme.warning,
+            Icons.payments,
+          ),
+          (
+            'Jumlah Transaksi',
+            '${summary['total_transactions'] ?? 0}',
+            AppTheme.navy,
+            Icons.receipt,
+          ),
         ];
 
         return GridView.count(
           crossAxisCount: crossAxisCount,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
+          crossAxisSpacing: 10.w,
+          mainAxisSpacing: 10.h,
           childAspectRatio: 2.2,
-          children: items.map((item) => Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.grey200),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: [
-                    Icon(item.$4, size: 18, color: item.$3),
-                    const SizedBox(width: 6),
-                    Text(item.$1, style: const TextStyle(fontSize: 11, color: AppTheme.grey600)),
-                  ],
+          children: items
+              .map(
+                (item) => Container(
+                  padding: EdgeInsets.all(14.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14.r),
+                    border: Border.all(color: AppTheme.grey200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(item.$4, size: 18.sp, color: item.$3),
+                          SizedBox(width: 6.w),
+                          Text(
+                            item.$1,
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: AppTheme.grey600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        item.$2,
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                          color: item.$3,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(item.$2, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: item.$3)),
-              ],
-            ),
-          )).toList(),
+              )
+              .toList(),
         );
       },
     );
@@ -190,45 +289,72 @@ class _TransactionCard extends StatelessWidget {
     final type = payment['payment_type'] ?? '';
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: EdgeInsets.only(bottom: 8.h),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(14.w),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: EdgeInsets.all(10.w),
               decoration: BoxDecoration(
-                color: (isPaid ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                color: (isPaid ? AppTheme.success : AppTheme.warning)
+                    .withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10.r),
               ),
               child: Icon(
                 isPaid ? Icons.check_circle : Icons.schedule,
                 color: isPaid ? AppTheme.success : AppTheme.warning,
-                size: 22,
+                size: 22.sp,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text('Order ${payment['order_code'] ?? '#${payment['order_id']}'}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: (type == 'DP' ? AppTheme.info : AppTheme.warning).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
+                      Text(
+                        'Order ${payment['order_code'] ?? '#${payment['order_id']}'}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
                         ),
-                        child: Text(type, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: type == 'DP' ? AppTheme.info : AppTheme.warning)),
+                      ),
+                      SizedBox(width: 6.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6.w,
+                          vertical: 2.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              (type == 'DP' ? AppTheme.info : AppTheme.warning)
+                                  .withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: Text(
+                          type,
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w600,
+                            color: type == 'DP'
+                                ? AppTheme.info
+                                : AppTheme.warning,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Text('${payment['customer_name'] ?? '-'} → ${payment['provider_name'] ?? '-'}', style: const TextStyle(fontSize: 12, color: AppTheme.grey600)),
-                  Text(payment['paid_at'] ?? payment['created_at'] ?? '', style: const TextStyle(fontSize: 11, color: AppTheme.grey400)),
+                  SizedBox(height: 2.h),
+                  Text(
+                    '${payment['customer_name'] ?? '-'} → ${payment['provider_name'] ?? '-'}',
+                    style: TextStyle(fontSize: 12.sp, color: AppTheme.grey600),
+                  ),
+                  Text(
+                    payment['paid_at'] ?? payment['created_at'] ?? '',
+                    style: TextStyle(fontSize: 11.sp, color: AppTheme.grey400),
+                  ),
                 ],
               ),
             ),
@@ -237,18 +363,27 @@ class _TransactionCard extends StatelessWidget {
               children: [
                 Text(
                   _formatCurrency(payment['amount']),
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isPaid ? AppTheme.success : AppTheme.navy),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15.sp,
+                    color: isPaid ? AppTheme.success : AppTheme.navy,
+                  ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                   decoration: BoxDecoration(
-                    color: (isPaid ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
+                    color: (isPaid ? AppTheme.success : AppTheme.warning)
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6.r),
                   ),
                   child: Text(
                     isPaid ? 'Lunas' : status,
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: isPaid ? AppTheme.success : AppTheme.warning),
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w600,
+                      color: isPaid ? AppTheme.success : AppTheme.warning,
+                    ),
                   ),
                 ),
               ],

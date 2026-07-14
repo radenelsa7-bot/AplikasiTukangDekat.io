@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 
-final adminOrdersProvider = FutureProvider.family<List<Map<String, dynamic>>, String?>((ref, status) async {
-  final api = ref.read(apiServiceProvider);
-  return api.getAdminOrders(status: status);
-});
+final adminOrdersProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String?>((
+      ref,
+      status,
+    ) async {
+      final api = ref.read(apiServiceProvider);
+      return api.getAdminOrders(status: status);
+    });
 
 class AdminOrdersPage extends ConsumerStatefulWidget {
   const AdminOrdersPage({super.key});
@@ -25,30 +30,51 @@ class _AdminOrdersPageState extends ConsumerState<AdminOrdersPage> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16.w),
           child: Row(
             children: [
-              const Text('Monitoring Pesanan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              Text(
+                'Monitoring Pesanan',
+                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
+              ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(horizontal: 12.w),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(10.r),
                   border: Border.all(color: AppTheme.grey200),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String?>(
                     value: _statusFilter,
-                    hint: const Text('Semua Status', style: TextStyle(fontSize: 13)),
+                    hint: Text(
+                      'Semua Status',
+                      style: TextStyle(fontSize: 13.sp),
+                    ),
                     items: const [
-                      DropdownMenuItem(value: null, child: Text('Semua Status')),
+                      DropdownMenuItem(
+                        value: null,
+                        child: Text('Semua Status'),
+                      ),
                       DropdownMenuItem(value: 'CREATED', child: Text('Baru')),
-                      DropdownMenuItem(value: 'ACCEPTED', child: Text('Diterima')),
-                      DropdownMenuItem(value: 'IN_PROGRESS', child: Text('Dikerjakan')),
-                      DropdownMenuItem(value: 'COMPLETED', child: Text('Selesai')),
+                      DropdownMenuItem(
+                        value: 'ACCEPTED',
+                        child: Text('Diterima'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'IN_PROGRESS',
+                        child: Text('Dikerjakan'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'COMPLETED',
+                        child: Text('Selesai'),
+                      ),
                       DropdownMenuItem(value: 'CLOSED', child: Text('Ditutup')),
-                      DropdownMenuItem(value: 'CANCELLED', child: Text('Dibatalkan')),
+                      DropdownMenuItem(
+                        value: 'CANCELLED',
+                        child: Text('Dibatalkan'),
+                      ),
                     ],
                     onChanged: (v) => setState(() => _statusFilter = v),
                   ),
@@ -65,8 +91,12 @@ class _AdminOrdersPageState extends ConsumerState<AdminOrdersPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text('Error: $err'),
-                  const SizedBox(height: 8),
-                  ElevatedButton(onPressed: () => ref.refresh(adminOrdersProvider(_statusFilter)), child: const Text('Coba Lagi')),
+                  SizedBox(height: 8.h),
+                  ElevatedButton(
+                    onPressed: () =>
+                        ref.refresh(adminOrdersProvider(_statusFilter)),
+                    child: const Text('Coba Lagi'),
+                  ),
                 ],
               ),
             ),
@@ -76,17 +106,25 @@ class _AdminOrdersPageState extends ConsumerState<AdminOrdersPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.receipt_long_outlined, size: 64, color: AppTheme.grey400.withValues(alpha: 0.5)),
-                      const SizedBox(height: 12),
-                      const Text('Tidak ada pesanan', style: TextStyle(color: AppTheme.grey600)),
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 64.sp,
+                        color: AppTheme.grey400.withValues(alpha: 0.5),
+                      ),
+                      SizedBox(height: 12.h),
+                      const Text(
+                        'Tidak ada pesanan',
+                        style: TextStyle(color: AppTheme.grey600),
+                      ),
                     ],
                   ),
                 );
               }
               return RefreshIndicator(
-                onRefresh: () async => ref.refresh(adminOrdersProvider(_statusFilter)),
+                onRefresh: () async =>
+                    ref.refresh(adminOrdersProvider(_statusFilter)),
                 child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
                   itemCount: orders.length,
                   itemBuilder: (context, i) => _OrderCard(order: orders[i]),
                 ),
@@ -147,79 +185,124 @@ class _OrderCard extends StatelessWidget {
     final label = _statusLabels[status] ?? status;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: EdgeInsets.only(bottom: 10.h),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(14.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                  child: Icon(icon, color: color, size: 20),
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Icon(icon, color: color, size: 20.sp),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         order['order_code'] ?? '#${order['id']}',
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15.sp,
+                        ),
                       ),
                       Text(
                         order['created_at'] ?? '',
-                        style: const TextStyle(fontSize: 11, color: AppTheme.grey600),
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: AppTheme.grey600,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                  child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Row(
               children: [
                 Expanded(
-                  child: _buildInfoItem(Icons.person, 'Customer', order['customer_name'] ?? '-'),
+                  child: _buildInfoItem(
+                    Icons.person,
+                    'Customer',
+                    order['customer_name'] ?? '-',
+                  ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
-                  child: _buildInfoItem(Icons.engineering, 'Provider', order['provider_name'] ?? '-'),
+                  child: _buildInfoItem(
+                    Icons.engineering,
+                    'Provider',
+                    order['provider_name'] ?? '-',
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Row(
               children: [
                 Expanded(
-                  child: _buildInfoItem(Icons.payment, 'Estimasi', _formatCurrency(order['estimated_price'])),
+                  child: _buildInfoItem(
+                    Icons.payment,
+                    'Estimasi',
+                    _formatCurrency(order['estimated_price']),
+                  ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: Row(
                     children: [
                       _buildPaymentBadge('DP', order['dp_status']),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6.w),
                       _buildPaymentBadge('Final', order['final_status']),
                     ],
                   ),
                 ),
               ],
             ),
-            if (order['address'] != null && order['address'].toString().isNotEmpty) ...[
-              const SizedBox(height: 8),
+            if (order['address'] != null &&
+                order['address'].toString().isNotEmpty) ...[
+              SizedBox(height: 8.h),
               Row(
                 children: [
-                  const Icon(Icons.location_on, size: 14, color: AppTheme.grey600),
-                  const SizedBox(width: 4),
-                  Expanded(child: Text(order['address'].toString(), style: const TextStyle(fontSize: 12, color: AppTheme.grey600), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  Icon(Icons.location_on, size: 14.sp, color: AppTheme.grey600),
+                  SizedBox(width: 4.w),
+                  Expanded(
+                    child: Text(
+                      order['address'].toString(),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppTheme.grey600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -232,14 +315,22 @@ class _OrderCard extends StatelessWidget {
   Widget _buildInfoItem(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: AppTheme.grey600),
-        const SizedBox(width: 4),
+        Icon(icon, size: 14.sp, color: AppTheme.grey600),
+        SizedBox(width: 4.w),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(fontSize: 10, color: AppTheme.grey600)),
-              Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                label,
+                style: TextStyle(fontSize: 10.sp, color: AppTheme.grey600),
+              ),
+              Text(
+                value,
+                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),
@@ -249,11 +340,23 @@ class _OrderCard extends StatelessWidget {
 
   Widget _buildPaymentBadge(String type, dynamic status) {
     final st = status?.toString() ?? 'PENDING';
-    final color = st == 'PAID' ? AppTheme.success : (st == 'PENDING' ? AppTheme.warning : AppTheme.grey400);
+    final color = st == 'PAID'
+        ? AppTheme.success
+        : (st == 'PENDING' ? AppTheme.warning : AppTheme.grey400);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-      child: Text('$type: $st', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: color)),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6.r),
+      ),
+      child: Text(
+        '$type: $st',
+        style: TextStyle(
+          fontSize: 9.sp,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
     );
   }
 }

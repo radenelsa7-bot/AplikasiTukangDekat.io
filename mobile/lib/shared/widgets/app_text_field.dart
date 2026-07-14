@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AppTextField extends StatefulWidget {
   const AppTextField({
@@ -49,8 +50,8 @@ class _AppTextFieldState extends State<AppTextField> {
   @override
   void didUpdateWidget(covariant AppTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialValue != null && 
-        oldWidget.initialValue != widget.initialValue && 
+    if (widget.initialValue != null &&
+        oldWidget.initialValue != widget.initialValue &&
         widget.controller == null) {
       _controller.text = widget.initialValue!;
     }
@@ -79,7 +80,7 @@ class _AppTextFieldState extends State<AppTextField> {
         hintText: widget.hintText,
         prefixIcon: widget.prefixIcon,
         errorText: widget.errorText,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
       ),
     );
   }
