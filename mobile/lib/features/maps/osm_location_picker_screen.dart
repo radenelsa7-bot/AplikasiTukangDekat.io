@@ -125,7 +125,7 @@ class _OsmLocationPickerScreenState extends ConsumerState<OsmLocationPickerScree
         _isLoadingLocation = false;
       });
 
-      await _mapController.move(selected, 15);
+      _mapController.move(selected, 15);
     } catch (e) {
       if (!mounted) return;
       setState(() {

@@ -76,7 +76,7 @@ class _AdminOrdersPageState extends ConsumerState<AdminOrdersPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.receipt_long_outlined, size: 64, color: AppTheme.grey400.withOpacity(0.5)),
+                      Icon(Icons.receipt_long_outlined, size: 64, color: AppTheme.grey400.withValues(alpha: 0.5)),
                       const SizedBox(height: 12),
                       const Text('Tidak ada pesanan', style: TextStyle(color: AppTheme.grey600)),
                     ],
@@ -157,7 +157,7 @@ class _OrderCard extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                   child: Icon(icon, color: color, size: 20),
                 ),
                 const SizedBox(width: 12),
@@ -178,7 +178,7 @@ class _OrderCard extends StatelessWidget {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                   child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
                 ),
               ],
@@ -252,7 +252,7 @@ class _OrderCard extends StatelessWidget {
     final color = st == 'PAID' ? AppTheme.success : (st == 'PENDING' ? AppTheme.warning : AppTheme.grey400);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
       child: Text('$type: $st', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: color)),
     );
   }

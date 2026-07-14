@@ -198,7 +198,7 @@ class _TransactionCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (isPaid ? AppTheme.success : AppTheme.warning).withOpacity(0.1),
+                color: (isPaid ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -219,7 +219,7 @@ class _TransactionCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: (type == 'DP' ? AppTheme.info : AppTheme.warning).withOpacity(0.1),
+                          color: (type == 'DP' ? AppTheme.info : AppTheme.warning).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(type, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: type == 'DP' ? AppTheme.info : AppTheme.warning)),
@@ -243,7 +243,7 @@ class _TransactionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: (isPaid ? AppTheme.success : AppTheme.warning).withOpacity(0.1),
+                    color: (isPaid ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(

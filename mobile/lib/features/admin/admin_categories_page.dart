@@ -51,7 +51,7 @@ class AdminCategoriesPage extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.category_outlined, size: 64, color: AppTheme.grey400.withOpacity(0.5)),
+                      Icon(Icons.category_outlined, size: 64, color: AppTheme.grey400.withValues(alpha: 0.5)),
                       const SizedBox(height: 12),
                       const Text('Belum ada kategori', style: TextStyle(color: AppTheme.grey600)),
                     ],
@@ -162,7 +162,7 @@ class _CategoryCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: (category.isActive ? AppTheme.info : AppTheme.grey400).withOpacity(0.1),
+                color: (category.isActive ? AppTheme.info : AppTheme.grey400).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -185,7 +185,7 @@ class _CategoryCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: (category.isActive ? AppTheme.success : AppTheme.grey400).withOpacity(0.1),
+                color: (category.isActive ? AppTheme.success : AppTheme.grey400).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

@@ -542,7 +542,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                       )
                     else ...[
                       DropdownButtonFormField<int>(
-                        value: _selectedKotaId,
+                        initialValue: _selectedKotaId,
                         isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Kota',
@@ -577,7 +577,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                         )
                       else
                         DropdownButtonFormField<int>(
-                          value: _selectedKecamatanId,
+                          initialValue: _selectedKecamatanId,
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Kecamatan',

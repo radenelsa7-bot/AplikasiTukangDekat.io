@@ -53,7 +53,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppTheme.danger.withOpacity(0.1),
+                    color: AppTheme.danger.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -163,19 +163,19 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [statusColor.withOpacity(0.1), statusColor.withOpacity(0.05)],
+          colors: [statusColor.withValues(alpha: 0.1), statusColor.withValues(alpha: 0.05)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withOpacity(0.2)),
+        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
+              color: statusColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(statusIcon, color: statusColor, size: 28),
@@ -199,7 +199,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
+                    color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -356,7 +356,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: order.attachments.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final att = order.attachments[index];
                 final url = att.publicUrl ?? att.fileUrl ?? '';
@@ -379,7 +379,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                               width: 120,
                               height: 76,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
+                              errorBuilder: (_, _, _) => Container(
                                 width: 120,
                                 height: 76,
                                 color: AppTheme.grey100,
@@ -565,9 +565,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.05),
+                color: statusColor.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: statusColor.withOpacity(0.2)),
+                border: Border.all(color: statusColor.withValues(alpha: 0.2)),
               ),
               child: Column(
                 children: [
@@ -579,7 +579,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.15),
+                              color: statusColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -901,9 +901,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.danger.withOpacity(0.1),
+                  color: AppTheme.danger.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.danger.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.danger.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -1037,6 +1037,56 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 onPressed: actionState.isLoading
                     ? null
                     : () => _showFinalPriceDialog(context, ref, order),
+              ),
+            ),
+          ],
+          // FIX: Handle price rejection for provider - allow resubmit of final price
+          if (order.status == 'COMPLETED' && order.finalPriceApprovalStatus == 'REJECTED') ...[
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.warning.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: AppTheme.warning, size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Harga final sebelumnya ditolak customer. Silakan ajukan harga baru.',
+                            style: TextStyle(color: AppTheme.warning, fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Input Harga Final Baru'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.orange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: actionState.isLoading
+                          ? null
+                          : () => _showFinalPriceDialog(context, ref, order),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -1246,7 +1296,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.warning.withOpacity(0.1),
+                  color: AppTheme.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(
@@ -1685,7 +1735,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.success.withOpacity(0.1),
+                  color: AppTheme.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.qr_code_2, color: AppTheme.success),
@@ -1709,7 +1759,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.orange.withOpacity(0.1),
+                      color: AppTheme.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

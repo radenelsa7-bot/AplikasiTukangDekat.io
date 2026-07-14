@@ -195,7 +195,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
               ),
               selected: isSelected,
               selectedColor: AppTheme.orange,
-              backgroundColor: AppTheme.navy.withOpacity(0.18),
+              backgroundColor: AppTheme.navy.withValues(alpha: 0.18),
               side: BorderSide.none,
               onSelected: (_) => setState(() => _selectedIndex = i),
             ),
@@ -455,7 +455,7 @@ class _DashboardOverview extends ConsumerWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: orders.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (context, i) {
           final o = orders[i];
           return ListTile(
@@ -502,7 +502,7 @@ class _DashboardOverview extends ConsumerWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: payments.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (context, i) {
           final p = payments[i];
           return ListTile(

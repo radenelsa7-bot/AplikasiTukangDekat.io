@@ -1,5 +1,5 @@
 /// Web implementation: triggers download via data URL (used for web only).
-library download_helper_stub;
+library;
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';

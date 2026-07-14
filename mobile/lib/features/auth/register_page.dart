@@ -565,7 +565,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             border: Border.all(color: const Color(0xFFE8DCC8), width: 1),
           ),
           child: DropdownButtonFormField<String>(
-            value: _selectedRole,
+            initialValue: _selectedRole,
             decoration: InputDecoration(
               border: InputBorder.none,
               prefixIcon: const Icon(
@@ -623,7 +623,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   ),
                 )
               : DropdownButtonFormField<int>(
-                  value: _selectedCategoryId,
+                  initialValue: _selectedCategoryId,
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     prefixIcon: const Icon(

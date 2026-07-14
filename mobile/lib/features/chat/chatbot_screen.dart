@@ -94,7 +94,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppTheme.success.withOpacity(0.2),
+                color: AppTheme.success.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -172,7 +172,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -192,8 +192,9 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
   Widget _buildBotActions(Map<String, dynamic> message) {
     final actions = message['actions'];
-    if (actions == null || actions is! List || actions.isEmpty)
+    if (actions == null || actions is! List || actions.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: 8, left: 12, right: 12),
@@ -215,11 +216,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                   final pid = (payload is Map)
                       ? (payload['payment_id'] ??
                             payload['paymentId'] ??
-                            payload['payment'] ??
-                            null)
+                            payload['payment'])
                       : null;
                   final oid = (payload is Map)
-                      ? (payload['order_id'] ?? payload['orderId'] ?? null)
+                      ? (payload['order_id'] ?? payload['orderId'])
                       : null;
 
                   if (oid != null) {
@@ -229,7 +229,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                           orderId: int.tryParse(oid.toString()) ?? 0,
                           autoOpenQris: true,
                           autoPaymentId: pid != null
-                              ? int.tryParse(pid.toString()) ?? null
+                              ? int.tryParse(pid.toString())
                               : null,
                         ),
                       ),
@@ -256,7 +256,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
                 if (type == 'open_order') {
                   final oid = (payload is Map)
-                      ? (payload['order_id'] ?? payload['orderId'] ?? null)
+                      ? (payload['order_id'] ?? payload['orderId'])
                       : null;
                   if (oid != null) {
                     Navigator.of(context).push(
@@ -270,7 +270,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                   }
 
                   final info = payload is Map && payload['order_code'] != null
-                      ? 'Order: ' + payload['order_code'].toString()
+                      ? 'Order: ${payload['order_code']}'
                       : payload?.toString() ?? '';
                   ScaffoldMessenger.of(
                     context,
@@ -280,7 +280,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
                 if (type == 'view_payment') {
                   final oid = (payload is Map)
-                      ? (payload['order_id'] ?? payload['orderId'] ?? null)
+                      ? (payload['order_id'] ?? payload['orderId'])
                       : null;
                   if (oid != null) {
                     Navigator.of(context).push(
@@ -296,7 +296,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
                 // Default behavior
                 final info = payload is Map && payload['order_code'] != null
-                    ? 'Order: ' + payload['order_code'].toString()
+                    ? 'Order: ${payload['order_code']}'
                     : payload?.toString() ?? '';
                 ScaffoldMessenger.of(
                   context,
@@ -365,7 +365,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -403,7 +403,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.orange.withOpacity(0.3),
+                    color: AppTheme.orange.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
