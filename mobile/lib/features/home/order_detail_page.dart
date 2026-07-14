@@ -11,7 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 import '../../core/models/order_model.dart';
-import '../../shared/widgets/location_map_preview.dart';
+import '../../shared/widgets/live_tracking_map.dart';
 import '../auth/auth_controller.dart';
 import 'order_providers.dart';
 
@@ -243,6 +243,12 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           ),
           const SizedBox(height: 16),
           _buildInfoRow(Icons.location_on_outlined, 'Alamat', order.address),
+          if (order.providerLatitude != null && order.providerLongitude != null)
+            _buildInfoRow(
+              Icons.person_pin_circle_outlined,
+              'Lokasi Provider',
+              '${order.providerLatitude!.toStringAsFixed(6)}, ${order.providerLongitude!.toStringAsFixed(6)}',
+            ),
           _buildInfoRow(
             Icons.calendar_today_outlined,
             'Jadwal',
@@ -283,7 +289,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             ],
           ),
           const SizedBox(height: 12),
-          LocationMapPreview(
+          LiveTrackingMap(
+            orderId: order.id,
             customerLatitude: order.customerLatitude,
             customerLongitude: order.customerLongitude,
             providerLatitude: order.providerLatitude,

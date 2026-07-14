@@ -164,6 +164,8 @@ class CreateOrderRequest {
   final int kecamatanId;
   final String scheduleAt;
   final String address;
+  final double? customerLatitude;
+  final double? customerLongitude;
   final String? notes;
   final String? damageLevel;
   final String? damageDescription;
@@ -181,6 +183,8 @@ class CreateOrderRequest {
     required this.kecamatanId,
     required this.scheduleAt,
     required this.address,
+    this.customerLatitude,
+    this.customerLongitude,
     this.notes,
     this.damageLevel,
     this.damageDescription,
@@ -199,6 +203,13 @@ class CreateOrderRequest {
       'schedule_at': scheduleAt,
       'address': address,
     };
+
+        if (customerLatitude != null) {
+      data['customer_latitude'] = customerLatitude!;
+    }
+    if (customerLongitude != null) {
+      data['customer_longitude'] = customerLongitude!;
+    }
 
     if (categoryId != null) {
       data['category_id'] = categoryId!;
