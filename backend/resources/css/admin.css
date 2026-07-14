@@ -12,9 +12,23 @@
     --text-muted: #6b7280;
 }
 
+html, body {
+    overflow-x: hidden;
+    min-width: 0;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 body {
     background: var(--content-bg);
     color: var(--text-default);
+}
+
+.wrapper,
+.content-wrapper {
+    overflow-x: hidden;
 }
 
 .main-header, .main-sidebar, .main-footer {
