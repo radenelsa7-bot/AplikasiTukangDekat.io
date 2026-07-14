@@ -281,29 +281,29 @@ class _DashboardOverview extends ConsumerWidget {
           onRefresh: () async => ref.refresh(adminDashboardProvider),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Ringkasan',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 _buildStatsGrid(stats),
-                const SizedBox(height: 28),
+                const SizedBox(height: 20),
                 const Text(
                   'Pesanan Terbaru',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _buildRecentOrders(recentOrders),
-                const SizedBox(height: 28),
+                const SizedBox(height: 20),
                 const Text(
                   'Pembayaran Terbaru',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _buildRecentPayments(recentPayments),
               ],
             ),
@@ -374,69 +374,69 @@ class _DashboardOverview extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
-        final crossAxisCount = maxWidth > 900
-            ? 4
-            : (maxWidth > 700 ? 3 : (maxWidth > 520 ? 2 : 1));
-        final itemWidth =
-            (maxWidth - (crossAxisCount - 1) * 8) / crossAxisCount;
+        final isLargeScreen = maxWidth > 900;
+        final isMediumScreen = maxWidth > 600;
+        final isSmallScreen = maxWidth <= 480;
 
-        return Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        final crossAxisCount = isLargeScreen
+            ? 4
+            : (isMediumScreen ? 3 : (isSmallScreen ? 2 : 2));
+
+        return GridView.count(
+          crossAxisCount: crossAxisCount,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1.5,
           children: items.map((item) {
-            return SizedBox(
-              width: itemWidth.clamp(160, maxWidth),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.grey200),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: item.color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(item.icon, size: 14, color: item.color),
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.grey200),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: item.color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            item.value,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: item.color,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            item.label,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppTheme.grey600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
+                    child: Icon(
+                      item.icon,
+                      size: 16,
+                      color: item.color,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    item.value,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    child: Text(
+                      item.label,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        color: AppTheme.grey600,
+                        height: 1.0,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
               ),
             );
           }).toList(),

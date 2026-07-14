@@ -264,7 +264,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
 
             // ── Langkah Mudah ────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: _buildLocationFilters(context),
             ),
             _buildSectionHeader(context, 'Langkah Mudah', null),
@@ -316,6 +316,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
               ),
             ),
 
+            const SizedBox(height: 4),
             _buildSectionHeader(context, 'Kategori Layanan', null),
             _buildCategories(context, ref, selectedCategory),
 
