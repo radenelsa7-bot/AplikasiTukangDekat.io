@@ -244,6 +244,12 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           ),
           const SizedBox(height: 16),
           _buildInfoRow(Icons.location_on_outlined, 'Alamat', order.address),
+          if (order.providerLatitude != null && order.providerLongitude != null)
+            _buildInfoRow(
+              Icons.person_pin_circle_outlined,
+              'Lokasi Provider',
+              '${order.providerLatitude!.toStringAsFixed(6)}, ${order.providerLongitude!.toStringAsFixed(6)}',
+            ),
           _buildInfoRow(
             Icons.calendar_today_outlined,
             'Jadwal',

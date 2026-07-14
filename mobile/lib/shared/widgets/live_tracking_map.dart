@@ -29,6 +29,8 @@ class LiveTrackingMap extends ConsumerStatefulWidget {
 class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
   static const Duration _updateInterval = Duration(seconds: 3);
   static const int _simulationSteps = 24;
+  static const double _providerOffsetLat = 0.0012;
+  static const double _providerOffsetLng = 0.0012;
 
   StreamSubscription<int>? _locationSubscription;
 
@@ -89,8 +91,8 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
       _startLat = widget.providerLatitude;
       _startLng = widget.providerLongitude;
     } else if (hasCustomer) {
-      _startLat = widget.customerLatitude! + 0.012;
-      _startLng = widget.customerLongitude! - 0.012;
+      _startLat = widget.customerLatitude! + _providerOffsetLat;
+      _startLng = widget.customerLongitude! - _providerOffsetLng;
     } else {
       _startLat = null;
       _startLng = null;
@@ -142,6 +144,8 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
         ? LatLng(_providerLat!, _providerLng!)
         : LatLng(widget.customerLatitude!, widget.customerLongitude!);
 
+    final showRoute = hasCustomerLocation && hasProviderLocation;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -166,6 +170,19 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
                           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.tukangdekat.app',
                     ),
+                    if (showRoute)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: [
+                              LatLng(widget.customerLatitude!, widget.customerLongitude!),
+                              LatLng(_providerLat!, _providerLng!),
+                            ],
+                            color: AppTheme.orange.withValues(alpha: 0.75),
+                            strokeWidth: 3.0,
+                          ),
+                        ],
+                      ),
                     MarkerLayer(
                       markers: [
                         if (hasCustomerLocation)

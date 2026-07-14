@@ -187,6 +187,30 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
     });
   }
 
+  void _applyLocationFilter() {
+    if (_selectedKotaId != null || _selectedKecamatanId != null) {
+      ref.invalidate(
+        providersByCategoryProvider(
+          ProviderCatalogQuery(
+            categoryId: ref.read(selectedCategoryProvider) ?? 0,
+            kotaId: _selectedKotaId,
+            kecamatanId: _selectedKecamatanId,
+          ),
+        ),
+      );
+      ref.invalidate(
+        searchProvidersProvider(
+          ProviderSearchQuery(
+            query: ref.read(searchQueryProvider),
+            kotaId: _selectedKotaId,
+            kecamatanId: _selectedKecamatanId,
+          ),
+        ),
+      );
+    }
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedCategory = ref.watch(selectedCategoryProvider);
@@ -373,7 +397,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
               if (value != null) {
                 await _loadKecamatan(value);
               }
-              _refreshCatalogData();
+              _applyLocationFilter();
             },
           ),
           const SizedBox(height: 12),
@@ -404,7 +428,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                 ? null
                 : (value) {
                     setState(() => _selectedKecamatanId = value);
-                    _refreshCatalogData();
+                    _applyLocationFilter();
                   },
           ),
         ],
