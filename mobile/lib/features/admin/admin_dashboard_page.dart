@@ -12,7 +12,9 @@ import 'admin_reports_page.dart';
 import 'admin_transactions_page.dart';
 import 'admin_users_page.dart';
 
-final adminDashboardProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final adminDashboardProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   final api = ref.read(apiServiceProvider);
   return api.getAdminDashboard();
 });
@@ -77,11 +79,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       children: [
         _buildSidebar(),
         Expanded(
-          child: Column(
-            children: [
-              Expanded(child: _buildContent()),
-            ],
-          ),
+          child: Column(children: [Expanded(child: _buildContent())]),
         ),
       ],
     );
@@ -123,14 +121,14 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        isSelected ? AppTheme.orange.withValues(alpha: 0.15) : null,
                     color: isSelected
                         ? AppTheme.orange.withValues(alpha: 0.15)
                         : null,
                     border: Border(
                       left: BorderSide(
-                        color: isSelected ? AppTheme.orange : Colors.transparent,
+                        color: isSelected
+                            ? AppTheme.orange
+                            : Colors.transparent,
                         width: 3,
                       ),
                     ),
@@ -147,8 +145,9 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                         item.label,
                         style: TextStyle(
                           color: isSelected ? AppTheme.orange : Colors.white70,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                           fontSize: 14,
                         ),
                       ),
@@ -191,7 +190,9 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.white70,
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                     ),
                   ),
                 ],
@@ -372,8 +373,9 @@ class _DashboardOverview extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount =
-            constraints.maxWidth > 900 ? 4 : (constraints.maxWidth > 600 ? 3 : 2);
+        final crossAxisCount = constraints.maxWidth > 900
+            ? 4
+            : (constraints.maxWidth > 600 ? 3 : 2);
 
         return GridView.builder(
           shrinkWrap: true,
@@ -400,7 +402,6 @@ class _DashboardOverview extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: item.color.withValues(alpha: 0.1),
                       color: item.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -514,7 +515,6 @@ class _DashboardOverview extends ConsumerWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AppTheme.success.withValues(alpha: 0.1),
-                color: AppTheme.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -559,7 +559,6 @@ class _DashboardOverview extends ConsumerWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: entry.$2.withValues(alpha: 0.1),
-        color: entry.$2.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(entry.$1, color: entry.$2, size: 20),
@@ -580,7 +579,6 @@ class _DashboardOverview extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -613,4 +611,3 @@ class _StatItem {
 
   const _StatItem(this.label, this.value, this.icon, this.color);
 }
-

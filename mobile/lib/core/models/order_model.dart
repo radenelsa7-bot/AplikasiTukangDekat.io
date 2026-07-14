@@ -9,6 +9,7 @@ class OrderData {
   final double? customerLongitude;
   final double? providerLatitude;
   final double? providerLongitude;
+  final String? providerName;
   final String? notes;
   final String? damageLevel;
   final String? damageDescription;
@@ -31,6 +32,7 @@ class OrderData {
     this.customerLongitude,
     this.providerLatitude,
     this.providerLongitude,
+    this.providerName,
     this.notes,
     this.damageLevel,
     this.damageDescription,
@@ -51,10 +53,19 @@ class OrderData {
       estimatedPrice: json['estimated_price'] ?? 0,
       finalPrice: json['final_price'],
       address: json['address'] ?? '',
-      customerLatitude: double.tryParse(json['customer_latitude']?.toString() ?? ''),
-      customerLongitude: double.tryParse(json['customer_longitude']?.toString() ?? ''),
-      providerLatitude: double.tryParse(json['provider_latitude']?.toString() ?? ''),
-      providerLongitude: double.tryParse(json['provider_longitude']?.toString() ?? ''),
+      customerLatitude: double.tryParse(
+        json['customer_latitude']?.toString() ?? '',
+      ),
+      customerLongitude: double.tryParse(
+        json['customer_longitude']?.toString() ?? '',
+      ),
+      providerLatitude: double.tryParse(
+        json['provider_latitude']?.toString() ?? '',
+      ),
+      providerLongitude: double.tryParse(
+        json['provider_longitude']?.toString() ?? '',
+      ),
+      providerName: json['provider']?['full_name'] ?? json['provider_name'],
       notes: json['notes'],
       damageLevel: json['damage_level'],
       damageDescription: json['damage_description'],
@@ -204,7 +215,7 @@ class CreateOrderRequest {
       'address': address,
     };
 
-        if (customerLatitude != null) {
+    if (customerLatitude != null) {
       data['customer_latitude'] = customerLatitude!;
     }
     if (customerLongitude != null) {

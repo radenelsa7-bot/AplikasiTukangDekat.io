@@ -162,7 +162,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [statusColor.withValues(alpha: 0.1), statusColor.withValues(alpha: 0.05)],
+          colors: [
+            statusColor.withValues(alpha: 0.1),
+            statusColor.withValues(alpha: 0.05),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -258,8 +261,13 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           ),
           if (order.notes != null && order.notes!.isNotEmpty)
             _buildInfoRow(Icons.note_outlined, 'Catatan', order.notes!),
-          if (order.damageDescription != null && order.damageDescription!.isNotEmpty)
-            _buildInfoRow(Icons.build_circle_outlined, 'Kondisi', order.damageDescription!),
+          if (order.damageDescription != null &&
+              order.damageDescription!.isNotEmpty)
+            _buildInfoRow(
+              Icons.build_circle_outlined,
+              'Kondisi',
+              order.damageDescription!,
+            ),
           if (order.queueNote != null && order.queueNote!.isNotEmpty)
             _buildInfoRow(Icons.info_outline, 'Info Antrian', order.queueNote!),
         ],
@@ -284,7 +292,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               const SizedBox(width: 8),
               Text(
                 'Tracking Lokasi',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -295,6 +305,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             customerLongitude: order.customerLongitude,
             providerLatitude: order.providerLatitude,
             providerLongitude: order.providerLongitude,
+            providerName: order.providerName,
+            enableAutoRefresh: true,
           ),
         ],
       ),
@@ -402,7 +414,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                           _attachmentPurposeLabel(att.purpose),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 10, color: AppTheme.grey600),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppTheme.grey600,
+                          ),
                         ),
                       ],
                     ),
@@ -476,7 +491,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               ),
             ],
           ),
-          if (order.estimatedPriceMin != null && order.estimatedPriceMax != null) ...[
+          if (order.estimatedPriceMin != null &&
+              order.estimatedPriceMax != null) ...[
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -612,8 +628,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                                 isPaid
                                     ? 'Lunas'
                                     : (isCancelled
-                                        ? 'Dibatalkan'
-                                        : 'Belum Dibayar'),
+                                          ? 'Dibatalkan'
+                                          : 'Belum Dibayar'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: statusColor,
@@ -649,9 +665,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                             width: double.infinity,
                             child: ElevatedButton.icon(
                               icon: const Icon(Icons.qr_code_2, size: 18),
-                              label: Text(payment.paymentType == 'DP' 
-                                  ? 'Bayar DP Sekarang' 
-                                  : 'Bayar Pelunasan Sekarang'),
+                              label: Text(
+                                payment.paymentType == 'DP'
+                                    ? 'Bayar DP Sekarang'
+                                    : 'Bayar Pelunasan Sekarang',
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.success,
                                 foregroundColor: Colors.white,
@@ -912,16 +930,25 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 decoration: BoxDecoration(
                   color: AppTheme.danger.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.danger.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppTheme.danger.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: AppTheme.danger, size: 20),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppTheme.danger,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         actionState.errorMessage!,
-                        style: const TextStyle(color: AppTheme.danger, fontSize: 13),
+                        style: const TextStyle(
+                          color: AppTheme.danger,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -1050,7 +1077,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             ),
           ],
           // FIX: Handle price rejection for provider - allow resubmit of final price
-          if (order.status == 'COMPLETED' && order.finalPriceApprovalStatus == 'REJECTED') ...[
+          if (order.status == 'COMPLETED' &&
+              order.finalPriceApprovalStatus == 'REJECTED') ...[
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Column(
@@ -1061,16 +1089,25 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                     decoration: BoxDecoration(
                       color: AppTheme.warning.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AppTheme.warning.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.info_outline, color: AppTheme.warning, size: 20),
+                        Icon(
+                          Icons.info_outline,
+                          color: AppTheme.warning,
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Harga final sebelumnya ditolak customer. Silakan ajukan harga baru.',
-                            style: TextStyle(color: AppTheme.warning, fontSize: 13),
+                            style: TextStyle(
+                              color: AppTheme.warning,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -1183,12 +1220,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                     ),
                     onPressed: actionState.isLoading
                         ? null
-                        : () => _decideFinalPrice(
-                            context,
-                            ref,
-                            order,
-                            'reject',
-                          ),
+                        : () =>
+                              _decideFinalPrice(context, ref, order, 'reject'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1206,12 +1239,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                     ),
                     onPressed: actionState.isLoading
                         ? null
-                        : () => _decideFinalPrice(
-                            context,
-                            ref,
-                            order,
-                            'approve',
-                          ),
+                        : () =>
+                              _decideFinalPrice(context, ref, order, 'approve'),
                   ),
                 ),
               ],
@@ -1409,7 +1438,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           }
 
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             title: const Text(
               'Harga Final',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -1435,9 +1466,21 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  _buildReportPicker('Foto kondisi awal', initialPhotos, () => pickInto(initialPhotos)),
-                  _buildReportPicker('Foto kondisi akhir', finalPhotos, () => pickInto(finalPhotos)),
-                  _buildReportPicker('Foto kuitansi pembelian', receiptPhotos, () => pickInto(receiptPhotos)),
+                  _buildReportPicker(
+                    'Foto kondisi awal',
+                    initialPhotos,
+                    () => pickInto(initialPhotos),
+                  ),
+                  _buildReportPicker(
+                    'Foto kondisi akhir',
+                    finalPhotos,
+                    () => pickInto(finalPhotos),
+                  ),
+                  _buildReportPicker(
+                    'Foto kuitansi pembelian',
+                    receiptPhotos,
+                    () => pickInto(receiptPhotos),
+                  ),
                 ],
               ),
             ),
@@ -1457,7 +1500,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                   }
                   if (initialPhotos.isEmpty || finalPhotos.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Foto kondisi awal dan akhir wajib diisi')),
+                      const SnackBar(
+                        content: Text(
+                          'Foto kondisi awal dan akhir wajib diisi',
+                        ),
+                      ),
                     );
                     return;
                   }
@@ -1467,7 +1514,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       .completeOrder(
                         order.id,
                         finalPrice,
-                        initialConditionPhotos: await _toMultipart(initialPhotos),
+                        initialConditionPhotos: await _toMultipart(
+                          initialPhotos,
+                        ),
                         finalConditionPhotos: await _toMultipart(finalPhotos),
                         receiptPhotos: await _toMultipart(receiptPhotos),
                       );
@@ -1490,7 +1539,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     );
   }
 
-  Widget _buildReportPicker(String label, List<XFile> files, VoidCallback onPick) {
+  Widget _buildReportPicker(
+    String label,
+    List<XFile> files,
+    VoidCallback onPick,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(

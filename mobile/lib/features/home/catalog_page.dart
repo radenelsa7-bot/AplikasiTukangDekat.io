@@ -273,16 +273,15 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SizedBox(
-                height: 132,
+                height: 136,
                 child: GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: 3,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
                     childAspectRatio: 1.0,
                   ),
                   itemBuilder: (context, index) {
@@ -326,9 +325,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
               child: searchQuery.isNotEmpty
                   ? _buildSearchResults(context, ref)
                   : selectedCategory != null
-                      ? _buildProvidersByCategory(
-                          context, ref, selectedCategory)
-                      : _buildSuggestedProviders(context, ref),
+                  ? _buildProvidersByCategory(context, ref, selectedCategory)
+                  : _buildSuggestedProviders(context, ref),
             ),
 
             const SizedBox(height: 24),
@@ -360,9 +358,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
         children: [
           Text(
             'Filter Wilayah',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int?>(
@@ -544,8 +542,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.orange
-                                      .withValues(alpha: 0.40),
+                                  color: AppTheme.orange.withValues(
+                                    alpha: 0.40,
+                                  ),
                                   blurRadius: 16,
                                   offset: const Offset(0, 6),
                                 ),
@@ -607,8 +606,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.orange
-                                      .withValues(alpha: 0.40),
+                                  color: AppTheme.orange.withValues(
+                                    alpha: 0.40,
+                                  ),
                                   blurRadius: 16,
                                   offset: const Offset(0, 6),
                                 ),
@@ -627,9 +627,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                     Text(
                       'Temukan teknisi terdekat dengan cepat dan aman. Pesan & pantau langsung dari aplikasi.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.80),
-                            height: 1.6,
-                          ),
+                        color: Colors.white.withValues(alpha: 0.80),
+                        height: 1.6,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     Wrap(
@@ -687,16 +687,16 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
     String? action,
   ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
-                ),
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
+            ),
           ),
           if (action != null)
             Container(
@@ -727,41 +727,48 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
     Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 28,
+            height: 28,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Center(child: Icon(icon, color: Colors.white, size: 18)),
+            child: Center(child: Icon(icon, color: Colors.white, size: 14)),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             step,
             style: TextStyle(
               color: color,
-              fontSize: 10,
+              fontSize: 8,
               fontWeight: FontWeight.w700,
-              letterSpacing: 1.0,
+              letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.3,
-                ),
+          Expanded(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                height: 1.1,
+                fontSize: 10,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -911,9 +918,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
           child: Text(
             label,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -944,7 +951,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             .toList();
 
         if (activeProviders.isEmpty) {
-          return _buildEmptyState(context, 'Tidak ada provider di kategori ini');
+          return _buildEmptyState(
+            context,
+            'Tidak ada provider di kategori ini',
+          );
         }
 
         return Column(
@@ -1122,7 +1132,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      provider.description ?? 'Belum ada deskripsi',
+                                      provider.description ??
+                                          'Belum ada deskripsi',
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -1182,7 +1193,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                                 child: Text(
                                   isBusy ? 'Sedang dipesan' : 'Tersedia',
                                   style: TextStyle(
-                                    color: isBusy ? Colors.orange : Colors.green,
+                                    color: isBusy
+                                        ? Colors.orange
+                                        : Colors.green,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1266,7 +1279,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.amber.withValues(alpha: 0.12),
+                                        color: Colors.amber.withValues(
+                                          alpha: 0.12,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
@@ -1295,14 +1310,19 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: (isBusy ? Colors.orange : Colors.green)
-                                            .withValues(alpha: 0.10),
+                                        color:
+                                            (isBusy
+                                                    ? Colors.orange
+                                                    : Colors.green)
+                                                .withValues(alpha: 0.10),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         isBusy ? 'Sedang dipesan' : 'Tersedia',
                                         style: TextStyle(
-                                          color: isBusy ? Colors.orange : Colors.green,
+                                          color: isBusy
+                                              ? Colors.orange
+                                              : Colors.green,
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -1351,4 +1371,3 @@ class _CatalogFooter extends StatelessWidget {
     );
   }
 }
-
