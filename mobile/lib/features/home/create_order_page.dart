@@ -16,8 +16,7 @@ import '../../core/models/provider_model.dart';
 import '../../app/theme/app_theme.dart';
 import '../auth/auth_controller.dart';
 import '../maps/location_picker_screen.dart' show LocationPickerScreen, LocationResult;
-
-
+import '../maps/location_address_helper.dart';
 
 import 'my_orders_page.dart';
 import 'order_providers.dart';
@@ -54,8 +53,11 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   List<Map<String, dynamic>> _kecamatanList = [];
   int? _selectedKotaId;
   int? _selectedKecamatanId;
+  double? _pickedLatitude;
+  double? _pickedLongitude;
   bool _isLoadingWilayah = false;
   bool _isLoadingKecamatan = false;
+  bool _coverageFilterActive = false;
   List<XFile> _damagePhotos = [];
   String _damageLevel = 'LIGHT';
 
@@ -156,12 +158,18 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       final api = ref.read(apiServiceProvider);
       final kota = await api.getKota();
       if (!mounted) return;
-      final filteredKota = _hasCoverageFilter
-          ? kota.where((item) {
-              final id = (item['id'] as num).toInt();
-              return _coverageKotaIds.contains(id);
-            }).toList()
-          : kota;
+
+      List<Map<String, dynamic>> coverageFiltered = [];
+      if (_hasCoverageFilter) {
+        coverageFiltered = kota.where((item) {
+          final id = (item['id'] as num).toInt();
+          return _coverageKotaIds.contains(id);
+        }).toList();
+      }
+
+      final filteredKota = coverageFiltered.isNotEmpty ? coverageFiltered : kota;
+      _coverageFilterActive = _hasCoverageFilter && coverageFiltered.isNotEmpty;
+
       setState(() {
         _kotaList = filteredKota;
         _selectedKotaId = filteredKota.isNotEmpty
@@ -190,12 +198,14 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       final api = ref.read(apiServiceProvider);
       final kecamatan = await api.getKecamatan(kotaId);
       if (!mounted) return;
-      final filteredKecamatan = _hasCoverageFilter
+      final coverageFiltered = _hasCoverageFilter
           ? kecamatan.where((item) {
               final id = (item['id'] as num).toInt();
               return _coverageKecamatanIdsForKota(kotaId).contains(id);
             }).toList()
           : kecamatan;
+                final filteredKecamatan =
+          coverageFiltered.isNotEmpty ? coverageFiltered : kecamatan;
       setState(() {
         _kecamatanList = filteredKecamatan;
         _selectedKecamatanId = filteredKecamatan.isNotEmpty
@@ -252,7 +262,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       return;
     }
 
-    if (_hasCoverageFilter) {
+    if (_coverageFilterActive) {
       final kotaCovered = _coverageKotaIds.contains(_selectedKotaId);
       final kecamatanCovered = _coverageKecamatanIdsForKota(
         _selectedKotaId!,
@@ -364,6 +374,8 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
           ),
         ),
         'address': _addressCtrl.text.trim(),
+        if (_pickedLatitude != null) 'customer_latitude': _pickedLatitude,
+        if (_pickedLongitude != null) 'customer_longitude': _pickedLongitude,
         'notes': _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         'damage_level': _damageLevel,
         'damage_description': _damageInfo['description'],
@@ -410,6 +422,8 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
         ),
       ),
       address: _addressCtrl.text.trim(),
+      customerLatitude: _pickedLatitude,
+      customerLongitude: _pickedLongitude,
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       damageLevel: _damageLevel,
       damageDescription: _damageInfo['description'],
@@ -497,31 +511,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Pilih Layanan
-                    Text(
-                      'Pilih Layanan',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    if (widget.services.isNotEmpty)
-                      DropdownButton<ProviderService>(
-                        isExpanded: true,
-                        value: _selectedService,
-                        items: widget.services.map((service) {
-                          return DropdownMenuItem(
-                            value: service,
-                            child: Text(
-                              '${service.name} - Rp${service.basePrice}/${service.priceUnit}',
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (ProviderService? newService) {
-                          setState(() => _selectedService = newService);
-                        },
-                      )
-                    else
-                      const Text('Tidak ada layanan tersedia'),
-                    const SizedBox(height: 24),
+                    // (Duplicate layanan selector removed)
 
                     Text(
                       'Wilayah Layanan',
@@ -607,9 +597,15 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                     ),
                     const SizedBox(height: 8),
                     if (widget.services.isNotEmpty)
-                      DropdownButton<ProviderService>(
+                      DropdownButtonFormField<ProviderService>(
                         isExpanded: true,
                         value: _selectedService,
+                        decoration: InputDecoration(
+                          labelText: 'Layanan',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                         items: widget.services.map((service) {
                           return DropdownMenuItem(
                             value: service,
@@ -703,7 +699,16 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                           ),
                         );
                         if (result != null && mounted) {
-                          _addressCtrl.text = result.address;
+                          setState(() {
+                            _addressCtrl.text = result.address.isNotEmpty
+                                ? result.address
+                                : buildReadableLocationAddress(
+                                    lat: result.latitude,
+                                    lng: result.longitude,
+                                  );
+                            _pickedLatitude = result.latitude;
+                            _pickedLongitude = result.longitude;
+                          });
                         }
                       },
 

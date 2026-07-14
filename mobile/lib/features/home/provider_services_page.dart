@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:dio/dio.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/models/provider_model.dart';
 import '../../core/services/api_service.dart';
 import '../../shared/widgets/app_text_field.dart';
+import '../maps/location_picker_screen.dart'
+    show LocationPickerScreen, LocationResult;
 
 final providerServicesControllerProvider =
     StateNotifierProvider<ProviderServicesController, ProviderServicesState>((ref) {
@@ -139,6 +142,8 @@ class ProviderServicesController extends StateNotifier<ProviderServicesState> {
     String? description,
     String? area,
     String? address,
+    double? latitude,
+    double? longitude,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -148,6 +153,8 @@ class ProviderServicesController extends StateNotifier<ProviderServicesState> {
         description: description,
         area: area,
         address: address,
+        latitude: latitude,
+        longitude: longitude,
       );
       await refreshProfile();
       return true;
@@ -296,6 +303,56 @@ class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
                           ),
                           child: const Text('Simpan Profil'),
                         ),
+                                                const Divider(height: 24),
+                        Text(
+                          'Lokasi Provider',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Lokasi ini dipakai untuk menampilkan posisi Anda ke '
+                          'customer pada peta pelacakan pesanan.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              (profile.latitude != null &&
+                                      profile.longitude != null)
+                                  ? Icons.my_location
+                                  : Icons.location_off,
+                              size: 18,
+                              color: (profile.latitude != null &&
+                                      profile.longitude != null)
+                                  ? AppTheme.orange
+                                  : AppTheme.danger,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                (profile.latitude != null &&
+                                        profile.longitude != null)
+                                    ? (profile.address?.isNotEmpty == true
+                                          ? profile.address!
+                                          : '${profile.latitude}, ${profile.longitude}')
+                                    : 'Lokasi belum diatur',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: () => _setProviderLocation(profile),
+                          icon: const Icon(Icons.map_rounded, size: 18),
+                          label: Text(
+                            (profile.latitude != null &&
+                                    profile.longitude != null)
+                                ? 'Perbarui Lokasi (GPS/Peta)'
+                                : 'Atur Lokasi (GPS/Peta)',
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -342,6 +399,67 @@ class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
     );
   }
 
+  Future<void> _setProviderLocation(ProviderProfile profile) async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!mounted) return;
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lokasi GPS tidak aktif. Silakan aktifkan GPS.'),
+          backgroundColor: AppTheme.danger,
+        ),
+      );
+      return;
+    }
+ 
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (!mounted) return;
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Izin lokasi belum diberikan.'),
+          backgroundColor: AppTheme.danger,
+        ),
+      );
+      return;
+    }
+ 
+    final result = await Navigator.of(context).push<LocationResult>(
+      MaterialPageRoute(
+        builder: (_) => LocationPickerScreen(
+          initialLat: profile.latitude,
+          initialLng: profile.longitude,
+          initialAddress: profile.address,
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+ 
+    final ok = await ref
+        .read(providerServicesControllerProvider.notifier)
+        .updateProfile(
+          businessName: profile.businessName,
+          description: profile.description,
+          area: profile.area,
+          address: result.address,
+          latitude: result.latitude,
+          longitude: result.longitude,
+        );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok ? 'Lokasi provider diperbarui' : 'Gagal memperbarui lokasi',
+        ),
+        backgroundColor: ok ? Colors.green : AppTheme.danger,
+      ),
+    );
+  }
+ 
   void _showAddServiceDialog(BuildContext context) {
     showDialog(
       context: context,
