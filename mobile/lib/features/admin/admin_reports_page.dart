@@ -277,7 +277,7 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
           margin: EdgeInsets.zero,
           color: AppTheme.navy,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 _buildTotalItem(
@@ -392,22 +392,35 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
 
   Widget _buildTotalItem(String label, String value, Color color) {
     return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white60, fontSize: 11),
-          ),
-        ],
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white60,
+                fontSize: 9,
+                height: 1.0,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
