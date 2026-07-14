@@ -12,7 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 import '../../core/models/order_model.dart';
-import '../../shared/widgets/location_map_preview.dart';
+import '../../shared/widgets/live_tracking_map.dart';
 import '../auth/auth_controller.dart';
 import 'order_providers.dart';
 
@@ -284,7 +284,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             ],
           ),
           const SizedBox(height: 12),
-          LocationMapPreview(
+          LiveTrackingMap(
+            orderId: order.id,
             customerLatitude: order.customerLatitude,
             customerLongitude: order.customerLongitude,
             providerLatitude: order.providerLatitude,
