@@ -385,14 +385,21 @@ class _DashboardOverview extends ConsumerWidget {
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 900
             ? 4
-            : (constraints.maxWidth > 600 ? 3 : 2);
+            : (constraints.maxWidth > 700
+                  ? 3
+                  : (constraints.maxWidth > 460 ? 2 : 1));
+        final childAspectRatio = constraints.maxWidth > 900
+            ? 4.0
+            : (constraints.maxWidth > 700
+                  ? 3.2
+                  : (constraints.maxWidth > 460 ? 2.6 : 2.4));
 
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            childAspectRatio: 4.0,
+            childAspectRatio: childAspectRatio,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
           ),

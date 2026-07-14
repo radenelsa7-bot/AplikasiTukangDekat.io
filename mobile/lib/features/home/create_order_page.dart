@@ -609,7 +609,13 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                     if (widget.services.isNotEmpty)
                       DropdownButton<ProviderService>(
                         isExpanded: true,
-                        value: _selectedService,
+                        initialValue: _selectedService,
+                        decoration: InputDecoration(
+                          labelText: 'Layanan',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                         items: widget.services.map((service) {
                           return DropdownMenuItem(
                             value: service,
