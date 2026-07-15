@@ -7,6 +7,7 @@ import '../models/category_model.dart';
 import '../models/provider_model.dart';
 import '../models/order_model.dart';
 import '../models/review_model.dart';
+import '../models/location_models.dart';
 import '../http/dio_provider.dart';
 
 class ApiService {
@@ -34,6 +35,8 @@ class ApiService {
     String? businessName,
     String? serviceName,
     int? basePrice,
+    int? cityId,
+    int? districtId,
   }) async {
     try {
       final data = <String, dynamic>{
@@ -50,6 +53,8 @@ class ApiService {
         if (businessName != null) data['business_name'] = businessName;
         if (serviceName != null) data['service_name'] = serviceName;
         if (basePrice != null) data['base_price'] = basePrice;
+        if (cityId != null) data['city_id'] = cityId;
+        if (districtId != null) data['district_id'] = districtId;
       }
 
       final response = await dio.post('/api/auth/register', data: data);
@@ -939,6 +944,67 @@ class ApiService {
     try {
       final response = await dio.get('/api/metrics');
       return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // ===== LOCATION ENDPOINTS (Cities & Districts) =====
+
+  /// Get all cities
+  Future<CitiesResponse> getCities({String? search}) async {
+    try {
+      final params = <String, dynamic>{};
+      if (search != null && search.isNotEmpty) {
+        params['search'] = search;
+      }
+      final response = await dio.get(
+        '/api/cities',
+        queryParameters: params,
+      );
+      return CitiesResponse.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get city by ID
+  Future<CityData> getCityById(int cityId) async {
+    try {
+      final response = await dio.get('/api/cities/$cityId');
+      final data = response.data['data'] as Map<String, dynamic>;
+      return CityData.fromJson(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get districts by city ID
+  Future<DistrictsResponse> getDistrictsByCity(
+    int cityId, {
+    String? search,
+  }) async {
+    try {
+      final params = <String, dynamic>{'city_id': cityId};
+      if (search != null && search.isNotEmpty) {
+        params['search'] = search;
+      }
+      final response = await dio.get(
+        '/api/districts',
+        queryParameters: params,
+      );
+      return DistrictsResponse.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get district by ID
+  Future<DistrictData> getDistrictById(int districtId) async {
+    try {
+      final response = await dio.get('/api/districts/$districtId');
+      final data = response.data['data'] as Map<String, dynamic>;
+      return DistrictData.fromJson(data);
     } catch (e) {
       rethrow;
     }

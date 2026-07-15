@@ -4,6 +4,7 @@ import '../../app/theme/app_theme.dart';
 import '../../config/api_config.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_page.dart';
+import '../auth/provider_approval_guard.dart';
 import '../admin/admin_dashboard_page.dart';
 import 'catalog_page.dart';
 import 'my_orders_page.dart';
@@ -40,15 +41,9 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     final isProvider = state.userRole == 'PROVIDER';
-    final bottomItems = isProvider
-        ? const [
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
-            BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Pesanan'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Akun'),
-          ]
-        : _customerBottomItems;
+    final bottomItems = _customerBottomItems;
     final pages = isProvider
-        ? [
+        ? <Widget>[
             ProviderDashboardPage(
               onOpenOrders: () => setState(() => _selectedIndex = 1),
               onOpenAccount: () => setState(() => _selectedIndex = 2),
@@ -56,34 +51,32 @@ class _HomePageState extends ConsumerState<HomePage> {
             const MyOrdersPage(),
             _buildAccountTab(context, ref, state),
           ]
-        : [
+        : <Widget>[
             const CatalogPage(),
             const MyOrdersPage(),
             _buildAccountTab(context, ref, state),
           ];
 
-
-    return DefaultTabController(
-      length: 1,
-      child: Scaffold(
-        backgroundColor: AppTheme.cream,
-        // Halaman tab tidak memakai AppBar bersama. SafeArea menjaga konten
-        // tetap berada di bawah status bar pada perangkat dengan notch.
-        body: SafeArea(
-          bottom: false,
-          child: pages[_selectedIndex],
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) => setState(() => _selectedIndex = index),
-          items: bottomItems,
-          selectedItemColor: AppTheme.orange,
-          unselectedItemColor: AppTheme.grey600,
-          backgroundColor: Colors.white,
-          type: BottomNavigationBarType.fixed,
-        ),
+    final scaffold = Scaffold(
+      backgroundColor: AppTheme.cream,
+      body: SafeArea(bottom: false, child: pages[_selectedIndex]),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        items: bottomItems,
+        selectedItemColor: AppTheme.orange,
+        unselectedItemColor: AppTheme.grey600,
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
       ),
     );
+
+    return isProvider
+        ? ProviderApprovalGuard(
+            providerStatus: state.providerStatus,
+            child: scaffold,
+          )
+        : scaffold;
   }
 
   Widget _buildAccountTab(BuildContext context, WidgetRef ref, dynamic state) {

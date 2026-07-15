@@ -32,14 +32,23 @@ class AuthController extends Controller
 
             // Wrap DB create in retry in case of transient connection/DNS failures
             $user = $this->dbAttempt(function () use ($validated) {
-                return User::create([
+                $userData = [
                     'name' => $validated['name'],
                     'email' => $validated['email'],
                     'phone' => $validated['phone'],
                     'password' => Hash::make($validated['password']),
                     'role' => $validated['role'],
                     'status' => 'ACTIVE',
-                ]);
+                ];
+
+                // Set provider_status = 'pending' for new PROVIDER registrations
+                if ($validated['role'] === 'PROVIDER') {
+                    $userData['provider_status'] = 'pending';
+                    $userData['city_id'] = $validated['city_id'] ?? null;
+                    $userData['district_id'] = $validated['district_id'] ?? null;
+                }
+
+                return User::create($userData);
             });
 
             if ($validated['role'] === 'PROVIDER') {
@@ -105,18 +114,25 @@ class AuthController extends Controller
 
             $token = $user->createToken('api-token')->plainTextToken;
 
+            $userData = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'full_name' => $user->full_name,
+                'phone_number' => $user->phone_number,
+                'profile_photo_path' => $user->profile_photo_path,
+            ];
+
+            // Include provider_status if user is a PROVIDER
+            if ($user->role === 'PROVIDER') {
+                $userData['provider_status'] = $user->provider_status;
+            }
+
             return $this->success([
                 'token' => $token,
                 'token_type' => 'Bearer',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'full_name' => $user->full_name,
-                    'phone_number' => $user->phone_number,
-                    'profile_photo_path' => $user->profile_photo_path,
-                ],
+                'user' => $userData,
             ], 'Login successful', 200);
         } catch (\Throwable $e) {
             Log::error('Login error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);

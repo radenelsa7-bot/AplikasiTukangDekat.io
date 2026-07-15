@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/category_model.dart';
 import '../../core/services/api_service.dart';
+import '../../shared/widgets/cascading_location_selector.dart';
 import 'auth_controller.dart';
 import 'auth_state.dart';
 import 'login_page.dart';
@@ -23,6 +24,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _businessNameCtrl = TextEditingController();
   String _selectedRole = 'CUSTOMER';
   int? _selectedCategoryId;
+  int? _selectedCityId;
+  int? _selectedDistrictId;
   List<ServiceCategory> _categories = [];
   bool _loadingCategories = false;
 
@@ -85,6 +88,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           businessName: _selectedRole == 'PROVIDER'
               ? _businessNameCtrl.text.trim()
               : null,
+          cityId: _selectedRole == 'PROVIDER' ? _selectedCityId : null,
+          districtId: _selectedRole == 'PROVIDER' ? _selectedDistrictId : null,
         );
 
     if (!mounted) return;
@@ -342,6 +347,28 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 14),
+                CascadingLocationSelector(
+                  initialCityId: _selectedCityId,
+                  initialDistrictId: _selectedDistrictId,
+                  onSelectionChanged: (cityId, districtId) {
+                    setState(() {
+                      _selectedCityId = cityId;
+                      _selectedDistrictId = districtId;
+                    });
+                  },
+                ),
+                if (state.fieldErrors['city_id'] != null ||
+                    state.fieldErrors['district_id'] != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    state.fieldErrors['city_id'] ?? state.fieldErrors['district_id'] ?? '',
+                    style: const TextStyle(
+                      color: Color(0xFFE74C3C),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 14),
                 _buildCategoryDropdown(
                   errorText: state.fieldErrors['category_id'],

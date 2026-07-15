@@ -5,6 +5,7 @@ namespace App\Http\Requests\Auth;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class RegisterRequest extends FormRequest
 {
@@ -37,6 +38,14 @@ class RegisterRequest extends FormRequest
             $rules['business_name'] = 'required|string|max:150';
             $rules['service_name'] = 'nullable|string|max:100';
             $rules['base_price'] = 'nullable|integer|min:0';
+            $rules['city_id'] = 'required|integer|exists:wilayah_kota,id';
+            $rules['district_id'] = [
+                'required',
+                'integer',
+                Rule::exists('wilayah_kecamatan', 'id')->where(function ($query) {
+                    return $query->where('kota_id', $this->input('city_id'));
+                }),
+            ];
         }
 
         return $rules;
@@ -48,6 +57,10 @@ class RegisterRequest extends FormRequest
             'password.min' => 'Password must be at least 8 characters long.',
             'password.regex' => 'Password must contain uppercase letter, number, and special character (@$!%*?&).',
             'password.confirmed' => 'Password confirmation does not match.',
+            'city_id.required' => 'City is required for provider registration.',
+            'city_id.exists' => 'Selected city does not exist.',
+            'district_id.required' => 'District is required for provider registration.',
+            'district_id.exists' => 'Selected district does not exist or does not belong to the selected city.',
         ];
     }
 

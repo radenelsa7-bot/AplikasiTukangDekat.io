@@ -36,6 +36,9 @@ class AuthController extends StateNotifier<AuthState> {
       final profilePhotoPath = await _ref
           .read(authStorageProvider)
           .getUserProfilePhotoPath();
+      final providerStatus = await _ref
+          .read(authStorageProvider)
+          .getUserProviderStatus();
 
       if (token != null) {
         _ref.read(apiServiceProvider).setToken(token);
@@ -48,6 +51,7 @@ class AuthController extends StateNotifier<AuthState> {
           userFullName: fullName,
           userPhoneNumber: phoneNumber,
           userProfilePhotoPath: profilePhotoPath,
+          providerStatus: providerStatus,
         );
       } else {
         state = const AuthState(isLoading: false);
@@ -70,6 +74,8 @@ class AuthController extends StateNotifier<AuthState> {
     String? businessName,
     String? serviceName,
     int? basePrice,
+    int? cityId,
+    int? districtId,
   }) async {
     state = state.copyWith(
       isLoading: true,
@@ -88,6 +94,8 @@ class AuthController extends StateNotifier<AuthState> {
         businessName: businessName,
         serviceName: serviceName,
         basePrice: basePrice,
+        cityId: cityId,
+        districtId: districtId,
       );
 
       state = state.copyWith(isLoading: false, fieldErrors: {});
@@ -145,6 +153,7 @@ class AuthController extends StateNotifier<AuthState> {
               userId: response.user!.id,
               userRole: response.user!.role,
               userEmail: response.user!.email,
+              providerStatus: response.user!.providerStatus,
               fullName: response.user!.fullName,
               phoneNumber: response.user!.phoneNumber,
               profilePhotoPath: response.user!.profilePhotoPath,
@@ -162,6 +171,7 @@ class AuthController extends StateNotifier<AuthState> {
           userFullName: response.user!.fullName,
           userPhoneNumber: response.user!.phoneNumber,
           userProfilePhotoPath: response.user!.profilePhotoPath,
+          providerStatus: response.user!.providerStatus,
         );
         return true;
       } else {
@@ -235,13 +245,13 @@ class AuthController extends StateNotifier<AuthState> {
         final fullName = user['full_name'] as String?;
         final phoneNumber = user['phone_number'] as String?;
         final profilePhotoPath = user['profile_photo_path'] as String?;
+        final providerStatus = user['provider_status'] as String?;
 
-        await _ref
-            .read(authStorageProvider)
-            .saveUserData(
+        await _ref.read(authStorageProvider).saveUserData(
               userId: user['id'] ?? state.userId ?? 0,
               userRole: user['role'] ?? state.userRole ?? 'CUSTOMER',
               userEmail: user['email'] ?? state.userEmail ?? '',
+              providerStatus: providerStatus,
               fullName: fullName,
               phoneNumber: phoneNumber,
               profilePhotoPath: profilePhotoPath,
@@ -252,6 +262,7 @@ class AuthController extends StateNotifier<AuthState> {
           userFullName: fullName,
           userPhoneNumber: phoneNumber,
           userProfilePhotoPath: profilePhotoPath,
+          providerStatus: providerStatus,
         );
       } else {
         state = state.copyWith(isLoading: false);

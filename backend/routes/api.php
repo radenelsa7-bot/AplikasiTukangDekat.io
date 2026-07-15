@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\ProviderServiceController;
 use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\TreasurerController;
+use App\Http\Controllers\Api\CityController;
+use App\Http\Controllers\Api\DistrictController;
 
 // Public routes (authentication)
 Route::prefix('auth')->group(function () {
@@ -34,6 +36,12 @@ Route::prefix('catalog')->group(function () {
     Route::get('/providers/{providerId}', [CatalogController::class, 'getProviderDetail'])->middleware('throttle:30,1');
     Route::get('/providers/{providerId}/reviews', [ReviewController::class, 'getProviderReviews'])->middleware('throttle:30,1');
 });
+
+// City & District routes (public - for dropdown selectors)
+Route::get('/cities', [CityController::class, 'index'])->middleware('throttle:60,1');
+Route::get('/cities/{id}', [CityController::class, 'show'])->middleware('throttle:60,1');
+Route::get('/districts', [DistrictController::class, 'index'])->middleware('throttle:60,1');
+Route::get('/districts/{id}', [DistrictController::class, 'show'])->middleware('throttle:60,1');
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
@@ -78,7 +86,15 @@ Route::middleware('auth:sanctum')->group(function () {
         // Dashboard
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->middleware('throttle:30,1');
 
-        // Provider management
+        // City & District management
+        Route::post('/cities', [CityController::class, 'store'])->middleware('throttle:10,1');
+        Route::put('/cities/{id}', [CityController::class, 'update'])->middleware('throttle:10,1');
+        Route::delete('/cities/{id}', [CityController::class, 'destroy'])->middleware('throttle:10,1');
+        Route::post('/districts', [DistrictController::class, 'store'])->middleware('throttle:10,1');
+        Route::put('/districts/{id}', [DistrictController::class, 'update'])->middleware('throttle:10,1');
+        Route::delete('/districts/{id}', [DistrictController::class, 'destroy'])->middleware('throttle:10,1');
+
+        // Provider management (existing)
         Route::get('/providers', [AdminController::class, 'getAllProviders'])->middleware('throttle:30,1');
         Route::get('/providers/pending', [AdminController::class, 'getPendingProviders'])->middleware('throttle:30,1');
         Route::patch('/providers/{providerId}/verification', [AdminController::class, 'updateVerification'])->middleware('throttle:20,1');
@@ -86,11 +102,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/providers/{providerId}/disable', [AdminController::class, 'disableProvider'])->middleware('throttle:10,1');
         Route::post('/providers/{providerId}/enable', [AdminController::class, 'enableProvider'])->middleware('throttle:10,1');
 
+        // Provider registration approval (new)
+        Route::get('/providers/pending-registration', [AdminController::class, 'getPendingRegistrationProviders'])->middleware('throttle:30,1');
+        Route::post('/providers/{providerId}/approve-registration', [AdminController::class, 'approveProviderRegistration'])->middleware('throttle:10,1');
+        Route::post('/providers/{providerId}/reject-registration', [AdminController::class, 'rejectProviderRegistration'])->middleware('throttle:10,1');
+
         // Category management
         Route::get('/categories', [AdminController::class, 'getCategories'])->middleware('throttle:30,1');
         Route::post('/categories', [AdminController::class, 'createCategory'])->middleware('throttle:10,1');
         Route::put('/categories/{categoryId}', [AdminController::class, 'updateCategory'])->middleware('throttle:10,1');
-        Route::delete('/categories/{categoryId}', [AdminController::class, 'deleteCategory'])->middleware('throttle:10,1');
+        Route::delete('/categories/{categoryId}', [AdminController::class, 'deleteCategory'])->middleware('throttle:30,1');
 
         // User management
         Route::get('/users', [AdminController::class, 'getUsers'])->middleware('throttle:30,1');
