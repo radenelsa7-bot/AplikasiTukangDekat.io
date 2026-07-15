@@ -308,7 +308,6 @@ class AdminController extends Controller
             return $this->error('Failed to reject provider: ' . $e->getMessage(), 500);
         }
     }
-    }
 
     // ===== CATEGORY MANAGEMENT =====
 
