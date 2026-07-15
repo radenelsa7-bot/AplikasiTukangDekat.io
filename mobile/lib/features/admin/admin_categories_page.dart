@@ -373,6 +373,6 @@ class _CategoryCard extends ConsumerWidget {
     }
 
     // Default message
-    return errorStr.length > 100 ? errorStr.substring(0, 100) + '...' : errorStr;
+    return errorStr.length > 100 ? '${errorStr.substring(0, 100)}...' : errorStr;
   }
 }

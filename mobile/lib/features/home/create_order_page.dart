@@ -626,7 +626,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                         isExpanded: true,
-                        value: _damageLevel,
+                        initialValue: _damageLevel,
                         decoration: InputDecoration(
                           labelText: 'Layanan',
                           border: OutlineInputBorder(

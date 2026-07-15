@@ -380,7 +380,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                   searchQuery.isNotEmpty
                       ? _buildSearchResults(context, ref)
                       : selectedCategory != null
-                      ? _buildProvidersByCategory(context, ref, selectedCategory)
+                      ? _buildProvidersByCategory(
+                          context,
+                          ref,
+                          selectedCategory,
+                        )
                       : _buildSuggestedProviders(context, ref),
                 ],
               ),
@@ -1420,6 +1424,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
       },
     );
   }
+
   Widget _buildProvidersByLocation(BuildContext context, WidgetRef ref) {
     final providersAsync = ref.watch(
       providersByLocationProvider(
@@ -1487,5 +1492,4 @@ class _CatalogFooter extends StatelessWidget {
       ),
     );
   }
-
 }
