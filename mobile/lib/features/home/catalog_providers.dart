@@ -104,13 +104,11 @@ final providersByLocationProvider =
     });
 
 // Provider detail
-final providerDetailProvider = FutureProvider.family<ProviderProfile, int>((
-  ref,
-  providerId,
-) async {
-  final apiService = ref.read(apiServiceProvider);
-  return await apiService.getProviderDetail(providerId);
-});
+final providerDetailProvider = FutureProvider.autoDispose
+    .family<ProviderProfile, int>((ref, providerId) async {
+      final apiService = ref.read(apiServiceProvider);
+      return await apiService.getProviderDetail(providerId);
+    });
 
 // Provider reviews
 final providerReviewsProvider = FutureProvider.family<ReviewsResponse, int>((

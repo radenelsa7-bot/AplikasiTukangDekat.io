@@ -280,9 +280,12 @@ class ProviderDetailPage extends ConsumerWidget {
                         itemBuilder: (context, index) {
                           final service = provider.services[index];
                           return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             child: Padding(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -290,7 +293,19 @@ class ProviderDetailPage extends ConsumerWidget {
                                     service.name,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 15,
                                     ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    service.description?.trim().isNotEmpty ==
+                                            true
+                                        ? service.description!
+                                        : 'Deskripsi layanan belum tersedia.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(fontSize: 13),
                                   ),
                                 ],
                               ),
