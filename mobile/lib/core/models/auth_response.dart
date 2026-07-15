@@ -34,6 +34,7 @@ class UserData {
   final String role;
   final String? fullName;
   final String? phoneNumber;
+  final String? providerStatus;
   final String? profilePhotoPath;
 
   UserData({
@@ -43,6 +44,7 @@ class UserData {
     required this.role,
     this.fullName,
     this.phoneNumber,
+    this.providerStatus,
     this.profilePhotoPath,
   });
 
@@ -54,6 +56,7 @@ class UserData {
       role: json['role'] ?? 'CUSTOMER',
       fullName: json['full_name'],
       phoneNumber: json['phone_number'],
+      providerStatus: json['provider_status'],
       profilePhotoPath: json['profile_photo_path'],
     );
   }

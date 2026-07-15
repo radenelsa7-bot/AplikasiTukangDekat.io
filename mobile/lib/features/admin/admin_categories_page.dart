@@ -272,32 +272,107 @@ class _CategoryCard extends ConsumerWidget {
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref) {
+    bool isLoading = false;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Kategori'),
-        content: Text('Apakah Anda yakin ingin menghapus kategori "${category.name}"?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
-            onPressed: () async {
-              try {
-                await ref.read(apiServiceProvider).deleteCategory(category.id);
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                  ref.refresh(adminCategoriesProvider);
-                }
-              } catch (e) {
-                if (ctx.mounted) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Gagal: $e'), backgroundColor: AppTheme.danger));
-                }
-              }
-            },
-            child: const Text('Hapus'),
+      barrierDismissible: false, // Prevent closing dialog while deleting
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Hapus Kategori'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Apakah Anda yakin ingin menghapus kategori "${category.name}"?'),
+              if (isLoading)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Menghapus kategori...',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: AppTheme.grey600),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
-        ],
+          actions: [
+            if (!isLoading)
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+            if (!isLoading)
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+                onPressed: () async {
+                  setDialogState(() => isLoading = true);
+                  try {
+                    await ref.read(apiServiceProvider).deleteCategory(category.id);
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                      ref.refresh(adminCategoriesProvider);
+                      // Show success message
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Kategori berhasil dihapus'),
+                          backgroundColor: AppTheme.success,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  } on Exception catch (e) {
+                    setDialogState(() => isLoading = false);
+                    if (ctx.mounted) {
+                      String errorMessage = _parseErrorMessage(e);
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(
+                          content: Text('Gagal: $errorMessage'),
+                          backgroundColor: AppTheme.danger,
+                          duration: const Duration(seconds: 4),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Hapus'),
+              ),
+          ],
+        ),
       ),
     );
+  }
+
+  String _parseErrorMessage(Exception e) {
+    String errorStr = e.toString();
+
+    // Handle rate limiting (429) error
+    if (errorStr.contains('429')) {
+      return 'Terlalu banyak permintaan. Silakan tunggu beberapa saat sebelum menghapus kategori lain.';
+    }
+
+    // Handle conflict (409) error
+    if (errorStr.contains('409')) {
+      return 'Kategori masih memiliki layanan aktif. Nonaktifkan layanan terlebih dahulu.';
+    }
+
+    // Handle not found (404) error
+    if (errorStr.contains('404')) {
+      return 'Kategori tidak ditemukan.';
+    }
+
+    // Handle connection errors
+    if (errorStr.contains('Connection') || errorStr.contains('timeout')) {
+      return 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
+    }
+
+    // Default message
+    return errorStr.length > 100 ? errorStr.substring(0, 100) + '...' : errorStr;
   }
 }

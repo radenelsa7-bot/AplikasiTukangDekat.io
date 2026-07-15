@@ -190,6 +190,126 @@ class AdminController extends Controller
         return $this->success(['provider_id' => $provider->id, 'status' => $provider->status], 'Provider enabled');
     }
 
+    // ===== PROVIDER REGISTRATION APPROVAL =====
+    /**
+     * Get pending providers awaiting registration approval.
+     * Returns providers with provider_status = 'pending'
+     */
+    public function getPendingRegistrationProviders(Request $request)
+    {
+        $providers = User::with(['providerProfile', 'city', 'district'])
+            ->where('role', 'PROVIDER')
+            ->where('provider_status', 'pending')
+            ->latest()
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'city_id' => $user->city_id,
+                    'city_name' => $user->city?->name,
+                    'district_id' => $user->district_id,
+                    'district_name' => $user->district?->name,
+                    'provider_status' => $user->provider_status,
+                    'profile' => $user->providerProfile ? [
+                        'business_name' => $user->providerProfile->business_name,
+                        'description' => $user->providerProfile->description,
+                        'address' => $user->providerProfile->address,
+                    ] : null,
+                    'created_at' => $user->created_at?->toDateTimeString(),
+                ];
+            });
+
+        return $this->success($providers, 'Pending registration providers');
+    }
+
+    /**
+     * Approve provider registration.
+     * Updates provider_status from 'pending' to 'approved'
+     */
+    public function approveProviderRegistration(Request $request, $providerId)
+    {
+        $request->validate([
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $provider = User::where('id', $providerId)
+            ->where('role', 'PROVIDER')
+            ->where('provider_status', 'pending')
+            ->first();
+
+        if (!$provider) {
+            return $this->notFound('Provider with pending status not found');
+        }
+
+        try {
+            $provider->update([
+                'provider_status' => 'approved',
+            ]);
+
+            // Send approval notification via N8n
+            app(N8nNotificationService::class)->dispatch('provider_registration_approved', [
+                'provider_id' => $provider->id,
+                'provider_name' => $provider->name,
+                'email' => $provider->email,
+                'notes' => $request->input('notes'),
+            ]);
+
+            return $this->success([
+                'id' => $provider->id,
+                'provider_status' => $provider->provider_status,
+                'approved_at' => now()->toDateTimeString(),
+            ], 'Provider registration approved');
+        } catch (\Exception $e) {
+            return $this->error('Failed to approve provider: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Reject provider registration.
+     * Updates provider_status from 'pending' to 'rejected'
+     */
+    public function rejectProviderRegistration(Request $request, $providerId)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $provider = User::where('id', $providerId)
+            ->where('role', 'PROVIDER')
+            ->where('provider_status', 'pending')
+            ->first();
+
+        if (!$provider) {
+            return $this->notFound('Provider with pending status not found');
+        }
+
+        try {
+            $provider->update([
+                'provider_status' => 'rejected',
+            ]);
+
+            // Send rejection notification via N8n
+            app(N8nNotificationService::class)->dispatch('provider_registration_rejected', [
+                'provider_id' => $provider->id,
+                'provider_name' => $provider->name,
+                'email' => $provider->email,
+                'reason' => $request->input('reason'),
+            ]);
+
+            return $this->success([
+                'id' => $provider->id,
+                'provider_status' => $provider->provider_status,
+                'rejected_at' => now()->toDateTimeString(),
+            ], 'Provider registration rejected');
+        } catch (\Exception $e) {
+            return $this->error('Failed to reject provider: ' . $e->getMessage(), 500);
+        }
+    }
+    }
+
     // ===== CATEGORY MANAGEMENT =====
 
     public function getCategories()
