@@ -593,9 +593,21 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> confirmPayment(int paymentId) async {
+  Future<Map<String, dynamic>> confirmPayment(
+    int paymentId, {
+    required Uint8List proofBytes,
+    required String proofFileName,
+  }) async {
     try {
-      final response = await dio.post('/api/payments/$paymentId/confirm');
+      final response = await dio.post(
+        '/api/payments/$paymentId/confirm',
+        data: FormData.fromMap({
+          'payment_proof': MultipartFile.fromBytes(
+            proofBytes,
+            filename: proofFileName,
+          ),
+        }),
+      );
       return Map<String, dynamic>.from(response.data['data'] ?? {});
     } catch (e) {
       rethrow;

@@ -1770,6 +1770,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       }
     }
 
+    XFile? paymentProof;
+    Uint8List? paymentProofBytes;
+    var isConfirming = false;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1788,7 +1792,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           });
         }
 
-        return AlertDialog(
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -1889,10 +1895,45 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 ],
                 const SizedBox(height: 12),
                 const Text(
-                  'Scan QRIS atau buka halaman pembayaran untuk menyelesaikan transaksi.',
+                  'Scan QRIS atau buka halaman pembayaran untuk menyelesaikan transaksi. Bukti pembayaran wajib diunggah sebelum konfirmasi.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: AppTheme.grey600),
                 ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: isConfirming
+                      ? null
+                      : () async {
+                          final selected = await ImagePicker().pickImage(
+                            source: ImageSource.gallery,
+                            imageQuality: 85,
+                          );
+                          if (selected == null) return;
+                          final bytes = await selected.readAsBytes();
+                          setDialogState(() {
+                            paymentProof = selected;
+                            paymentProofBytes = bytes;
+                          });
+                        },
+                  icon: const Icon(Icons.upload_file),
+                  label: Text(
+                    paymentProof == null
+                        ? 'Unggah bukti pembayaran'
+                        : 'Ganti bukti pembayaran',
+                  ),
+                ),
+                if (paymentProofBytes != null) ...[
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      paymentProofBytes!,
+                      height: 110,
+                      width: 110,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1907,11 +1948,26 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 backgroundColor: AppTheme.success,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () async {
+              onPressed: isConfirming
+                  ? null
+                  : () async {
+                if (paymentProof == null || paymentProofBytes == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Unggah screenshot bukti pembayaran terlebih dahulu.'),
+                    ),
+                  );
+                  return;
+                }
+                setDialogState(() => isConfirming = true);
                 try {
                   final result = await ref
                       .read(apiServiceProvider)
-                      .confirmPayment(paymentId);
+                      .confirmPayment(
+                        paymentId,
+                        proofBytes: paymentProofBytes!,
+                        proofFileName: paymentProof!.name,
+                      );
                   ref.invalidate(orderDetailProvider(orderId));
                   if (context.mounted) {
                     Navigator.pop(ctx);
@@ -1940,11 +1996,17 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       SnackBar(content: Text('Gagal konfirmasi: $e')),
                     );
                   }
+                } finally {
+                  if (dialogContext.mounted) {
+                    setDialogState(() => isConfirming = false);
+                  }
                 }
               },
-              child: const Text('Sudah Dibayar'),
+              child: Text(isConfirming ? 'Mengonfirmasi...' : 'Sudah Dibayar'),
             ),
           ],
+        );
+          },
         );
       },
     );
