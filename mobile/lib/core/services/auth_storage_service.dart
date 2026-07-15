@@ -14,6 +14,7 @@ class AuthStorageService {
   static const String _userFullNameKey = 'user_full_name';
   static const String _userPhoneNumberKey = 'user_phone_number';
   static const String _userProfilePhotoPathKey = 'user_profile_photo_path';
+  static const String _userProviderStatusKey = 'user_provider_status';
 
   // Save token
   Future<void> saveToken(String token) async {
@@ -30,6 +31,7 @@ class AuthStorageService {
     required int userId,
     required String userRole,
     required String userEmail,
+    String? providerStatus,
     String? fullName,
     String? phoneNumber,
     String? profilePhotoPath,
@@ -37,6 +39,12 @@ class AuthStorageService {
     await _storage.write(key: _userIdKey, value: userId.toString());
     await _storage.write(key: _userRoleKey, value: userRole);
     await _storage.write(key: _userEmailKey, value: userEmail);
+
+    if (providerStatus != null) {
+      await _storage.write(key: _userProviderStatusKey, value: providerStatus);
+    } else {
+      await _storage.delete(key: _userProviderStatusKey);
+    }
 
     if (fullName != null) {
       await _storage.write(key: _userFullNameKey, value: fullName);
@@ -84,6 +92,10 @@ class AuthStorageService {
   // Get user phone number
   Future<String?> getUserPhoneNumber() async {
     return await _storage.read(key: _userPhoneNumberKey);
+  }
+
+  Future<String?> getUserProviderStatus() async {
+    return await _storage.read(key: _userProviderStatusKey);
   }
 
   // Get user profile photo path

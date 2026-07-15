@@ -7,6 +7,7 @@ class AuthState {
   final String? userFullName;
   final String? userPhoneNumber;
   final String? userProfilePhotoPath;
+  final String? providerStatus;
   final String? errorMessage;
   final Map<String, String?> fieldErrors;
 
@@ -19,6 +20,7 @@ class AuthState {
     this.userFullName,
     this.userPhoneNumber,
     this.userProfilePhotoPath,
+    this.providerStatus,
     this.errorMessage,
     this.fieldErrors = const {},
   });
@@ -34,6 +36,7 @@ class AuthState {
     String? userFullName,
     String? userPhoneNumber,
     String? userProfilePhotoPath,
+    String? providerStatus,
     String? errorMessage,
     Map<String, String?>? fieldErrors,
   }) {
@@ -46,6 +49,7 @@ class AuthState {
       userFullName: userFullName ?? this.userFullName,
       userPhoneNumber: userPhoneNumber ?? this.userPhoneNumber,
       userProfilePhotoPath: userProfilePhotoPath ?? this.userProfilePhotoPath,
+      providerStatus: providerStatus ?? this.providerStatus,
       errorMessage: errorMessage,
       fieldErrors: fieldErrors ?? this.fieldErrors,
     );
