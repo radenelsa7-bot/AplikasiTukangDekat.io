@@ -537,83 +537,145 @@ class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
     );
   }
  
-  void _showAddServiceDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final nameCtrl = TextEditingController();
-        final descriptionCtrl = TextEditingController();
-        final priceCtrl = TextEditingController();
-        final unitCtrl = TextEditingController(text: 'per kunjungan');
-        final categories = ref.read(categoriesProvider).valueOrNull ?? const [];
-        int? categoryId = categories.isNotEmpty ? categories.first.id : null;
+  Future<void> _showAddServiceDialog(BuildContext context) async {
+    final nameCtrl = TextEditingController();
+    final descriptionCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final categories = ref.read(categoriesProvider).valueOrNull ?? const [];
+    int? categoryId = categories.isNotEmpty ? categories.first.id : null;
+    var isSaving = false;
 
-        return AlertDialog(
-          title: const Text('Tambah Layanan'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppTextField(
-                controller: nameCtrl,
-                label: 'Nama Layanan',
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            // Keep the action buttons outside the scrollable content. This lets
+            // the form shrink and scroll on short screens or when the keyboard
+            // is open, instead of overflowing over the buttons.
+            return AlertDialog(
+              scrollable: true,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              title: const Text('Tambah Layanan'),
+              content: SizedBox(
+                width: 360,
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppTextField(
+                        controller: nameCtrl,
+                        label: 'Nama Layanan',
+                        validator: (value) => value == null || value.trim().isEmpty
+                            ? 'Nama layanan wajib diisi'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<int>(
+                        value: categoryId,
+                        isExpanded: true,
+                        decoration: const InputDecoration(labelText: 'Kategori'),
+                        hint: const Text('Pilih kategori'),
+                        items: categories
+                            .map(
+                              (category) => DropdownMenuItem(
+                                value: category.id,
+                                child: Text(
+                                  category.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        validator: (value) => value == null
+                            ? 'Kategori wajib dipilih'
+                            : null,
+                        onChanged: isSaving || categories.isEmpty
+                            ? null
+                            : (value) => setDialogState(() => categoryId = value),
+                      ),
+                      if (categories.isEmpty) ...[
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Kategori belum tersedia. Tutup dialog dan coba lagi.',
+                          style: TextStyle(color: AppTheme.danger),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      AppTextField(
+                        controller: descriptionCtrl,
+                        label: 'Deskripsi (opsional)',
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<int>(
-                value: categoryId,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Kategori'),
-                items: categories.map((category) => DropdownMenuItem(
-                  value: category.id,
-                  child: Text(category.name),
-                )).toList(),
-                onChanged: (value) => categoryId = value,
-              ),
-              const SizedBox(height: 12),
-              AppTextField(
-                controller: descriptionCtrl,
-                label: 'Deskripsi (opsional)',
-                maxLines: 2,
-              ),
-              const SizedBox(height: 12),
-              AppTextField(
-                controller: priceCtrl,
-                label: 'Harga Dasar',
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 12),
-              AppTextField(controller: unitCtrl, label: 'Satuan harga'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final name = nameCtrl.text.trim();
-                final price = int.tryParse(priceCtrl.text) ?? 0;
-                if (name.isNotEmpty && price > 0 && categoryId != null) {
-                  final ok = await ref.read(providerServicesControllerProvider.notifier).createService(
-                    categoryId: categoryId!,
-                    name: name,
-                    description: descriptionCtrl.text.trim(),
-                    basePrice: price,
-                    priceUnit: unitCtrl.text.trim(),
-                  );
-                  if (!context.mounted) return;
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(ok ? 'Layanan ditambahkan' : 'Gagal menambahkan layanan')),
-                  );
-                }
-              },
-              child: const Text('Simpan'),
-            ),
-          ],
-        );
-      },
-    );
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('Batal'),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving || categories.isEmpty
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
+
+                          setDialogState(() => isSaving = true);
+                          final controller = ref.read(
+                            providerServicesControllerProvider.notifier,
+                          );
+                          final ok = await controller.createService(
+                            categoryId: categoryId!,
+                            name: nameCtrl.text.trim(),
+                            description: descriptionCtrl.text.trim(),
+                            // Harga dikonfirmasi langsung oleh provider;
+                            // kolom API tetap diisi nilai default agar layanan
+                            // dapat dibuat tanpa form harga.
+                            basePrice: 0,
+                            priceUnit: null,
+                          );
+                          if (!mounted || !dialogContext.mounted) return;
+
+                          if (ok) {
+                            Navigator.pop(dialogContext);
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Layanan ditambahkan')),
+                            );
+                            return;
+                          }
+
+                          setDialogState(() => isSaving = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                controller.state.errorMessage ??
+                                    'Gagal menambahkan layanan',
+                              ),
+                              backgroundColor: AppTheme.danger,
+                            ),
+                          );
+                        },
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Simpan'),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    } finally {
+      nameCtrl.dispose();
+      descriptionCtrl.dispose();
+    }
   }
 
   void _showEditServiceDialog(BuildContext context, ProviderService service) {

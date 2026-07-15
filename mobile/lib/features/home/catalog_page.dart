@@ -63,7 +63,6 @@ class CatalogPage extends ConsumerStatefulWidget {
 class _CatalogPageState extends ConsumerState<CatalogPage>
     with WidgetsBindingObserver {
   final _searchCtrl = TextEditingController();
-  TabController? _tabController;
   bool _showFooter = false;
 
   List<Map<String, dynamic>> _kotaList = [];
@@ -81,32 +80,14 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
 
   @override
   void dispose() {
-    _tabController?.removeListener(_handleTabChange);
     WidgetsBinding.instance.removeObserver(this);
     _searchCtrl.dispose();
     super.dispose();
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final controller = DefaultTabController.of(context);
-    if (_tabController != controller) {
-      _tabController?.removeListener(_handleTabChange);
-      _tabController = controller;
-      _tabController?.addListener(_handleTabChange);
-    }
-  }
-
-  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _refreshCatalogData();
-    }
-  }
-
-  void _handleTabChange() {
-    if (_tabController?.index == 0 && !_tabController!.indexIsChanging) {
       _refreshCatalogData();
     }
   }
@@ -399,7 +380,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
                   searchQuery.isNotEmpty
                       ? _buildSearchResults(context, ref)
                       : selectedCategory != null
-                      ? _buildProvidersByCategory(context, ref, selectedCategory)
+                      ? _buildProvidersByCategory(
+                          context,
+                          ref,
+                          selectedCategory,
+                        )
                       : _buildSuggestedProviders(context, ref),
                 ],
               ),
@@ -1439,6 +1424,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
       },
     );
   }
+
   Widget _buildProvidersByLocation(BuildContext context, WidgetRef ref) {
     final providersAsync = ref.watch(
       providersByLocationProvider(
@@ -1506,5 +1492,4 @@ class _CatalogFooter extends StatelessWidget {
       ),
     );
   }
-
 }
