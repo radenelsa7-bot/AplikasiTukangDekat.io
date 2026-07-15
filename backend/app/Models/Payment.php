@@ -26,6 +26,8 @@ class Payment extends Model
     'status',
     'provider',
     'external_payment_id',
+    'payment_proof_path',
+    'payment_proof_uploaded_at',
     'paid_at',
   ];
 
@@ -35,6 +37,7 @@ class Payment extends Model
         'platform_fee' => 'integer',
         'provider_payout' => 'integer',
         'paid_at' => 'datetime',
+        'payment_proof_uploaded_at' => 'datetime',
         'qris_captured_at' => 'datetime',
         'settled_at' => 'datetime',
         'refund_amount' => 'integer',

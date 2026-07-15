@@ -12,7 +12,7 @@ return new class extends Migration
   public function up(): void
   {
     // Modify the enum to include SUSPENDED
-    if (Schema::hasTable('users')) {
+    if (DB::getDriverName() === 'mysql' && Schema::hasTable('users')) {
       // Use raw statement to modify enum safely for MySQL
       DB::statement("ALTER TABLE `users` MODIFY `status` ENUM('ACTIVE','INACTIVE','SUSPENDED') NOT NULL DEFAULT 'ACTIVE'");
     }
@@ -23,7 +23,7 @@ return new class extends Migration
    */
   public function down(): void
   {
-    if (Schema::hasTable('users')) {
+    if (DB::getDriverName() === 'mysql' && Schema::hasTable('users')) {
       DB::statement("ALTER TABLE `users` MODIFY `status` ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE'");
     }
   }

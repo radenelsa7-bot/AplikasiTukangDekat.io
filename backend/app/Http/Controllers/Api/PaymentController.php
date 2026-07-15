@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentController extends Controller
 {
@@ -48,6 +49,10 @@ class PaymentController extends Controller
 
         if (!$payment) {
             return $this->notFoundResponse('payment not found');
+        }
+
+        if ($response = $this->authorizePaymentAccess($payment, false)) {
+            return $response;
         }
 
         if ($payment->status === 'PAID') {
@@ -91,9 +96,30 @@ class PaymentController extends Controller
             return $this->notFoundResponse('payment not found');
         }
 
+        if ($response = $this->authorizePaymentAccess($payment, false)) {
+            return $response;
+        }
+
         if ($payment->status === 'PAID') {
             return $this->successResponse(['payment' => $payment], 'Payment already confirmed', 200);
         }
+
+        $validated = $request->validate([
+            'payment_proof' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ], [
+            'payment_proof.required' => 'Bukti pembayaran wajib diunggah.',
+            'payment_proof.image' => 'Bukti pembayaran harus berupa gambar.',
+            'payment_proof.max' => 'Ukuran bukti pembayaran maksimal 5 MB.',
+        ]);
+
+        if ($payment->payment_proof_path) {
+            Storage::disk('public')->delete($payment->payment_proof_path);
+        }
+
+        $payment->update([
+            'payment_proof_path' => $validated['payment_proof']->store('payment-proofs', 'public'),
+            'payment_proof_uploaded_at' => now(),
+        ]);
 
         // Requirement: FINAL payment hanya bisa diproses setelah customer menyetujui harga akhir.
         if (strtoupper((string) $payment->payment_type) === 'FINAL') {

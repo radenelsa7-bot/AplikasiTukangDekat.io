@@ -9,45 +9,61 @@ import 'order_detail_page.dart';
 class MyOrdersPage extends ConsumerWidget {
   const MyOrdersPage({super.key});
 
-
+  static const _activeOrderStatuses = {
+    'CREATED',
+    'ACCEPTED',
+    'IN_PROGRESS',
+    'COMPLETED',
+  };
 
   Future<void> _openStatusFilter(BuildContext context, WidgetRef ref) async {
     final current = ref.read(myOrdersStatusFilterProvider);
     final selected = await showModalBottomSheet<String?>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
       builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: const Text('Semua'),
-                leading: const Icon(Icons.filter_alt_off),
-                trailing: current == null ? const Icon(Icons.check) : null,
-                onTap: () => Navigator.of(sheetContext).pop(null),
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.60,
+          minChildSize: 0.35,
+          maxChildSize: 0.90,
+          builder: (context, scrollController) {
+            return SafeArea(
+              top: false,
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.only(bottom: 8),
+                children: [
+                  ListTile(
+                    title: const Text('Semua'),
+                    leading: const Icon(Icons.filter_alt_off),
+                    trailing: current == null ? const Icon(Icons.check) : null,
+                    onTap: () => Navigator.of(sheetContext).pop(null),
+                  ),
+                  const Divider(height: 1),
+                  ...const [
+                    ('ACTIVE', 'Belum selesai'),
+                    ('CREATED', 'Menunggu konfirmasi'),
+                    ('ACCEPTED', 'Diterima'),
+                    ('IN_PROGRESS', 'Dikerjakan'),
+                    ('COMPLETED', 'Menunggu pelunasan'),
+                    ('CLOSED', 'Selesai & lunas'),
+                    ('CANCELLED', 'Dibatalkan'),
+                  ].map(
+                    (entry) => ListTile(
+                      title: Text(entry.$2),
+                      leading: const Icon(Icons.receipt_long),
+                      trailing: current == entry.$1
+                          ? const Icon(Icons.check)
+                          : null,
+                      onTap: () => Navigator.of(sheetContext).pop(entry.$1),
+                    ),
+                  ),
+                ],
               ),
-              const Divider(height: 1),
-              ...const [
-                ('CREATED', 'Menunggu'),
-                ('ACCEPTED', 'Diterima'),
-                ('IN_PROGRESS', 'Dikerjakan'),
-                ('COMPLETED', 'Selesai'),
-                ('CANCELLED', 'Dibatalkan'),
-                ('CLOSED', 'Ditutup'),
-              ].map(
-                (entry) => ListTile(
-                  title: Text(entry.$2),
-                  leading: const Icon(Icons.receipt_long),
-                  trailing: current == entry.$1
-                      ? const Icon(Icons.check)
-                      : null,
-                  onTap: () => Navigator.of(sheetContext).pop(entry.$1),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -113,7 +129,11 @@ class MyOrdersPage extends ConsumerWidget {
       data: (orders) {
         final filteredOrders = statusFilter == null
             ? orders
-            : orders.where((order) => order.status == statusFilter).toList();
+            : orders
+                  .where(
+                    (order) => _matchesStatusFilter(order.status, statusFilter),
+                  )
+                  .toList();
 
         if (filteredOrders.isEmpty) {
           return Center(
@@ -150,7 +170,7 @@ class MyOrdersPage extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     statusFilter != null
-                        ? 'Coba pilih status lain atau hapus filter'
+                        ? 'Tidak ada pesanan dengan status ${_statusLabel(statusFilter).toLowerCase()}'
                         : authState.userRole == 'PROVIDER'
                         ? 'Order dari pelanggan akan muncul di sini'
                         : 'Pesan jasa teknisi dari halaman Beranda',
@@ -158,6 +178,24 @@ class MyOrdersPage extends ConsumerWidget {
                       context,
                     ).textTheme.bodySmall?.copyWith(color: AppTheme.grey600),
                   ),
+                  if (statusFilter != null) ...[
+                    const SizedBox(height: 20),
+                    OutlinedButton.icon(
+                      onPressed: () => _openStatusFilter(context, ref),
+                      icon: const Icon(Icons.filter_list),
+                      label: const Text('Ubah Filter'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () =>
+                          ref
+                                  .read(myOrdersStatusFilterProvider.notifier)
+                                  .state =
+                              null,
+                      icon: const Icon(Icons.filter_alt_off),
+                      label: const Text('Tampilkan Semua Pesanan'),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -221,38 +259,42 @@ class MyOrdersPage extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      InkWell(
+                      Material(
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(20),
-                        onTap: () => _openStatusFilter(context, ref),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.orange.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.filter_list,
-                                size: 16,
-                                color: AppTheme.orange,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                statusFilter == null
-                                    ? 'Semua'
-                                    : _statusLabel(statusFilter),
-                                style: const TextStyle(
-                                  fontSize: 12,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () => _openStatusFilter(context, ref),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.orange.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.filter_list,
+                                  size: 16,
                                   color: AppTheme.orange,
-                                  fontWeight: FontWeight.w600,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                Text(
+                                  statusFilter == null
+                                      ? 'Semua'
+                                      : _statusLabel(statusFilter),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.orange,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -487,22 +529,29 @@ class MyOrdersPage extends ConsumerWidget {
 
   String _getStatusLabel(String status) {
     switch (status) {
+      case 'ACTIVE':
+        return 'Belum selesai';
       case 'CREATED':
-        return 'Menunggu';
+        return 'Menunggu konfirmasi';
       case 'ACCEPTED':
         return 'Diterima';
       case 'IN_PROGRESS':
         return 'Dikerjakan';
       case 'COMPLETED':
-        return 'Selesai';
+        return 'Menunggu pelunasan';
       case 'CANCELLED':
         return 'Dibatalkan';
       case 'CLOSED':
-        return 'Ditutup';
+        return 'Selesai & lunas';
       default:
         return status;
     }
   }
 
   String _statusLabel(String status) => _getStatusLabel(status);
+
+  bool _matchesStatusFilter(String orderStatus, String filter) {
+    if (filter == 'ACTIVE') return _activeOrderStatuses.contains(orderStatus);
+    return orderStatus == filter;
+  }
 }

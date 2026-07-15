@@ -13,6 +13,7 @@ use App\Models\ProviderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
 
 class PaymentStepFlowTest extends TestCase
 {
@@ -138,7 +139,9 @@ class PaymentStepFlowTest extends TestCase
         ]);
 
         $dpConfirmResp = $this->actingAs($customer, 'sanctum')
-            ->postJson('/api/payments/' . $dpPayment->id . '/confirm', []);
+            ->post('/api/payments/' . $dpPayment->id . '/confirm', [
+                'payment_proof' => UploadedFile::fake()->image('dp-proof.jpg'),
+            ]);
         $dpConfirmResp->assertStatus(200);
 
         $order->refresh();
@@ -185,7 +188,9 @@ class PaymentStepFlowTest extends TestCase
         // 7) customer confirm FINAL -> CLOSED
         $finalPayment->refresh();
         $finalConfirmResp = $this->actingAs($customer, 'sanctum')
-            ->postJson('/api/payments/' . $finalPayment->id . '/confirm', []);
+            ->post('/api/payments/' . $finalPayment->id . '/confirm', [
+                'payment_proof' => UploadedFile::fake()->image('final-proof.jpg'),
+            ]);
         $finalConfirmResp->assertStatus(200);
 
         $order->refresh();
