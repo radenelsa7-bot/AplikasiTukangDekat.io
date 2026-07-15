@@ -52,7 +52,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      title: const Text('Admin Dashboard'),
+      title: const Text('Admin'),
       elevation: 0,
       backgroundColor: AppTheme.navy,
       actions: [

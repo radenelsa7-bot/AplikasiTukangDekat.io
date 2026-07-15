@@ -26,36 +26,40 @@ class ProviderDashboardPage extends ConsumerWidget {
     final dashboard = ref.watch(providerDashboardProvider);
     final currency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
 
-    return RefreshIndicator(
-      color: AppTheme.orange,
-      onRefresh: () async => ref.refresh(providerDashboardProvider.future),
-      child: dashboard.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.orange)),
-        error: (err, st) => ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            const SizedBox(height: 120),
-            const Icon(Icons.error_outline, size: 48, color: AppTheme.danger),
-            const SizedBox(height: 12),
-            Text('Gagal memuat dashboard provider: $err', textAlign: TextAlign.center),
-          ],
-        ),
-        data: (data) {
-          final balance = int.tryParse(data['balance']?.toString() ?? '0') ?? 0;
-          final activeOrders = data['active_orders'] ?? 0;
-          final completedOrders = data['completed_orders'] ?? 0;
-          final transactions = (data['transactions'] as List?) ?? [];
+    return SafeArea(
+      bottom: false,
+      child: RefreshIndicator(
+        color: AppTheme.orange,
+        onRefresh: () async => ref.refresh(providerDashboardProvider.future),
+        child: dashboard.when(
+          loading: () =>
+              const Center(child: CircularProgressIndicator(color: AppTheme.orange)),
+          error: (err, st) => ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              const SizedBox(height: 120),
+              const Icon(Icons.error_outline, size: 48, color: AppTheme.danger),
+              const SizedBox(height: 12),
+              Text('Gagal memuat dashboard provider: $err', textAlign: TextAlign.center),
+            ],
+          ),
+          data: (data) {
+            final balance = int.tryParse(data['balance']?.toString() ?? '0') ?? 0;
+            final activeOrders = data['active_orders'] ?? 0;
+            final completedOrders = data['completed_orders'] ?? 0;
+            final transactions = (data['transactions'] as List?) ?? [];
 
-          return _DashboardContent(
-            balance: balance,
-            activeOrders: activeOrders,
-            completedOrders: completedOrders,
-            transactions: transactions,
-            currency: currency,
-            onOpenOrders: onOpenOrders,
-            onOpenAccount: onOpenAccount,
-          );
-        },
+            return _DashboardContent(
+              balance: balance,
+              activeOrders: activeOrders,
+              completedOrders: completedOrders,
+              transactions: transactions,
+              currency: currency,
+              onOpenOrders: onOpenOrders,
+              onOpenAccount: onOpenAccount,
+            );
+          },
+        ),
       ),
     );
   }
@@ -100,7 +104,7 @@ class _DashboardContentState extends State<_DashboardContent> {
         return false;
       },
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
         children: [
           Container(
             padding: const EdgeInsets.all(20),
@@ -280,11 +284,14 @@ class _DashboardFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'TukangDekat Provider - kelola pesanan, laporan, dan transaksi dari satu tempat.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: AppTheme.grey600, fontSize: 12),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: Center(
+        child: Text(
+          'TukangDekat Provider - kelola pesanan, laporan, dan transaksi dari satu tempat.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppTheme.grey600, fontSize: 12),
+        ),
       ),
     );
   }

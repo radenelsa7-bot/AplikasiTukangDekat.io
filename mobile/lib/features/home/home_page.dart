@@ -67,7 +67,12 @@ class _HomePageState extends ConsumerState<HomePage> {
       length: 1,
       child: Scaffold(
         backgroundColor: AppTheme.cream,
-        body: pages[_selectedIndex],
+        // Halaman tab tidak memakai AppBar bersama. SafeArea menjaga konten
+        // tetap berada di bawah status bar pada perangkat dengan notch.
+        body: SafeArea(
+          bottom: false,
+          child: pages[_selectedIndex],
+        ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: (index) => setState(() => _selectedIndex = index),
@@ -87,11 +92,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         : state.userEmail ?? 'N/A';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(

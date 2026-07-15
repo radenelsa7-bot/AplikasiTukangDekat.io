@@ -7,6 +7,7 @@ import '../../app/theme/app_theme.dart';
 import '../../core/models/provider_model.dart';
 import '../../core/services/api_service.dart';
 import '../../shared/widgets/app_text_field.dart';
+import 'catalog_providers.dart';
 import '../maps/location_picker_screen.dart'
     show LocationPickerScreen, LocationResult;
 
@@ -46,10 +47,11 @@ class ProviderServicesController extends StateNotifier<ProviderServicesState> {
   static const _minRefreshInterval = Duration(seconds: 2);
 
   /// Refresh profile with debouncing to prevent API spam (429 error)
-  Future<bool> refreshProfile() async {
+  Future<bool> refreshProfile({bool force = false}) async {
     final now = DateTime.now();
-    if (now.difference(_lastRefreshTime) < _minRefreshInterval) {
+    if (!force && now.difference(_lastRefreshTime) < _minRefreshInterval) {
       // Rate limited - skip this refresh call
+      state = state.copyWith(isLoading: false);
       return false;
     }
     _lastRefreshTime = now;
@@ -94,7 +96,7 @@ class ProviderServicesController extends StateNotifier<ProviderServicesState> {
         basePrice: basePrice,
         priceUnit: priceUnit,
       );
-      await refreshProfile();
+      await refreshProfile(force: true);
       return true;
     } on DioException catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
@@ -126,7 +128,7 @@ class ProviderServicesController extends StateNotifier<ProviderServicesState> {
         priceUnit: priceUnit,
         isActive: isActive,
       );
-      await refreshProfile();
+      await refreshProfile(force: true);
       return true;
     } on DioException catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
@@ -156,7 +158,7 @@ class ProviderServicesController extends StateNotifier<ProviderServicesState> {
         latitude: latitude,
         longitude: longitude,
       );
-      await refreshProfile();
+      await refreshProfile(force: true);
       return true;
     } on DioException catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
@@ -178,10 +180,30 @@ class ProviderServicesController extends StateNotifier<ProviderServicesState> {
         kotaId: kotaId,
         kecamatanIds: kecamatanIds,
       );
-      await refreshProfile();
+      await refreshProfile(force: true);
       return true;
     } on DioException catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> deleteService(int serviceId) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _ref.read(apiServiceProvider).deleteProviderService(serviceId);
+      await refreshProfile(force: true);
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.response?.data is Map
+            ? e.response?.data['message']?.toString()
+            : e.message,
+      );
       return false;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -203,12 +225,31 @@ class ProviderServicesPage extends ConsumerStatefulWidget {
 
 class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
   bool _showFooter = false;
+  final _businessNameCtrl = TextEditingController();
+  final _descriptionCtrl = TextEditingController();
+  int? _loadedProfileId;
+
+  @override
+  void dispose() {
+    _businessNameCtrl.dispose();
+    _descriptionCtrl.dispose();
+    super.dispose();
+  }
+
+  void _populateProfileFields(ProviderProfile profile) {
+    if (_loadedProfileId == profile.id) return;
+    _loadedProfileId = profile.id;
+    _businessNameCtrl.text = profile.businessName;
+    _descriptionCtrl.text = profile.description ?? '';
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = ref.read(providerServicesControllerProvider.notifier);
     final state = ref.watch(providerServicesControllerProvider);
     final profileAsync = ref.watch(providerProfileProvider);
+    // Preload categories so the add-service form can always offer a category.
+    ref.watch(categoriesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -242,6 +283,7 @@ class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
           ),
         ),
         data: (profile) {
+          _populateProfileFields(profile);
           // Handle error notification
           if (state.errorMessage != null && state.errorMessage!.contains('429')) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -282,25 +324,41 @@ class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
                         ),
                         const SizedBox(height: 12),
                         AppTextField(
-                          initialValue: profile.businessName,
+                          controller: _businessNameCtrl,
                           label: 'Nama Usaha',
-                          onChanged: (v) {},
                         ),
                         const SizedBox(height: 12),
                         AppTextField(
-                          initialValue: profile.description ?? '',
+                          controller: _descriptionCtrl,
                           label: 'Deskripsi',
                           maxLines: 2,
-                          onChanged: (v) {},
                         ),
                         const SizedBox(height: 12),
                         ElevatedButton(
-                          onPressed: () => controller.updateProfile(
-                            businessName: profile.businessName,
-                            description: profile.description,
-                            area: profile.area,
-                            address: profile.address,
-                          ),
+                          onPressed: state.isLoading
+                              ? null
+                              : () async {
+                                  final name = _businessNameCtrl.text.trim();
+                                  if (name.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Nama usaha wajib diisi')),
+                                    );
+                                    return;
+                                  }
+                                  final ok = await controller.updateProfile(
+                                    businessName: name,
+                                    description: _descriptionCtrl.text.trim(),
+                                    area: profile.area,
+                                    address: profile.address,
+                                  );
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(ok ? 'Profil berhasil disimpan' : 'Gagal menyimpan profil'),
+                                      backgroundColor: ok ? Colors.green : AppTheme.danger,
+                                    ),
+                                  );
+                                },
                           child: const Text('Simpan Profil'),
                         ),
                                                 const Divider(height: 24),
@@ -372,13 +430,32 @@ class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         title: Text(service.name),
-                        subtitle: Text('Rp${service.basePrice} / ${service.priceUnit}'),
-                        trailing: Switch(
-                          value: service.isActive,
-                          onChanged: (val) => controller.updateService(
-                            serviceId: service.id,
-                            isActive: val,
-                          ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined),
+                              tooltip: 'Edit layanan',
+                              onPressed: () => _showEditServiceDialog(context, service),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: AppTheme.danger,
+                              ),
+                              tooltip: 'Hapus layanan',
+                              onPressed: state.isLoading
+                                  ? null
+                                  : () => _confirmDeleteService(service),
+                            ),
+                            Switch(
+                              value: service.isActive,
+                              onChanged: state.isLoading ? null : (val) => controller.updateService(
+                                serviceId: service.id,
+                                isActive: val,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -465,7 +542,11 @@ class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
       context: context,
       builder: (context) {
         final nameCtrl = TextEditingController();
+        final descriptionCtrl = TextEditingController();
         final priceCtrl = TextEditingController();
+        final unitCtrl = TextEditingController(text: 'per kunjungan');
+        final categories = ref.read(categoriesProvider).valueOrNull ?? const [];
+        int? categoryId = categories.isNotEmpty ? categories.first.id : null;
 
         return AlertDialog(
           title: const Text('Tambah Layanan'),
@@ -477,11 +558,30 @@ class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
                 label: 'Nama Layanan',
               ),
               const SizedBox(height: 12),
+              DropdownButtonFormField<int>(
+                value: categoryId,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Kategori'),
+                items: categories.map((category) => DropdownMenuItem(
+                  value: category.id,
+                  child: Text(category.name),
+                )).toList(),
+                onChanged: (value) => categoryId = value,
+              ),
+              const SizedBox(height: 12),
+              AppTextField(
+                controller: descriptionCtrl,
+                label: 'Deskripsi (opsional)',
+                maxLines: 2,
+              ),
+              const SizedBox(height: 12),
               AppTextField(
                 controller: priceCtrl,
                 label: 'Harga Dasar',
                 keyboardType: TextInputType.number,
               ),
+              const SizedBox(height: 12),
+              AppTextField(controller: unitCtrl, label: 'Satuan harga'),
             ],
           ),
           actions: [
@@ -490,16 +590,22 @@ class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
               child: const Text('Batal'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final name = nameCtrl.text.trim();
                 final price = int.tryParse(priceCtrl.text) ?? 0;
-                if (name.isNotEmpty && price > 0) {
-                  ref.read(providerServicesControllerProvider.notifier).createService(
-                    categoryId: 1,
+                if (name.isNotEmpty && price > 0 && categoryId != null) {
+                  final ok = await ref.read(providerServicesControllerProvider.notifier).createService(
+                    categoryId: categoryId!,
                     name: name,
+                    description: descriptionCtrl.text.trim(),
                     basePrice: price,
+                    priceUnit: unitCtrl.text.trim(),
                   );
+                  if (!context.mounted) return;
                   Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(ok ? 'Layanan ditambahkan' : 'Gagal menambahkan layanan')),
+                  );
                 }
               },
               child: const Text('Simpan'),
@@ -507,6 +613,81 @@ class _ProviderServicesPageState extends ConsumerState<ProviderServicesPage> {
           ],
         );
       },
+    );
+  }
+
+  void _showEditServiceDialog(BuildContext context, ProviderService service) {
+    final nameCtrl = TextEditingController(text: service.name);
+    final descriptionCtrl = TextEditingController(text: service.description ?? '');
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit Layanan'),
+        content: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            AppTextField(controller: nameCtrl, label: 'Nama Layanan'),
+            const SizedBox(height: 12),
+            AppTextField(controller: descriptionCtrl, label: 'Deskripsi', maxLines: 2),
+          ]),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) return;
+              final ok = await ref.read(providerServicesControllerProvider.notifier).updateService(
+                serviceId: service.id,
+                name: name,
+                description: descriptionCtrl.text.trim(),
+              );
+              if (!dialogContext.mounted) return;
+              Navigator.pop(dialogContext);
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(ok ? 'Layanan berhasil diperbarui' : 'Gagal memperbarui layanan')),
+              );
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteService(ProviderService service) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Hapus Layanan?'),
+        content: Text('Hapus layanan "${service.name}"? Tindakan ini tidak dapat dibatalkan.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final controller = ref.read(providerServicesControllerProvider.notifier);
+    final ok = await controller.deleteService(service.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Layanan berhasil dihapus'
+              : controller.state.errorMessage ?? 'Gagal menghapus layanan',
+        ),
+        backgroundColor: ok ? Colors.green : AppTheme.danger,
+      ),
     );
   }
 }

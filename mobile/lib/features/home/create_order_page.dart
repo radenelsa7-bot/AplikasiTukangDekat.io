@@ -61,6 +61,12 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   List<XFile> _damagePhotos = [];
   String _damageLevel = 'LIGHT';
 
+  static const _serviceLevels = <String, String>{
+    'LIGHT': 'Service Ringan',
+    'MEDIUM': 'Service Sedang',
+    'HEAVY': 'Service Berat',
+  };
+
   bool get _hasCoverageFilter => widget.coverages.isNotEmpty;
 
   List<int> get _coverageKotaIds {
@@ -107,11 +113,26 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   @override
   void initState() {
     super.initState();
-    // Set default ke service pertama jika ada
-    if (widget.services.isNotEmpty) {
-      _selectedService = widget.services.first;
-    }
+    _selectServiceForDamageLevel(_damageLevel);
     Future.microtask(_loadKota);
+  }
+
+  void _selectServiceForDamageLevel(String damageLevel) {
+    final levelName = _serviceLevels[damageLevel]!.toLowerCase();
+    final availableServices = widget.services
+        .where((service) => service.isActive)
+        .toList();
+    _selectedService = availableServices.cast<ProviderService?>().firstWhere(
+          (service) => service!.name.toLowerCase().contains(levelName),
+          orElse: () => availableServices.isNotEmpty ? availableServices.first : null,
+        );
+  }
+
+  void _setDamageLevel(String value) {
+    setState(() {
+      _damageLevel = value;
+      _selectServiceForDamageLevel(value);
+    });
   }
 
   @override
@@ -494,7 +515,14 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Buat Order')),
+      appBar: AppBar(
+        title: const Text('Buat Order'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Kembali',
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+      ),
       body: Column(
         children: [
           Expanded(
@@ -596,30 +624,32 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    if (widget.services.isNotEmpty)
-                      DropdownButtonFormField<ProviderService>(
+                    DropdownButtonFormField<String>(
                         isExpanded: true,
-                        value: _selectedService,
+                        value: _damageLevel,
                         decoration: InputDecoration(
                           labelText: 'Layanan',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        items: widget.services.map((service) {
-                          return DropdownMenuItem(
-                            value: service,
-                            child: Text(
-                              '${service.name} - Rp${service.basePrice}/${service.priceUnit}',
-                            ),
+                        items: _serviceLevels.entries.map((entry) {
+                          return DropdownMenuItem<String>(
+                            value: entry.key,
+                            child: Text(entry.value),
                           );
                         }).toList(),
-                        onChanged: (ProviderService? newService) {
-                          setState(() => _selectedService = newService);
+                        onChanged: (newLevel) {
+                          if (newLevel != null) _setDamageLevel(newLevel);
                         },
-                      )
-                    else
-                      const Text('Tidak ada layanan tersedia'),
+                      ),
+                    if (_selectedService == null) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Provider belum menambahkan harga layanan. Anda tetap dapat memilih jenis service, lalu harga dikonfirmasi provider.',
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                    ],
                     const SizedBox(height: 24),
 
                     Text(
@@ -906,7 +936,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     return ChoiceChip(
       label: Text(label),
       selected: _damageLevel == value,
-      onSelected: (_) => setState(() => _damageLevel = value),
+      onSelected: (_) => _setDamageLevel(value),
     );
   }
 }

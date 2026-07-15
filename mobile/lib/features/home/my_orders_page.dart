@@ -168,95 +168,95 @@ class MyOrdersPage extends ConsumerWidget {
           color: AppTheme.orange,
           onRefresh: () async => ref.refresh(myOrdersProvider),
           child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
             itemCount: filteredOrders.length + 1,
             itemBuilder: (context, index) {
               if (index == 0) {
-                final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    );
-                final subtitleStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.grey600,
-                    );
-
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final compact = constraints.maxWidth < 360;
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 18,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.navy,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.navy.withValues(alpha: 0.20),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              authState.userRole == 'PROVIDER'
+                                  ? 'Order Masuk'
+                                  : 'Pesanan Saya',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${filteredOrders.length} pesanan',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => _openStatusFilter(context, ref),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.orange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      authState.userRole == 'PROVIDER'
-                                          ? 'Order Masuk'
-                                          : 'Pesanan Saya',
-                                      style: titleStyle,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${filteredOrders.length} pesanan',
-                                      style: subtitleStyle,
-                                    ),
-                                  ],
+                              const Icon(
+                                Icons.filter_list,
+                                size: 16,
+                                color: AppTheme.orange,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                statusFilter == null
+                                    ? 'Semua'
+                                    : _statusLabel(statusFilter),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.orange,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              InkWell(
-                                borderRadius: BorderRadius.circular(20),
-                                onTap: () => _openStatusFilter(context, ref),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.orange.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.filter_list,
-                                        size: 16,
-                                        color: AppTheme.orange,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        statusFilter == null
-                                            ? 'Semua'
-                                            : _statusLabel(statusFilter),
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: AppTheme.orange,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }

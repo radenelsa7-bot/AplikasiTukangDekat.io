@@ -121,6 +121,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/coverage', [ProfileController::class, 'updateProviderCoverage'])->middleware('throttle:10,1');
         Route::post('/services', [ProviderServiceController::class, 'store'])->middleware('throttle:10,1');
         Route::patch('/services/{id}', [ProviderServiceController::class, 'update'])->middleware('throttle:10,1');
+        Route::delete('/services/{id}', [ProviderServiceController::class, 'destroy'])->middleware('throttle:10,1');
     });
 });
 
