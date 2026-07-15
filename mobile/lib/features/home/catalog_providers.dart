@@ -58,6 +58,23 @@ class ProviderSearchQuery {
   int get hashCode => Object.hash(query, kotaId, kecamatanId);
 }
 
+class ProviderLocationQuery {
+  final int? kotaId;
+  final int? kecamatanId;
+
+  const ProviderLocationQuery({this.kotaId, this.kecamatanId});
+
+  @override
+  bool operator ==(Object other) {
+    return other is ProviderLocationQuery &&
+        other.kotaId == kotaId &&
+        other.kecamatanId == kecamatanId;
+  }
+
+  @override
+  int get hashCode => Object.hash(kotaId, kecamatanId);
+}
+
 // Providers by category and optional location
 final providersByCategoryProvider =
     FutureProvider.family<List<ProviderProfile>, ProviderCatalogQuery>((
@@ -67,6 +84,19 @@ final providersByCategoryProvider =
       final apiService = ref.read(apiServiceProvider);
       final response = await apiService.getProvidersByCategory(
         query.categoryId,
+        kotaId: query.kotaId,
+        kecamatanId: query.kecamatanId,
+      );
+      return response.data;
+    });
+
+final providersByLocationProvider =
+    FutureProvider.family<List<ProviderProfile>, ProviderLocationQuery>((
+      ref,
+      query,
+    ) async {
+      final apiService = ref.read(apiServiceProvider);
+      final response = await apiService.getProviders(
         kotaId: query.kotaId,
         kecamatanId: query.kecamatanId,
       );

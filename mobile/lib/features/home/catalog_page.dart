@@ -188,20 +188,37 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
   }
 
   void _applyLocationFilter() {
-    if (_selectedKotaId != null || _selectedKecamatanId != null) {
+    final selectedCategory = ref.read(selectedCategoryProvider);
+    final searchQuery = ref.read(searchQueryProvider);
+
+    if (selectedCategory != null) {
       ref.invalidate(
         providersByCategoryProvider(
           ProviderCatalogQuery(
-            categoryId: ref.read(selectedCategoryProvider) ?? 0,
+            categoryId: selectedCategory,
             kotaId: _selectedKotaId,
             kecamatanId: _selectedKecamatanId,
           ),
         ),
       );
+    }
+
+    if (searchQuery.isNotEmpty) {
       ref.invalidate(
         searchProvidersProvider(
           ProviderSearchQuery(
-            query: ref.read(searchQueryProvider),
+            query: searchQuery,
+            kotaId: _selectedKotaId,
+            kecamatanId: _selectedKecamatanId,
+          ),
+        ),
+      );
+    }
+
+    if (selectedCategory == null) {
+      ref.invalidate(
+        providersByLocationProvider(
+          ProviderLocationQuery(
             kotaId: _selectedKotaId,
             kecamatanId: _selectedKecamatanId,
           ),
@@ -209,6 +226,25 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
       );
     }
     setState(() {});
+  }
+
+  String? get _activeLocationLabel {
+    if (_selectedKotaId == null) return null;
+    final kota = _kotaList.where(
+      (item) => int.tryParse(item['id']?.toString() ?? '') == _selectedKotaId,
+    );
+    final kotaName = kota.isEmpty
+        ? 'Kota terpilih'
+        : kota.first['name']?.toString() ?? 'Kota terpilih';
+    if (_selectedKecamatanId == null) return kotaName;
+    final kecamatan = _kecamatanList.where(
+      (item) =>
+          int.tryParse(item['id']?.toString() ?? '') == _selectedKecamatanId,
+    );
+    final kecamatanName = kecamatan.isEmpty
+        ? 'Kecamatan terpilih'
+        : kecamatan.first['name']?.toString() ?? 'Kecamatan terpilih';
+    return '$kotaName - $kecamatanName';
   }
 
   @override
@@ -323,15 +359,57 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: searchQuery.isNotEmpty
-                  ? _buildSearchResults(context, ref)
-                  : selectedCategory != null
-                  ? _buildProvidersByCategory(context, ref, selectedCategory)
-                  : _buildSuggestedProviders(context, ref),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_activeLocationLabel != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.navy.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            color: AppTheme.navy,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Menampilkan teknisi yang melayani $_activeLocationLabel',
+                              style: const TextStyle(
+                                color: AppTheme.navy,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  searchQuery.isNotEmpty
+                      ? _buildSearchResults(context, ref)
+                      : selectedCategory != null
+                      ? _buildProvidersByCategory(context, ref, selectedCategory)
+                      : _buildSuggestedProviders(context, ref),
+                ],
+              ),
             ),
 
             const SizedBox(height: 24),
             if (_showFooter) const _CatalogFooter(),
+            // Beri ruang napas sebelum navigasi bawah agar konten terakhir
+            // tidak terasa menempel pada tepi layar.
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -879,6 +957,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
   }
 
   Widget _buildSuggestedProviders(BuildContext context, WidgetRef ref) {
+    if (_selectedKotaId != null || _selectedKecamatanId != null) {
+      return _buildProvidersByLocation(context, ref);
+    }
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return categoriesAsync.when(
@@ -954,7 +1035,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
         if (activeProviders.isEmpty) {
           return _buildEmptyState(
             context,
-            'Tidak ada provider di kategori ini',
+            _activeLocationLabel == null
+                ? 'Tidak ada provider di kategori ini'
+                : 'Tidak ada teknisi yang melayani wilayah ini',
           );
         }
 
@@ -1356,6 +1439,55 @@ class _CatalogPageState extends ConsumerState<CatalogPage>
       },
     );
   }
+  Widget _buildProvidersByLocation(BuildContext context, WidgetRef ref) {
+    final providersAsync = ref.watch(
+      providersByLocationProvider(
+        ProviderLocationQuery(
+          kotaId: _selectedKotaId,
+          kecamatanId: _selectedKecamatanId,
+        ),
+      ),
+    );
+
+    return providersAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, st) => Center(child: Text('Error: $err')),
+      data: (providers) {
+        final activeProviders = providers
+            .where((provider) => provider.userStatus == 'ACTIVE')
+            .toList();
+        if (activeProviders.isEmpty) {
+          return _buildEmptyState(
+            context,
+            'Tidak ada teknisi yang melayani wilayah ini',
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionLabel(
+              context,
+              'Teknisi di Wilayah Terpilih (${activeProviders.length})',
+            ),
+            const SizedBox(height: 14),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: activeProviders.length,
+              itemBuilder: (context, index) {
+                final provider = activeProviders[index];
+                final categoryId = provider.services.isNotEmpty
+                    ? provider.services.first.categoryId ?? 0
+                    : 0;
+                return _buildProviderCard(context, provider, categoryId);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _CatalogFooter extends StatelessWidget {
@@ -1363,12 +1495,16 @@ class _CatalogFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'TukangDekat - Temukan teknisi terdekat dengan mudah.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: AppTheme.grey600, fontSize: 12),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: Center(
+        child: Text(
+          'TukangDekat - Temukan teknisi terdekat dengan mudah.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppTheme.grey600, fontSize: 12),
+        ),
       ),
     );
   }
+
 }

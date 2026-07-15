@@ -180,6 +180,24 @@ class ApiService {
     }
   }
 
+  Future<ProvidersResponse> getProviders({
+    int? kotaId,
+    int? kecamatanId,
+  }) async {
+    try {
+      final params = <String, dynamic>{};
+      if (kotaId != null) params['kota_id'] = kotaId;
+      if (kecamatanId != null) params['kecamatan_id'] = kecamatanId;
+      final response = await dio.get(
+        '/api/catalog/providers',
+        queryParameters: params,
+      );
+      return ProvidersResponse.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<ProviderProfile> getProviderDetail(int providerId) async {
     try {
       final response = await dio.get('/api/catalog/providers/$providerId');
@@ -429,6 +447,14 @@ class ApiService {
         data: data,
       );
       return Map<String, dynamic>.from(response.data['data'] ?? {});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteProviderService(int serviceId) async {
+    try {
+      await dio.delete('/api/provider/services/$serviceId');
     } catch (e) {
       rethrow;
     }

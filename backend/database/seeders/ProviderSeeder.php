@@ -6,7 +6,10 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\ProviderProfile;
 use App\Models\ProviderService;
+use App\Models\ProviderCoverage;
 use App\Models\ServiceCategory;
+use App\Models\WilayahKota;
+use App\Models\WilayahKecamatan;
 use Illuminate\Support\Facades\Hash;
 
 
@@ -31,6 +34,7 @@ class ProviderSeeder extends Seeder
           'area' => 'Bojongloa Kaler',
           'address' => 'Jl. Merdeka No. 123',
         ],
+        'coverage_city' => 'Bandung',
         'category_ids' => ['Listrik'],
       ],
       [
@@ -45,6 +49,7 @@ class ProviderSeeder extends Seeder
           'area' => 'Bojongloa Kaler',
           'address' => 'Jl. Ahmad Yani No. 456',
         ],
+        'coverage_city' => 'Bandung',
         'category_ids' => ['Plumbing'],
       ],
       [
@@ -59,6 +64,7 @@ class ProviderSeeder extends Seeder
           'area' => 'Bojongloa Kaler',
           'address' => 'Jl. Sudirman No. 789',
         ],
+        'coverage_city' => 'Bandung',
         'category_ids' => ['AC'],
       ],
     ];
@@ -108,6 +114,23 @@ class ProviderSeeder extends Seeder
             'is_active' => true,
           ],
         );
+      }
+
+      // Provider contoh beroperasi di Bandung. Simpan cakupan kecamatan agar
+      // pencarian customer berdasarkan kota/kecamatan memakai data yang sama
+      // dengan validasi saat membuat order.
+      $city = WilayahKota::where('name', $providerData['coverage_city'])->first();
+      if ($city) {
+        $districts = WilayahKecamatan::where('kota_id', $city->id)->get();
+        foreach ($districts as $district) {
+          ProviderCoverage::updateOrCreate(
+            [
+              'provider_profile_id' => $profile->id,
+              'kecamatan_id' => $district->id,
+            ],
+            ['is_active' => true],
+          );
+        }
       }
     }
   }

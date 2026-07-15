@@ -21,6 +21,14 @@ class ProviderDetailPage extends ConsumerWidget {
     final reviewsAsync = ref.watch(providerReviewsProvider(providerId));
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profil Teknisi'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Kembali',
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+      ),
       body: providerAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, st) => Center(child: Text('Error: $err')),
@@ -281,14 +289,6 @@ class ProviderDetailPage extends ConsumerWidget {
                                   Text(
                                     service.name,
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Rp${service.basePrice} / ${service.priceUnit}',
-                                    style: TextStyle(
-                                      color: Theme.of(context).primaryColor,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),

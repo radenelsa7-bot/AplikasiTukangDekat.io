@@ -27,10 +27,11 @@ class WilayahSeeder extends Seeder
         ];
 
         foreach ($regions as $cityName => $districts) {
-            $city = WilayahKota::where('name', $cityName)->first();
-            if (!$city) {
-                continue;
-            }
+            // WilayahKota is a master table, so it must be populated before
+            // its districts.  Previously this seeder only added districts
+            // when a city already existed, leaving the customer dropdowns
+            // empty on a fresh installation.
+            $city = WilayahKota::updateOrCreate(['name' => $cityName]);
 
             foreach ($districts as $districtName) {
                 WilayahKecamatan::updateOrCreate(
