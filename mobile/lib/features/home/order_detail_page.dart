@@ -39,6 +39,16 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     final orderAsync = ref.watch(orderDetailProvider(widget.orderId));
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Rincian Pesanan'),
+        backgroundColor: AppTheme.navy,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Kembali',
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+      ),
       body: orderAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppTheme.orange),
