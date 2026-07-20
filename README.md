@@ -1,6 +1,17 @@
 # TukangDekat — Ringkasan Proyek
 
+**Nama Project : Aplikasi Tukang Dekat**
+
 **Status Proyek: 🚀 Siap untuk Uji Coba End-to-End & Deployment**
+
+---
+
+## Tim Developer
+
+- **Project Manager:** R.Elsa Balqis Khoerunnisa S (20241320062)
+- **Backend:** Muhammad Fajar Nurjaman (20241320059), Fatin Asyifa Nurrizky JenPutri (20241320073), dan Nabilah Asana Alecia (20241320076)
+- **Frontend:** Tetep Safarudin (20241320065), Fazna Laisal Ramadhan (20241320081), dan Nabil Ramadhan (20241320068)
+- **QA Testing:** Aldy Ramadany (20241320050)
 
 Repo ini berisi implementasi lengkap aplikasi **TukangDekat**: backend API (Laravel) dan client mobile (Flutter). Proyek ini telah mencapai tahap finalisasi, di mana fitur-fitur inti telah selesai diimplementasikan dan divalidasi melalui serangkaian tes otomatis.
 
@@ -89,7 +100,3 @@ Referensi: [HELP_RUN_PROJECT.md](./HELP_RUN_PROJECT.md)
 - **Pengujian Manual E2E**: Lakukan pengujian manual pada aplikasi mobile untuk memastikan alur dari registrasi hingga penyelesaian order berjalan lancar.
 - **Hardening Keamanan**: Pindahkan *secrets* yang tersisa (seperti `GEMINI_API_KEY`) dari file `.env` ke environment variable di server atau *secret manager*.
 - **Deployment**: Lakukan *smoke test* pada environment staging sebelum melakukan deployment ke produksi.
-
----
-
-Untuk panduan lengkap penyelesaian proyek, lihat `GUIDE_FINAL_PROJECT_100_PERCENT.md`.

@@ -73,16 +73,16 @@ class AuthController extends Controller
                 });
             }
 
+            // Prepare user data for response - only include fields that exist
+            $userData = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ];
+
             return $this->success([
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'full_name' => $user->full_name,
-                    'phone_number' => $user->phone_number,
-                    'profile_photo_path' => $user->profile_photo_path,
-                ],
+                'user' => $userData,
             ], 'User registered successfully', 201);
         } catch (ValidationException $e) {
             return $this->validationError($e->errors());
@@ -119,10 +119,18 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
-                'full_name' => $user->full_name,
-                'phone_number' => $user->phone_number,
-                'profile_photo_path' => $user->profile_photo_path,
             ];
+
+            // Include optional fields if they exist
+            if ($user->full_name !== null) {
+                $userData['full_name'] = $user->full_name;
+            }
+            if ($user->phone_number !== null) {
+                $userData['phone_number'] = $user->phone_number;
+            }
+            if ($user->profile_photo_path !== null) {
+                $userData['profile_photo_path'] = $user->profile_photo_path;
+            }
 
             // Include provider_status if user is a PROVIDER
             if ($user->role === 'PROVIDER') {

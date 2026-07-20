@@ -72,9 +72,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('payments')->group(function () {
         Route::get('/order/{orderId}', [PaymentController::class, 'getPayments'])->middleware('throttle:30,1');
         Route::get('/{paymentId}', [PaymentController::class, 'getPaymentStatus'])->middleware('throttle:20,1');
-        Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS'])->middleware(['throttle:10,1', 'role:customer']);
-        Route::post('/{paymentId}/confirm', [PaymentController::class, 'confirmPayment'])->middleware(['throttle:10,1', 'role:customer']);
-        Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware(['throttle:3,1', 'role:customer']);
+        // FIX: Increased rate limits to prevent HTTP 429 on payment flow (20 requests per 2 minutes)
+        Route::post('/{paymentId}/generate-qris', [PaymentController::class, 'generateQRIS'])->middleware(['throttle:20,2', 'role:customer']);
+        Route::post('/{paymentId}/confirm', [PaymentController::class, 'confirmPayment'])->middleware(['throttle:20,2', 'role:customer']);
+        Route::post('/{paymentId}/capture-qris', [PaymentController::class, 'captureQris'])->middleware(['throttle:10,2', 'role:customer']);
     });
 
     Route::get('/reviews/{orderId}', [ReviewController::class, 'getOrderReview'])->middleware('throttle:30,1');

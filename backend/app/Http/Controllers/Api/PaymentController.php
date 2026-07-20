@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class PaymentController extends Controller
@@ -190,13 +191,18 @@ class PaymentController extends Controller
                 default => 'payment_' . strtolower($payment->payment_type) . '_paid',
             };
 
-            app(N8nNotificationService::class)->dispatch($eventName, [
-                'order_id' => $order->id,
-                'order_code' => $order->order_code,
-                'payment_id' => $payment->id,
-                'payment_type' => $payment->payment_type,
-                'amount' => $payment->amount,
-            ]);
+            // Dispatch notification but don't fail if it errors
+            try {
+                app(N8nNotificationService::class)->dispatch($eventName, [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code,
+                    'payment_id' => $payment->id,
+                    'payment_type' => $payment->payment_type,
+                    'amount' => $payment->amount,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('N8n notification failed, but payment continues: ' . $e->getMessage());
+            }
 
             if ($payment->payment_type === 'FINAL') {
                 $oldStatus = $order->status;
@@ -210,12 +216,15 @@ class PaymentController extends Controller
                 ]);
             }
 
-
             DB::commit();
             return $this->successResponse(['payment' => $payment->fresh()], 'Payment confirmed', 200);
         } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Failed to confirm payment', 'error' => $e->getMessage()], 500);
+            Log::error('Payment confirmation error: ' . $e->getMessage(), [
+                'payment_id' => $payment->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->errorResponse('Failed to confirm payment: ' . $e->getMessage(), 500);
         }
     }
 
@@ -282,23 +291,28 @@ class PaymentController extends Controller
                     default => 'payment_' . strtolower($payment->payment_type) . '_paid',
                 };
 
-                app(N8nNotificationService::class)->dispatch(
-                    $eventName,
-                    [
-                        'order_id' => $order->id,
-                        'order_code' => $order->order_code,
-                        'payment_id' => $payment->id,
-                        'payment_type' => $payment->payment_type,
-                        'amount' => $payment->amount,
-                        'order_status' => $order->status,
-                        'customer_name' => $order->customer?->name,
-                        'customer_email' => $order->customer?->email,
-                        'customer_phone' => $order->customer?->phone,
-                        'provider_name' => $order->provider?->name,
-                        'provider_email' => $order->provider?->email,
-                        'provider_phone' => $order->provider?->phone,
-                    ]
-                );
+                // Dispatch notification but don't fail if it errors
+                try {
+                    app(N8nNotificationService::class)->dispatch(
+                        $eventName,
+                        [
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code,
+                            'payment_id' => $payment->id,
+                            'payment_type' => $payment->payment_type,
+                            'amount' => $payment->amount,
+                            'order_status' => $order->status,
+                            'customer_name' => $order->customer?->name,
+                            'customer_email' => $order->customer?->email,
+                            'customer_phone' => $order->customer?->phone,
+                            'provider_name' => $order->provider?->name,
+                            'provider_email' => $order->provider?->email,
+                            'provider_phone' => $order->provider?->phone,
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('N8n notification failed in webhook, but payment continues: ' . $e->getMessage());
+                }
             }
 
             if ($payment->payment_type === 'FINAL') {
@@ -423,15 +437,20 @@ class PaymentController extends Controller
 
         $payment->update($this->paymentFinanceService->applySettlementSnapshot($payment));
 
-        app(N8nNotificationService::class)->dispatch(
-            'payment_' . strtolower($payment->payment_type) . '_paid',
-            [
-                'order_id' => $payment->order_id,
-                'payment_id' => $payment->id,
-                'payment_type' => $payment->payment_type,
-                'amount' => $payment->amount,
-            ]
-        );
+        // Dispatch notification but don't fail if it errors
+        try {
+            app(N8nNotificationService::class)->dispatch(
+                'payment_' . strtolower($payment->payment_type) . '_paid',
+                [
+                    'order_id' => $payment->order_id,
+                    'payment_id' => $payment->id,
+                    'payment_type' => $payment->payment_type,
+                    'amount' => $payment->amount,
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::warning('N8n notification failed in manual capture, but payment continues: ' . $e->getMessage());
+        }
 
         if ($payment->payment_type === 'FINAL') {
             $order = $payment->order;

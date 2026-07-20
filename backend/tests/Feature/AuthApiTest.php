@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\ServiceCategory;
 use App\Models\ProviderProfile;
+use Illuminate\Support\Facades\DB;
 
 class AuthApiTest extends TestCase
 {
@@ -45,6 +46,16 @@ class AuthApiTest extends TestCase
     {
         // RegisterRequest requires category_id + business_name when role=PROVIDER
         $category = ServiceCategory::factory()->create();
+        
+        // Create test city and district in wilayah tables
+        $cityId = DB::table('wilayah_kota')->insertGetId([
+            'name' => 'Test City',
+        ]);
+        
+        $districtId = DB::table('wilayah_kecamatan')->insertGetId([
+            'kota_id' => $cityId,
+            'name' => 'Test District',
+        ]);
 
         $response = $this->postJson('/api/auth/register', [
             'name' => 'Test Provider',
@@ -57,6 +68,8 @@ class AuthApiTest extends TestCase
             'business_name' => 'PT Test Provider',
             'service_name' => 'Layanan Test',
             'base_price' => 10000,
+            'city_id' => $cityId,
+            'district_id' => $districtId,
         ]);
 
         $response->assertStatus(201)

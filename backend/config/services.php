@@ -61,9 +61,16 @@ return [
         'alert_email' => env('PAYOUT_ALERT_EMAIL'),
     ],
     'gemini' => [
-        'endpoint' => env('GEMINI_API_ENDPOINT', 'https://generativeai.googleapis.com/v1'),
-        'model' => env('GEMINI_MODEL', 'gemini-1.0'),
+        'endpoint' => env('GEMINI_API_ENDPOINT', 'https://generativelanguage.googleapis.com/v1beta/models'),
+        'model' => env('GEMINI_API_MODEL', 'gemini-1.0-pro'),
         'key' => env('GEMINI_API_KEY'),
+    ],
+
+    'mailtrap' => [
+        'username' => env('MAIL_USERNAME'),
+        'password' => env('MAIL_PASSWORD'),
+        'host' => env('MAIL_HOST', 'sandbox.smtp.mailtrap.io'),
+        'port' => env('MAIL_PORT', 2525),
     ],
 
 ];

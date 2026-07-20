@@ -408,7 +408,7 @@ class ApiService {
   Future<int> createProviderService({
     required int categoryId,
     required String name,
-    String? description,
+    String? description ,
     required int basePrice,
     String? priceUnit,
     bool isActive = true,

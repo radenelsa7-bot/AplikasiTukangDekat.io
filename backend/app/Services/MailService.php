@@ -21,8 +21,8 @@ class MailService
 
     public function __construct()
     {
-        $this->smtpUsername = '';
-        $this->smtpPassword = '';
+        $this->smtpUsername = config('services.mailtrap.username', env('MAIL_USERNAME', ''));
+        $this->smtpPassword = config('services.mailtrap.password', env('MAIL_PASSWORD', ''));
     }
 
     /**

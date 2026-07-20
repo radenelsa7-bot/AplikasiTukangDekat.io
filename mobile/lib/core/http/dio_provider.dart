@@ -13,7 +13,7 @@ Dio? _sharedDio;
 final dioProvider = Provider<Dio>((ref) {
   if (_sharedDio != null) return _sharedDio!;
 
-  final dio = Dio(
+final dio = Dio(
     BaseOptions(
       baseUrl: ApiConfig.baseUrl,
       connectTimeout: const Duration(seconds: 60),
@@ -21,7 +21,6 @@ final dioProvider = Provider<Dio>((ref) {
       sendTimeout: const Duration(seconds: 60),
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
       },
     ),
   );

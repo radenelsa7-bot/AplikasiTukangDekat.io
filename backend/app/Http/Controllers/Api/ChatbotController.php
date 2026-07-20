@@ -52,24 +52,26 @@ class ChatbotController extends Controller
     return $this->success(['reply' => $reply], 'OK', 200);
   }
 
-  private function tryGeminiReply(string $userMessage, ?Order $lastOrder): ?string
-  {
-    $key = config('services.gemini.key');
-    $endpoint = config('services.gemini.endpoint');
-    $model = config('services.gemini.model');
+    private function tryGeminiReply(string $userMessage, ?Order $lastOrder): ?string
+    {
+        $key = config('services.gemini.key');
+        $endpoint = config('services.gemini.endpoint');
+        $model = config('services.gemini.model');
 
-    if (empty($key) || empty($endpoint) || empty($model)) {
-      return null;
-    }
+        if (empty($key) || empty($endpoint) || empty($model)) {
+            return null;
+        }
 
-    $systemPrompt = $this->systemPrompt($lastOrder);
-    // Attach short relevant document context from `docs/` to improve knowledge
-    $docContext = $this->getDocContext($userMessage);
-    if (!empty($docContext)) {
-      $systemPrompt = $systemPrompt . "\n\nRELEVANT DOCUMENTS:\n" . $docContext;
-    }
-    $base = rtrim($endpoint, '/');
-    $url = sprintf('%s/models/%s:generateMessage', $base, $model);
+        $systemPrompt = $this->systemPrompt($lastOrder);
+        // Attach short relevant document context from `docs/` to improve knowledge
+        $docContext = $this->getDocContext($userMessage);
+        if (!empty($docContext)) {
+            $systemPrompt = $systemPrompt . "\n\nRELEVANT DOCUMENTS:\n" . $docContext;
+        }
+        // Build the correct Gemini API URL: {endpoint}/{model}:generateContent?key={key}
+        $url = sprintf('%s/%s:generateContent?key=%s', rtrim($endpoint, '/'), $model, $key);
+        // Store key separately for authorization header (already in URL)
+        $authKey = $key;
 
     $payload = [
       'messages' => [
