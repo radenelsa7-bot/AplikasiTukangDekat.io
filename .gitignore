@@ -1,1 +1,21 @@
+# Environment files
 mobile/.env
+backend/.env
+backend/.env.testing
+backend/.env.production
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Generated files
+.DS_Store
+Thumbs.db
+
+# Build & Dependencies
+node_modules/
+vendor/
+*.log
