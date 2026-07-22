@@ -15,6 +15,7 @@ import '../../shared/widgets/live_tracking_map.dart';
 import '../auth/auth_controller.dart';
 import 'order_providers.dart';
 
+
 class OrderDetailPage extends ConsumerStatefulWidget {
   final int orderId;
   final bool autoOpenQris;
@@ -33,6 +34,8 @@ class OrderDetailPage extends ConsumerStatefulWidget {
 
 class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   bool _autoOpened = false;
+  // Track which payment IDs are currently generating QRIS to prevent double-clicks
+  final Set<int> _generatingQrisFor = {};
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +98,22 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               try {
                 final api = ref.read(apiServiceProvider);
                 if (widget.autoPaymentId != null) {
+                  // Check if payment is already PAID before generating QRIS
+                  PaymentData? existingPayment;
+                  try {
+                    existingPayment = order.payments.firstWhere(
+                      (p) => p.id == widget.autoPaymentId,
+                    );
+                  } catch (_) {
+                    existingPayment = null;
+                  }
+                  if (existingPayment != null && 
+                      (existingPayment.status == 'PAID' || 
+                       existingPayment.status == 'COMPLETED' || 
+                       existingPayment.status == 'VERIFIED')) {
+                    return; // Already paid, no need to generate QRIS
+                  }
+                  
                   final q = await api.generateQRIS(widget.autoPaymentId!);
                   if (context.mounted) {
                     _showQrisDialog(
@@ -118,7 +137,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 } else {
                   unpaid = null;
                 }
-                if (unpaid != null) {
+                // Only generate QRIS if payment is truly unpaid
+                if (unpaid != null && 
+                    unpaid.status != 'PAID' && 
+                    unpaid.status != 'COMPLETED' && 
+                    unpaid.status != 'VERIFIED') {
                   final q = await api.generateQRIS(unpaid.id);
                   if (context.mounted) {
                     _showQrisDialog(context, ref, q, order.id, unpaid.id);
@@ -586,12 +609,24 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           ),
           const SizedBox(height: 16),
           ...order.payments.map((payment) {
+            // AUTOMATIC FLOW:
+            //   UNPAID  = belum bayar, tombol bayar muncul
+            //   PAID    = sudah bayar otomatis setelah upload bukti
+            //   FAILED  = gagal
+            //   EXPIRED = kedaluwarsa
             final isPaid =
-                payment.status == 'PAID' || payment.status == 'COMPLETED';
+                payment.status == 'PAID' ||
+                payment.status == 'COMPLETED' ||
+                payment.status == 'VERIFIED';
             final isCancelled = order.status == 'CANCELLED';
             final statusColor = isPaid
                 ? AppTheme.success
                 : (isCancelled ? AppTheme.danger : AppTheme.warning);
+            final statusText = isPaid
+                ? 'Lunas'
+                : (isCancelled
+                    ? 'Dibatalkan'
+                    : 'Belum Dibayar');
 
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -635,11 +670,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                isPaid
-                                    ? 'Lunas'
-                                    : (isCancelled
-                                          ? 'Dibatalkan'
-                                          : 'Belum Dibayar'),
+                                statusText,
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: statusColor,
@@ -659,11 +690,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       ),
                     ],
                   ),
-                  // FIX: Show payment button for unpaid final payments when order is COMPLETED
-                  // and final price is approved (for CUSTOMER) or when payment is UNPAID/PENDING
+                  // Show payment button for UNPAID or PENDING payments
+                  // (PENDING included for backward compatibility with legacy payments)
                   if (!isPaid &&
-                      (payment.status == 'UNPAID' ||
-                          payment.status == 'PENDING') &&
+                      (payment.status == 'UNPAID' || payment.status == 'PENDING') &&
                       (order.status != 'CANCELLED' &&
                           order.status != 'CLOSED')) ...[
                     const SizedBox(height: 12),
@@ -690,33 +720,54 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
-                              onPressed: () async {
-                                final api = ref.read(apiServiceProvider);
-                                try {
-                                  final qris = await api.generateQRIS(
-                                    payment.id,
-                                  );
-                                  if (ctx.mounted) {
-                                    _showQrisDialog(
-                                      ctx,
-                                      ref,
-                                      qris,
-                                      order.id,
-                                      payment.id,
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (ctx.mounted) {
-                                    ScaffoldMessenger.of(ctx).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Gagal generate QRIS: $e',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
+                              onPressed: _generatingQrisFor.contains(payment.id)
+                                  ? null
+                                  : () async {
+                                      setState(() => _generatingQrisFor.add(payment.id));
+                                      final api = ref.read(apiServiceProvider);
+                                      try {
+                                        final qris = await api.generateQRIS(
+                                          payment.id,
+                                        );
+                                        if (ctx.mounted) {
+                                          _showQrisDialog(
+                                            ctx,
+                                            ref,
+                                            qris,
+                                            order.id,
+                                            payment.id,
+                                          );
+                                        }
+                                      } on DioException catch (e) {
+                                        if (ctx.mounted) {
+                                          String errorMsg;
+                                          if (e.response?.statusCode == 429) {
+                                            errorMsg = 'Terlalu banyak permintaan. Silakan tunggu beberapa saat.';
+                                          } else if (e.response?.statusCode == 400) {
+                                            errorMsg = 'Pembayaran sudah diproses. Silakan refresh halaman.';
+                                          } else {
+                                            errorMsg = 'Gagal generate QRIS: ${e.message}';
+                                          }
+                                          ScaffoldMessenger.of(ctx).showSnackBar(
+                                            SnackBar(content: Text(errorMsg)),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (ctx.mounted) {
+                                          ScaffoldMessenger.of(ctx).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Gagal generate QRIS: $e',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } finally {
+                                        if (mounted) {
+                                          setState(() => _generatingQrisFor.remove(payment.id));
+                                        }
+                                      }
+                                    },
                             ),
                           );
                         }
@@ -1561,7 +1612,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           Expanded(
             child: Text(
               '$label (${files.length})',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              style:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
           TextButton.icon(
@@ -1961,57 +2013,63 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               onPressed: isConfirming
                   ? null
                   : () async {
-                if (paymentProof == null || paymentProofBytes == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Unggah screenshot bukti pembayaran terlebih dahulu.'),
-                    ),
-                  );
-                  return;
-                }
-                setDialogState(() => isConfirming = true);
-                try {
-                  final result = await ref
-                      .read(apiServiceProvider)
-                      .confirmPayment(
-                        paymentId,
-                        proofBytes: paymentProofBytes!,
-                        proofFileName: paymentProof!.name,
-                      );
-                  ref.invalidate(orderDetailProvider(orderId));
-                  if (context.mounted) {
-                    Navigator.pop(ctx);
-                    final midtransStatus = result['midtrans_status'];
-                    if (midtransStatus != null &&
-                        midtransStatus != 'settlement' &&
-                        midtransStatus != 'capture') {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Status pembayaran: $midtransStatus. Silakan selesaikan pembayaran di Midtrans.',
+                      if (paymentProof == null || paymentProofBytes == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Unggah screenshot bukti pembayaran terlebih dahulu.',
+                            ),
                           ),
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Pembayaran berhasil dikonfirmasi!'),
-                        ),
-                      );
-                    }
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Gagal konfirmasi: $e')),
-                    );
-                  }
-                } finally {
-                  if (dialogContext.mounted) {
-                    setDialogState(() => isConfirming = false);
-                  }
-                }
-              },
+                        );
+                        return;
+                      }
+                      setDialogState(() => isConfirming = true);
+                      try {
+                        final result = await ref
+                            .read(apiServiceProvider)
+                            .confirmPayment(
+                              paymentId,
+                              proofBytes: paymentProofBytes!,
+                              proofFileName: paymentProof!.name,
+                            );
+                        // FIX: Refresh order data after successful payment confirmation
+                        ref.invalidate(orderDetailProvider(orderId));
+                        // Pop dialog FIRST using dialog's context (ctx), not page context
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                        if (context.mounted) {
+                          final midtransStatus = result['midtrans_status'];
+                          if (midtransStatus != null &&
+                              midtransStatus != 'settlement' &&
+                              midtransStatus != 'capture') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Status pembayaran: $midtransStatus. Silakan selesaikan pembayaran di Midtrans.',
+                                ),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Pembayaran berhasil dikonfirmasi!'),
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gagal konfirmasi: $e')),
+                          );
+                        }
+                      } finally {
+                        if (dialogContext.mounted) {
+                          setDialogState(() => isConfirming = false);
+                        }
+                      }
+                  },
               child: Text(isConfirming ? 'Mengonfirmasi...' : 'Sudah Dibayar'),
             ),
           ],
