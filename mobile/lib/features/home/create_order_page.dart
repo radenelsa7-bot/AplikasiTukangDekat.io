@@ -18,7 +18,7 @@ import '../auth/auth_controller.dart';
 import '../maps/location_picker_screen.dart' show LocationPickerScreen, LocationResult;
 import '../maps/location_address_helper.dart';
 
-import 'my_orders_page.dart';
+import 'home_page.dart';
 import 'order_providers.dart';
 
 class CreateOrderPage extends ConsumerStatefulWidget {
@@ -225,7 +225,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
               return _coverageKecamatanIdsForKota(kotaId).contains(id);
             }).toList()
           : kecamatan;
-                final filteredKecamatan =
+      final filteredKecamatan =
           coverageFiltered.isNotEmpty ? coverageFiltered : kecamatan;
       setState(() {
         _kecamatanList = filteredKecamatan;
@@ -303,9 +303,9 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
 
     // If user selected images, compress them client-side and send in single multipart request
     final api = ref.read(apiServiceProvider);
-    if (_selectedImages.isNotEmpty) {
+    if (_damagePhotos.isNotEmpty) {
       final parts = <MultipartFile>[];
-      for (final xfile in _selectedImages) {
+      for (final xfile in _damagePhotos) {
         try {
           final originalBytes = await xfile.readAsBytes();
           final decoded = img_pkg.decodeImage(originalBytes);
@@ -407,14 +407,21 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
 
       try {
         await api.createOrderWithFiles(fields, parts);
-        // navigate back with success
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Order berhasil dibuat!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(context).pop();
+        // navigate back with success - return to HomePage with Orders tab selected
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Order berhasil dibuat!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => const HomePage(initialIndex: 1),
+            ),
+            (route) => route.isFirst,
+          );
+        }
         return;
       } catch (e) {
         final errorMessage = e is DioException && e.response != null
@@ -474,8 +481,10 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MyOrdersPage()),
+      // Perbaikan Bug 3: Kembali ke HomePage dengan tab Pesanan (index: 1)
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomePage(initialIndex: 1)),
+        (route) => route.isFirst,
       );
     } else {
       final errorMsg =
@@ -666,7 +675,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                         _buildDamageChoice('HEAVY', 'Berat'),
                       ],
                     ),
-                    const SizedBox(height: 10),
+const SizedBox(height: 10),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
@@ -691,7 +700,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-        OutlinedButton.icon(
+                    OutlinedButton.icon(
                       onPressed: () async {
                         // CUSTOMER wajib aktifkan lokasi sebelum memilih titik pemesanan
                         final serviceEnabled = await Geolocator.isLocationServiceEnabled();

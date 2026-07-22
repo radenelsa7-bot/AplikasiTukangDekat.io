@@ -60,7 +60,7 @@ class PaymentController extends Controller
         }
 
         // Return cached checkout_url if already generated (avoid duplicate Snap transactions)
-        if ($payment->checkout_url && $payment->status !== 'UNPAID') {
+        if ($payment->checkout_url) {
             return $this->successResponse(['qris' => [
                 'provider' => $payment->provider ?? 'MIDTRANS',
                 'reference' => $payment->external_payment_id,
@@ -82,7 +82,7 @@ class PaymentController extends Controller
             'qris_code' => $qrisData['qris_code'] ?? $payment->qris_code,
             'qris_image' => $qrisData['qris_image'] ?? $payment->qris_image,
             'checkout_url' => $qrisData['checkout_url'] ?? $payment->checkout_url,
-            'status' => $payment->status === 'UNPAID' ? 'PENDING' : $payment->status,
+            // Status REMAINs UNPAID — only confirmPayment marks it PAID
         ]);
 
         return $this->successResponse(['qris' => $qrisData], 'ok', 200);

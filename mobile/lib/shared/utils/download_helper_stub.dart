@@ -8,7 +8,7 @@ import 'package:js/js.dart';
 @JS('eval')
 external void jsEval(String code);
 
-Future<void> downloadFile(List<int> bytes, String format) async {
+Future<String?> downloadFile(List<int> bytes, String format) async {
   try {
     final base64Bytes = base64Encode(bytes);
     final mimeType = format == 'xls' ? 'application/vnd.ms-excel' : 'text/csv';
@@ -31,4 +31,5 @@ Future<void> downloadFile(List<int> bytes, String format) async {
     debugPrint('[DownloadHelper] Error on web download: $e');
     rethrow;
   }
+  return null;
 }

@@ -1,32 +1,9 @@
-<<<<<<< HEAD
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 import '../../shared/utils/download_helper.dart';
-=======
-import 'dart:io';
-import 'dart:typed_data';
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:js/js.dart';
-import 'package:js/js_util.dart';
-import '../../app/theme/app_theme.dart';
-import '../../core/services/api_service.dart';
-
-// Use web-only code with kIsWeb check to avoid import errors on mobile
-// dart:html is available on web via Flutter's web SDK
-
-// JavaScript interop functions for web download
-@JS('window')
-external Object get window;
-
-@JS('eval')
-external void jsEval(String code);
->>>>>>> d11988a502d317c7882c6ee4cfdd1998a9b97034
 
 class AdminReportsPage extends ConsumerStatefulWidget {
   const AdminReportsPage({super.key});
@@ -86,28 +63,21 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
         params['end_date'] = _dateRange!.end.toIso8601String().substring(0, 10);
       }
 
-<<<<<<< HEAD
       final bytes = await api.getAdminPaymentReport(queryParameters: params);
-      await downloadFile(bytes, format);
+      final filePath = await downloadFile(bytes, format);
 
       if (mounted) {
+        // Show different message for mobile vs web
+        final message = kIsWeb
+            ? 'Export $format berhasil - file otomatis terunduh'
+            : 'Export $format berhasil - File disimpan di: $filePath';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Export $format berhasil'),
+            content: Text(message),
             backgroundColor: AppTheme.success,
+            duration: const Duration(seconds: 5),
           ),
         );
-=======
-      // Always download bytes (works for both web and mobile)
-      final bytes = await api.getAdminPaymentReport(queryParameters: params);
-
-      if (kIsWeb) {
-        // For web: use data URL to trigger download
-        await _downloadFileWeb(bytes, format);
-      } else {
-        // For mobile: save to device
-        await _downloadFileMobile(bytes, format);
->>>>>>> d11988a502d317c7882c6ee4cfdd1998a9b97034
       }
     } catch (e) {
       if (mounted) {
@@ -123,106 +93,6 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
     }
   }
 
-<<<<<<< HEAD
-=======
-  /// Download file on web using data URL
-  Future<void> _downloadFileWeb(List<int> bytes, String format) async {
-    try {
-      // Convert bytes to base64
-      final base64Bytes = base64Encode(bytes);
-
-      // Determine MIME type
-      final mimeType = format == 'xls' ? 'application/vnd.ms-excel' : 'text/csv';
-
-      // Create data URL
-      final dataUrl = 'data:$mimeType;base64,$base64Bytes';
-
-      // Create filename
-      final filename =
-          'treasurer_payments_${DateTime.now().toIso8601String().replaceAll(RegExp(r"[:.-]"), '_')}.$format';
-
-      // Execute JavaScript to download
-      _executeDownloadScript(dataUrl, filename);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Download $format dimulai...'),
-            backgroundColor: AppTheme.success,
-          ),
-        );
-      }
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Download file on mobile
-  Future<void> _downloadFileMobile(List<int> bytes, String format) async {
-    try {
-      final folder = await getApplicationDocumentsDirectory();
-      final extension = format == 'xls' ? 'xls' : 'csv';
-      final filename =
-          'treasurer_payments_${DateTime.now().toIso8601String().replaceAll(RegExp(r"[:.-]"), '_')}.$extension';
-      final file = File('${folder.path}/$filename');
-      await file.writeAsBytes(bytes);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Export $format berhasil. File disimpan di: ${file.path}'),
-            backgroundColor: AppTheme.success,
-          ),
-        );
-      }
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Execute JavaScript to download file from data URL
-  /// This uses the `js` package to call JavaScript from Dart
-  void _executeDownloadScript(String dataUrl, String filename) {
-    if (!kIsWeb) return;
-
-    try {
-      // Use eval to execute JavaScript
-      jsEval("""
-        (function() {
-          const link = document.createElement('a');
-          link.href = '$dataUrl';
-          link.download = '$filename';
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        })();
-      """);
-    } catch (e) {
-      debugPrint('Error executing download: $e');
-    }
-  }
-
-  /// Fallback download method using different approach
-  void _downloadViaBlobUrl(String dataUrl, String filename) {
-    if (!kIsWeb) return;
-
-    try {
-      // Try alternative using window object
-      jsEval("""
-        var link = document.createElement('a');
-        link.href = '$dataUrl';
-        link.download = '$filename';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      """);
-    } catch (_) {
-      debugPrint('Download attempted with data URL');
-    }
-  }
-
->>>>>>> d11988a502d317c7882c6ee4cfdd1998a9b97034
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -413,11 +283,7 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
           margin: EdgeInsets.zero,
           color: AppTheme.navy,
           child: Padding(
-<<<<<<< HEAD
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-=======
-            padding: const EdgeInsets.all(16),
->>>>>>> d11988a502d317c7882c6ee4cfdd1998a9b97034
             child: Row(
               children: [
                 _buildTotalItem(
@@ -532,7 +398,6 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
 
   Widget _buildTotalItem(String label, String value, Color color) {
     return Expanded(
-<<<<<<< HEAD
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(
@@ -562,24 +427,6 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
             ),
           ],
         ),
-=======
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white60, fontSize: 11),
-          ),
-        ],
->>>>>>> d11988a502d317c7882c6ee4cfdd1998a9b97034
       ),
     );
   }
@@ -592,8 +439,4 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> {
     );
     return 'Rp $formatted';
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> d11988a502d317c7882c6ee4cfdd1998a9b97034

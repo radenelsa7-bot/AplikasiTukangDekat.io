@@ -4,10 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProviderServiceRequest;
-<<<<<<< HEAD
 use App\Models\Order;
-=======
->>>>>>> d11988a502d317c7882c6ee4cfdd1998a9b97034
 use App\Models\ProviderService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -34,10 +31,7 @@ class ProviderServiceController extends Controller
             'provider_profile_id' => $profile->id,
             'category_id' => $request->input('category_id'),
             'name' => $request->input('name'),
-<<<<<<< HEAD
             'description' => $request->input('description'),
-=======
->>>>>>> d11988a502d317c7882c6ee4cfdd1998a9b97034
             'base_price' => $request->input('base_price'),
             'price_unit' => $request->input('price_unit'),
             'is_active' => $request->boolean('is_active', true),
@@ -75,7 +69,6 @@ class ProviderServiceController extends Controller
             'service' => $service,
         ], 'Service updated successfully', 200);
     }
-<<<<<<< HEAD
 
     public function destroy(Request $request, int $id): JsonResponse
     {
@@ -106,6 +99,4 @@ class ProviderServiceController extends Controller
 
         return $this->success(null, 'Service deleted successfully', 200);
     }
-=======
->>>>>>> d11988a502d317c7882c6ee4cfdd1998a9b97034
 }

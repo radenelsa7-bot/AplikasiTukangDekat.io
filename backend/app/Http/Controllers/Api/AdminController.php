@@ -9,10 +9,12 @@ use App\Models\Payment;
 use App\Models\ProviderProfile;
 use App\Models\ServiceCategory;
 use App\Models\User;
+use App\Mail\ProviderApprovedMail;
 use App\Services\N8nNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use App\Traits\ApiResponse;
 
 class AdminController extends Controller
@@ -228,6 +230,7 @@ class AdminController extends Controller
     /**
      * Approve provider registration.
      * Updates provider_status from 'pending' to 'approved'
+     * and sends email notification via PHPMailer (Mailtrap).
      */
     public function approveProviderRegistration(Request $request, $providerId)
     {
@@ -249,7 +252,7 @@ class AdminController extends Controller
                 'provider_status' => 'approved',
             ]);
 
-            // Send approval notification via N8n
+            // Send approval notification via N8n (existing)
             app(N8nNotificationService::class)->dispatch('provider_registration_approved', [
                 'provider_id' => $provider->id,
                 'provider_name' => $provider->name,
@@ -257,10 +260,35 @@ class AdminController extends Controller
                 'notes' => $request->input('notes'),
             ]);
 
+            // Send email notification via Laravel Mail (Mailtrap SMTP)
+            $emailSent = false;
+            try {
+                Mail::to($provider->email, $provider->name)
+                    ->send(new ProviderApprovedMail($provider));
+                $emailSent = true;
+            } catch (\Throwable $e) {
+                \Log::error('Failed to send provider approval email', [
+                    'provider_id' => $provider->id,
+                    'email'       => $provider->email,
+                    'error'       => $e->getMessage(),
+                ]);
+                $emailSent = false;
+            }
+
+            if (!$emailSent) {
+                return $this->success([
+                    'id' => $provider->id,
+                    'provider_status' => $provider->provider_status,
+                    'approved_at' => now()->toDateTimeString(),
+                    'email_notification' => 'failed',
+                ], 'Approve berhasil, tapi notifikasi email gagal terkirim');
+            }
+
             return $this->success([
                 'id' => $provider->id,
                 'provider_status' => $provider->provider_status,
                 'approved_at' => now()->toDateTimeString(),
+                'email_notification' => 'sent',
             ], 'Provider registration approved');
         } catch (\Exception $e) {
             return $this->error('Failed to approve provider: ' . $e->getMessage(), 500);
@@ -423,23 +451,6 @@ class AdminController extends Controller
             }
 
         $user->update(['status' => $validated['status']]);
-
-        if ($user->role === 'PROVIDER') {
-            $profile = ProviderProfile::where('user_id', $user->id)->first();
-            if ($profile) {
-                if ($validated['status'] === 'ACTIVE') {
-                    $profile->update([
-                        'is_verified' => true,
-                        'is_active' => true,
-                    ]);
-                } else {
-                    $profile->update([
-                        'is_verified' => false,
-                        'is_active' => false,
-                    ]);
-                }
-            }
-        }
 
             return $this->success([
                 'id' => $user->id,
