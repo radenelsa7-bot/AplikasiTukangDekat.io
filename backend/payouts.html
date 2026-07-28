@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="A6YVUXHd1gr22bvta0QJXeTt2bq6vFOE6kGcpwoH">
+  <title>Provider Payouts</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">Daftar Provider Payouts</h1>
+
+    <div class="mb-4">
+      <label class="inline-flex items-center mr-4"><input id="force_fail_toggle" type="checkbox" class="mr-2">Force fail (testing)</label>
+      <button id="sendSelected" class="bg-green-600 text-white px-4 py-2 rounded">Kirim yang dipilih</button>
+    </div>
+
+    <div class="bg-white rounded shadow overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="p-2"><input type="checkbox" id="select_all"></th>
+            <th class="p-2">ID</th>
+            <th class="p-2">Provider</th>
+            <th class="p-2">Jumlah</th>
+            <th class="p-2"># Payments</th>
+            <th class="p-2">Status</th>
+            <th class="p-2">Sent At</th>
+            <th class="p-2">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+                      <tr class="border-b">
+              <td class="p-2 text-center"><input type="checkbox" class="sel" value="3"></td>
+              <td class="p-2">3</td>
+              <td class="p-2">Tukang Listrik Andi (1)</td>
+              <td class="p-2 text-right">Rp 54.321</td>
+              <td class="p-2 text-center">1</td>
+              <td class="p-2">SENT</td>
+              <td class="p-2">2026-05-16 14:17:47</td>
+              <td class="p-2">
+                                  <span class="text-gray-500">-</span>
+                              </td>
+            </tr>
+                      <tr class="border-b">
+              <td class="p-2 text-center"><input type="checkbox" class="sel" value="1"></td>
+              <td class="p-2">1</td>
+              <td class="p-2">Tukang Listrik Andi (1)</td>
+              <td class="p-2 text-right">Rp 67.500</td>
+              <td class="p-2 text-center">1</td>
+              <td class="p-2">SENT</td>
+              <td class="p-2">2026-05-16 14:09:32</td>
+              <td class="p-2">
+                                  <span class="text-gray-500">-</span>
+                              </td>
+            </tr>
+                      <tr class="border-b">
+              <td class="p-2 text-center"><input type="checkbox" class="sel" value="2"></td>
+              <td class="p-2">2</td>
+              <td class="p-2">Provider Test (11)</td>
+              <td class="p-2 text-right">Rp 90.000</td>
+              <td class="p-2 text-center">1</td>
+              <td class="p-2">SENT</td>
+              <td class="p-2">2026-05-16 14:09:58</td>
+              <td class="p-2">
+                                  <span class="text-gray-500">-</span>
+                              </td>
+            </tr>
+                  </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4">
+      
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('select_all').addEventListener('change', function(e){
+      document.querySelectorAll('.sel').forEach(cb => cb.checked = e.target.checked);
+    });
+
+    function csrfToken(){
+      return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 'A6YVUXHd1gr22bvta0QJXeTt2bq6vFOE6kGcpwoH';
+    }
+
+    function isForceFail(){
+      return !!document.getElementById('force_fail_toggle')?.checked;
+    }
+
+    async function sendId(id, btn){
+      btn.disabled = true;
+      btn.textContent = 'Mengirim...';
+      try{
+        const res = await fetch('/admin/treasurer/provider-payouts/' + id + '/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+          credentials: 'same-origin',
+          body: JSON.stringify({ force_fail: isForceFail() })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'gagal');
+        btn.textContent = 'Terkirim';
+        location.reload();
+      }catch(err){
+        alert('Gagal: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Kirim';
+      }
+    }
+
+    document.querySelectorAll('.sendBtn').forEach(b => {
+      b.addEventListener('click', (e) => sendId(b.dataset.id, b));
+    });
+
+    document.getElementById('sendSelected').addEventListener('click', async function(){
+      const ids = Array.from(document.querySelectorAll('.sel:checked')).map(i => i.value);
+      if (ids.length === 0) return alert('Pilih minimal 1 payout');
+      if (!confirm('Kirim ' + ids.length + ' payout?')) return;
+      this.disabled = true; this.textContent = 'Mengirim...';
+      try{
+        const res = await fetch('/admin/treasurer/provider-payouts/send-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+          credentials: 'same-origin',
+          body: JSON.stringify({ ids, force_fail: isForceFail() })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'gagal batch');
+        alert('Selesai');
+        location.reload();
+      }catch(err){
+        alert('Gagal: ' + err.message);
+        this.disabled = false; this.textContent = 'Kirim yang dipilih';
+      }
+    });
+  </script>
+</body>
+</html>

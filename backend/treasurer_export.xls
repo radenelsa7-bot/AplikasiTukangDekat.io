@@ -1,0 +1,148 @@
+HTTP/1.1 200 OK
+Host: 127.0.0.1:8001
+Connection: close
+X-Powered-By: PHP/8.2.30
+Content-Type: application/vnd.ms-excel; charset=utf-8
+Content-Disposition: attachment; filename="treasurer_payments_20260516_133533.xls"
+Cache-Control: no-cache, private
+Date: Sat, 16 May 2026 13:35:33 GMT
+Access-Control-Allow-Origin: *
+Set-Cookie: XSRF-TOKEN=eyJpdiI6Imt3RE1SaDRtQlhPbnVBOHNFWWtIekE9PSIsInZhbHVlIjoiSWZSbW5VOTIyQm56dnNFVFNUcnI3MU1TM1ZPMGErcWxsSkVCTHNJTXZERENYK3FjeFgwSWpOUDZiZVpBTXcxankzU29JZFpLSEpvTkZtaEtxNHlRR1pJMGtLY2ptK3Njd09TdkV0TGhLWGlucCtEbTR2dWRYVFJrV045YWpzNFQiLCJtYWMiOiIwMWJhMGIxNDI2ZDRhNzRiYjczMWUwODllY2E2MTY2OTQ0MWM1MWFmZmNhNjBjMzgzOGI2YWZlMzZmZmQ5ZTM2IiwidGFnIjoiIn0%3D; expires=Sat, 16 May 2026 15:35:33 GMT; Max-Age=7200; path=/; samesite=lax
+Set-Cookie: db-schema-tukangdekat-session=eyJpdiI6IndoYmhNTDBVanVTYmlJZndoaGZ6Vnc9PSIsInZhbHVlIjoibE5IWXRQUkdhQ3lyVlZBTUJDOHZseVBtVGhtdlVFbGJGL0RZS2QzZ3RWT3crTmVqSnFQbDByM0lGVmlKeG4wWmN1c2M5RFJadjM2T1VHQW0vZjg0L0NNRmxCYUlsdHgrNWtDSDZXM3JlYUFFMWE1aGxZVVlWbVNsYjJ5clIvNFIiLCJtYWMiOiI5OTJlMmYwZGNjZWYwMTQ4YmNmMWE1YzEwMTBjZmUxODMyMDJkMWZkMGUyMTU5OTZjZjNiOTI1ZmM3YjBlOTk3IiwidGFnIjoiIn0%3D; expires=Sat, 16 May 2026 15:35:33 GMT; Max-Age=7200; path=/; httponly; samesite=lax
+
+<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">
+  <Worksheet ss:Name="Payments">
+    <Table>
+      <Row>
+        <Cell><Data ss:Type="String">payment_id</Data></Cell>
+        <Cell><Data ss:Type="String">order_id</Data></Cell>
+        <Cell><Data ss:Type="String">payment_type</Data></Cell>
+        <Cell><Data ss:Type="String">status</Data></Cell>
+        <Cell><Data ss:Type="String">amount</Data></Cell>
+        <Cell><Data ss:Type="String">platform_fee</Data></Cell>
+        <Cell><Data ss:Type="String">provider_payout</Data></Cell>
+        <Cell><Data ss:Type="String">refund_amount</Data></Cell>
+        <Cell><Data ss:Type="String">refund_status</Data></Cell>
+        <Cell><Data ss:Type="String">payment_reference</Data></Cell>
+        <Cell><Data ss:Type="String">customer</Data></Cell>
+        <Cell><Data ss:Type="String">provider</Data></Cell>
+        <Cell><Data ss:Type="String">created_at</Data></Cell>
+        <Cell><Data ss:Type="String">updated_at</Data></Cell>
+      </Row>
+      <Row>
+        <Cell><Data ss:Type="Number">7</Data></Cell>
+        <Cell><Data ss:Type="Number">6</Data></Cell>
+        <Cell><Data ss:Type="String">DP</Data></Cell>
+        <Cell><Data ss:Type="String">PAID</Data></Cell>
+        <Cell><Data ss:Type="Number">100000</Data></Cell>
+        <Cell><Data ss:Type="Number">10000</Data></Cell>
+        <Cell><Data ss:Type="Number">90000</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="String">NONE</Data></Cell>
+        <Cell><Data ss:Type="String"></Data></Cell>
+        <Cell><Data ss:Type="String">Customer Test</Data></Cell>
+        <Cell><Data ss:Type="String">Provider Test</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-15 21:10:00</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-16 13:04:00</Data></Cell>
+      </Row>
+      <Row>
+        <Cell><Data ss:Type="Number">6</Data></Cell>
+        <Cell><Data ss:Type="Number">1</Data></Cell>
+        <Cell><Data ss:Type="String">FINAL</Data></Cell>
+        <Cell><Data ss:Type="String">PENDING</Data></Cell>
+        <Cell><Data ss:Type="Number">125000</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="String">NONE</Data></Cell>
+        <Cell><Data ss:Type="String"></Data></Cell>
+        <Cell><Data ss:Type="String">Fajar Hidayatullah</Data></Cell>
+        <Cell><Data ss:Type="String">Tukang Listrik Andi</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-14 14:25:47</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-15 20:15:43</Data></Cell>
+      </Row>
+      <Row>
+        <Cell><Data ss:Type="Number">5</Data></Cell>
+        <Cell><Data ss:Type="Number">5</Data></Cell>
+        <Cell><Data ss:Type="String">DP</Data></Cell>
+        <Cell><Data ss:Type="String">UNPAID</Data></Cell>
+        <Cell><Data ss:Type="Number">75000</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="String">NONE</Data></Cell>
+        <Cell><Data ss:Type="String"></Data></Cell>
+        <Cell><Data ss:Type="String">Nabila Putri</Data></Cell>
+        <Cell><Data ss:Type="String">Tukang Listrik Andi</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-14 13:20:06</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-14 13:20:06</Data></Cell>
+      </Row>
+      <Row>
+        <Cell><Data ss:Type="Number">4</Data></Cell>
+        <Cell><Data ss:Type="Number">4</Data></Cell>
+        <Cell><Data ss:Type="String">DP</Data></Cell>
+        <Cell><Data ss:Type="String">PENDING</Data></Cell>
+        <Cell><Data ss:Type="Number">75000</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="String">NONE</Data></Cell>
+        <Cell><Data ss:Type="String"></Data></Cell>
+        <Cell><Data ss:Type="String">Fajar Hidayatullah</Data></Cell>
+        <Cell><Data ss:Type="String">Tukang Listrik Andi</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-14 13:18:34</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-15 20:15:34</Data></Cell>
+      </Row>
+      <Row>
+        <Cell><Data ss:Type="Number">3</Data></Cell>
+        <Cell><Data ss:Type="Number">3</Data></Cell>
+        <Cell><Data ss:Type="String">DP</Data></Cell>
+        <Cell><Data ss:Type="String">UNPAID</Data></Cell>
+        <Cell><Data ss:Type="Number">100000</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="String">NONE</Data></Cell>
+        <Cell><Data ss:Type="String"></Data></Cell>
+        <Cell><Data ss:Type="String">Nabila Putri</Data></Cell>
+        <Cell><Data ss:Type="String">Tukang Listrik Andi</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-14 13:00:41</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-14 13:00:41</Data></Cell>
+      </Row>
+      <Row>
+        <Cell><Data ss:Type="Number">2</Data></Cell>
+        <Cell><Data ss:Type="Number">2</Data></Cell>
+        <Cell><Data ss:Type="String">DP</Data></Cell>
+        <Cell><Data ss:Type="String">UNPAID</Data></Cell>
+        <Cell><Data ss:Type="Number">75000</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="String">NONE</Data></Cell>
+        <Cell><Data ss:Type="String"></Data></Cell>
+        <Cell><Data ss:Type="String">Fajar Hidayatullah</Data></Cell>
+        <Cell><Data ss:Type="String">Tukang Listrik Andi</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-14 12:56:03</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-14 12:56:03</Data></Cell>
+      </Row>
+      <Row>
+        <Cell><Data ss:Type="Number">1</Data></Cell>
+        <Cell><Data ss:Type="Number">1</Data></Cell>
+        <Cell><Data ss:Type="String">DP</Data></Cell>
+        <Cell><Data ss:Type="String">PAID</Data></Cell>
+        <Cell><Data ss:Type="Number">75000</Data></Cell>
+        <Cell><Data ss:Type="Number">7500</Data></Cell>
+        <Cell><Data ss:Type="Number">67500</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="String">NONE</Data></Cell>
+        <Cell><Data ss:Type="String"></Data></Cell>
+        <Cell><Data ss:Type="String">Fajar Hidayatullah</Data></Cell>
+        <Cell><Data ss:Type="String">Tukang Listrik Andi</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-13 22:03:13</Data></Cell>
+        <Cell><Data ss:Type="String">2026-05-16 13:04:00</Data></Cell>
+      </Row>
+    </Table>
+  </Worksheet>
+</Workbook>
